@@ -7,6 +7,10 @@ import { useLanguage } from "@/i18n/language-provider";
 import { useAuth } from "@/hooks/use-auth";
 import { getApplicationBadgeCount } from "@/lib/mock-applications";
 import { getSeenIds, SEEN_CHANGE_EVENT } from "@/lib/seen-applications";
+import { getDirectBadgeCount } from "@/lib/mock-direct";
+import { getSeenDirectIds, SEEN_DIRECT_EVENT } from "@/lib/seen-direct";
+import { getSubmissionBadgeCount } from "@/lib/mock-submissions";
+import { getSeenSubmissionIds, SEEN_SUBMISSION_EVENT } from "@/lib/seen-submissions";
 import LanguageSwitcher from "./language-switcher";
 
 function UserAvatar({ name }: { name: string }) {
@@ -25,15 +29,33 @@ export default function MainHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
+  const [seenDirectIds, setSeenDirectIds] = useState<Set<string>>(new Set());
+  const [seenSubmissionIds, setSeenSubmissionIds] = useState<Set<string>>(new Set());
 
   const userMenuRef = useRef<HTMLDivElement>(null);
 
-  // Sync seenIds from localStorage and re-sync whenever an app is marked seen
+  // Sync application seen IDs
   useEffect(() => {
     const sync = () => setSeenIds(getSeenIds());
     sync();
     window.addEventListener(SEEN_CHANGE_EVENT, sync);
     return () => window.removeEventListener(SEEN_CHANGE_EVENT, sync);
+  }, []);
+
+  // Sync direct seen IDs
+  useEffect(() => {
+    const sync = () => setSeenDirectIds(new Set(getSeenDirectIds()));
+    sync();
+    window.addEventListener(SEEN_DIRECT_EVENT, sync);
+    return () => window.removeEventListener(SEEN_DIRECT_EVENT, sync);
+  }, []);
+
+  // Sync submission seen IDs
+  useEffect(() => {
+    const sync = () => setSeenSubmissionIds(new Set(getSeenSubmissionIds()));
+    sync();
+    window.addEventListener(SEEN_SUBMISSION_EVENT, sync);
+    return () => window.removeEventListener(SEEN_SUBMISSION_EVENT, sync);
   }, []);
 
   // Close user dropdown when clicking outside
@@ -48,11 +70,13 @@ export default function MainHeader() {
   }, []);
 
   const applicationBadge = user ? getApplicationBadgeCount(user.id, user.role, seenIds) : 0;
+  const directBadge      = user ? getDirectBadgeCount(user.id, user.role, seenDirectIds) : 0;
+  const submissionBadge  = user ? getSubmissionBadgeCount(user.id, user.role, seenSubmissionIds) : 0;
 
   const navItems = [
     { label: t("nav.application"), href: "/applications", badge: applicationBadge },
-    { label: t("nav.direct"), href: "#", badge: 0 },
-    { label: t("nav.submission"), href: "#", badge: 0 },
+    { label: t("nav.direct"),      href: "/direct",       badge: directBadge      },
+    { label: t("nav.submission"),  href: "/submission",   badge: submissionBadge  },
   ];
 
   function handleLogout() {
