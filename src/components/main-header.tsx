@@ -11,6 +11,8 @@ import { getDirectBadgeCount } from "@/lib/mock-direct";
 import { getSeenDirectIds, SEEN_DIRECT_EVENT } from "@/lib/seen-direct";
 import { getSubmissionBadgeCount } from "@/lib/mock-submissions";
 import { getSeenSubmissionIds, SEEN_SUBMISSION_EVENT } from "@/lib/seen-submissions";
+import { getMyJobsBadgeCount } from "@/lib/mock-my-jobs";
+import { getSeenMyJobIds, SEEN_MY_JOBS_EVENT } from "@/lib/seen-my-jobs";
 import LanguageSwitcher from "./language-switcher";
 
 function UserAvatar({ name }: { name: string }) {
@@ -31,6 +33,7 @@ export default function MainHeader() {
   const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
   const [seenDirectIds, setSeenDirectIds] = useState<Set<string>>(new Set());
   const [seenSubmissionIds, setSeenSubmissionIds] = useState<Set<string>>(new Set());
+  const [seenMyJobIds, setSeenMyJobIds] = useState<Set<string>>(new Set());
 
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -58,6 +61,14 @@ export default function MainHeader() {
     return () => window.removeEventListener(SEEN_SUBMISSION_EVENT, sync);
   }, []);
 
+  // Sync my-jobs seen IDs
+  useEffect(() => {
+    const sync = () => setSeenMyJobIds(new Set(getSeenMyJobIds()));
+    sync();
+    window.addEventListener(SEEN_MY_JOBS_EVENT, sync);
+    return () => window.removeEventListener(SEEN_MY_JOBS_EVENT, sync);
+  }, []);
+
   // Close user dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -71,11 +82,13 @@ export default function MainHeader() {
 
   const applicationBadge = user ? getApplicationBadgeCount(user.id, user.role, seenIds) : 0;
   const directBadge      = user ? getDirectBadgeCount(user.id, user.role, seenDirectIds) : 0;
+  const myJobBadge       = user ? getMyJobsBadgeCount(user.id, user.role, seenMyJobIds) : 0;
   const submissionBadge  = user ? getSubmissionBadgeCount(user.id, user.role, seenSubmissionIds) : 0;
 
   const navItems = [
     { label: t("nav.application"), href: "/applications", badge: applicationBadge },
     { label: t("nav.direct"),      href: "/direct",       badge: directBadge      },
+    { label: t("nav.myJob"),       href: "/my-jobs",      badge: myJobBadge       },
     { label: t("nav.submission"),  href: "/submission",   badge: submissionBadge  },
   ];
 
@@ -161,7 +174,7 @@ export default function MainHeader() {
                   {/* Menu items */}
                   <div className="py-1">
                     <Link
-                      href="#"
+                      href="/profile"
                       onClick={() => setUserMenuOpen(false)}
                       className="flex items-center gap-3 px-4 py-2.5 text-[13px] text-[#333] transition-colors hover:bg-[#fafafa]"
                     >
@@ -275,7 +288,7 @@ export default function MainHeader() {
                 </div>
 
                 <Link
-                  href="#"
+                  href="/profile"
                   onClick={() => setMobileMenuOpen(false)}
                   className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-white/10"
                 >

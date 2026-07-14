@@ -42,6 +42,41 @@ export type ReceivedSubmission = {
 
 /** Keyed by entrepreneur userId */
 export const MOCK_RECEIVED_SUBMISSIONS: Record<string, ReceivedSubmission[]> = {
+  "1": [
+    {
+      id: "rsub-E1",
+      jobId: "j5",
+      influencerId: "inf2",
+      influencerName: "Krit Wattana",
+      influencerHandle: "@kritstyle",
+      influencerAvatarBg: "bg-[#e0f0ff]",
+      submittedDaysAgo: 0,
+      updatedDaysAgo: 0,
+      hasUpdate: true,
+    },
+    {
+      id: "rsub-E2",
+      jobId: "j7",
+      influencerId: "inf3",
+      influencerName: "Fern Phakamas",
+      influencerHandle: "@fernfoodie",
+      influencerAvatarBg: "bg-[#fef3c7]",
+      submittedDaysAgo: 1,
+      updatedDaysAgo: 0,
+      hasUpdate: true,
+    },
+    {
+      id: "rsub-E3",
+      jobId: "j2",
+      influencerId: "inf4",
+      influencerName: "Tawan Suphan",
+      influencerHandle: "@tawan.fit",
+      influencerAvatarBg: "bg-[#d1fae5]",
+      submittedDaysAgo: 4,
+      updatedDaysAgo: 4,
+      hasUpdate: false,
+    },
+  ],
   "2": [
     {
       id: "rsub-1",

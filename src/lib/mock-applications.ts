@@ -42,6 +42,13 @@ export const MOCK_INFLUENCER_APPLICATIONS: Record<string, InfluencerApplication[
 
 /** Keyed by userId */
 export const MOCK_ENTREPRENEUR_POSTINGS: Record<string, EntrepreneurPosting[]> = {
+  "1": [
+    { id: "post-E1", jobId: "j5", postedDaysAgo: 1,  updatedDaysAgo: 0, status: "active", applicants: 45,  hasUpdate: true  },
+    { id: "post-E2", jobId: "j7", postedDaysAgo: 2,  updatedDaysAgo: 0, status: "active", applicants: 23,  hasUpdate: true  },
+    { id: "post-E3", jobId: "j2", postedDaysAgo: 5,  updatedDaysAgo: 2, status: "active", applicants: 112, hasUpdate: false },
+    { id: "post-E4", jobId: "j8", postedDaysAgo: 7,  updatedDaysAgo: 4, status: "closed", applicants: 88,  hasUpdate: false },
+    { id: "post-E5", jobId: "j6", postedDaysAgo: 0,  updatedDaysAgo: 0, status: "draft",  applicants: 0,   hasUpdate: false },
+  ],
   "2": [
     { id: "post-1", jobId: "j2", postedDaysAgo: 3,  updatedDaysAgo: 0, status: "active", applicants: 58,  hasUpdate: true  },
     { id: "post-2", jobId: "j4", postedDaysAgo: 3,  updatedDaysAgo: 0, status: "active", applicants: 112, hasUpdate: true  },
