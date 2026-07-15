@@ -59,6 +59,24 @@ export default function HomePageContent() {
   const INFLUENCERS_PER_PAGE = 8;
   const [visibleCount, setVisibleCount] = useState(INFLUENCERS_PER_PAGE);
 
+  // Scroll offset used to drift the hero background shapes in different directions
+  const [scrollY, setScrollY] = useState(0);
+  useEffect(() => {
+    let raf = 0;
+    const onScroll = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        setScrollY(window.scrollY);
+        raf = 0;
+      });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, []);
+
   useEffect(() => {
     const controller = new AbortController();
 
@@ -121,15 +139,35 @@ export default function HomePageContent() {
       <MainHeader />
 
       {/* Hero */}
-      <section className="relative bg-[#5e0029] pb-12 pt-12 text-white sm:pb-14 sm:pt-16">
+      <section className="relative bg-[#5e0029] pb-20 pt-20 text-white sm:pb-28 sm:pt-28">
         {/* Decorative layer – overflow-hidden scoped here so the dropdown isn't clipped */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_80%_90%,rgba(37,94,54,0.7),transparent_45%),linear-gradient(120deg,#8c0034_0%,#5d0028_55%,#2a1020_100%)]" />
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.05),rgba(0,0,0,0.4))]" />
-          <div className="absolute -left-16 top-8 h-56 w-56 rounded-full border border-white/10" />
-          <div className="absolute -right-16 top-12 h-56 w-56 rounded-full border border-white/10" />
-          <div className="absolute right-40 top-16 h-40 w-40 rotate-12 border border-white/8" />
-          <div className="absolute left-1/4 top-20 h-44 w-44 -rotate-12 border border-white/8" />
+          <div
+            className="absolute inset-0"
+            style={{ transform: `translate3d(${scrollY * -0.12}px, ${scrollY * 0.25}px, 0)` }}
+          >
+            <div className="hero-shape hero-shape-a absolute -left-16 top-8 h-56 w-56 rounded-full border border-white/10" />
+          </div>
+          <div
+            className="absolute inset-0"
+            style={{ transform: `translate3d(${scrollY * 0.15}px, ${scrollY * -0.2}px, 0)` }}
+          >
+            <div className="hero-shape hero-shape-b absolute -right-16 top-12 h-56 w-56 rounded-full border border-white/10" />
+          </div>
+          <div
+            className="absolute inset-0"
+            style={{ transform: `translate3d(${scrollY * 0.28}px, ${scrollY * 0.18}px, 0)` }}
+          >
+            <div className="hero-shape hero-shape-c absolute right-40 top-16 h-40 w-40 rotate-12 border border-white/8" />
+          </div>
+          <div
+            className="absolute inset-0"
+            style={{ transform: `translate3d(${scrollY * -0.22}px, ${scrollY * -0.3}px, 0)` }}
+          >
+            <div className="hero-shape hero-shape-d absolute left-1/4 top-20 h-44 w-44 -rotate-12 border border-white/8" />
+          </div>
         </div>
 
         <div className="relative z-10 mx-auto max-w-4xl px-4 sm:px-6 text-center">
@@ -269,20 +307,13 @@ export default function HomePageContent() {
                   key={job.id}
                   className="flex flex-col overflow-hidden rounded-2xl border border-[#f0f0f0] bg-white shadow-[0_2px_10px_rgba(0,0,0,0.07)] hover:shadow-[0_4px_18px_rgba(0,0,0,0.12)] transition-shadow"
                 >
-                  <div className={`relative h-28 ${job.thumbnailBg}`}>
-                    <span className="absolute right-2.5 top-2.5">
-                      <PlatformBadge platform={job.platform} />
-                    </span>
-                  </div>
+                  <div className={`h-28 ${job.thumbnailBg}`} />
 
                   <div className="flex flex-1 flex-col gap-2 p-3.5">
                     <h3 className="line-clamp-2 text-[14px] font-bold leading-snug text-[#111]">
                       {job.title}
                     </h3>
                     <p className="text-[12px] text-[#888]">{job.company}</p>
-                    <p className="text-[11px] text-[#999]">
-                      📍 {job.location} · {job.duration}
-                    </p>
                     <p className="text-[12px] font-semibold text-[#333]">
                       {formatBudgetRange(job.budgetMin, job.budgetMax)}
                     </p>
@@ -384,11 +415,6 @@ export default function HomePageContent() {
                         {influencer.name.charAt(0)}
                       </div>
                     )}
-                    {influencer.platform && (
-                      <span className="absolute right-2.5 top-2.5">
-                        <PlatformBadge platform={influencer.platform} />
-                      </span>
-                    )}
                   </div>
 
                   <div className="flex flex-1 flex-col gap-2 p-3.5">
@@ -408,25 +434,6 @@ export default function HomePageContent() {
                       </span>
                       <span>({influencer.reviews})</span>
                     </div>
-
-                    {influencer.categories.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
-                        {influencer.categories.map((cat) => (
-                          <span
-                            key={cat}
-                            className="rounded-full bg-[#f5f5f5] px-2 py-0.5 text-[10px] font-medium text-[#666]"
-                          >
-                            {categoryLabel(cat)}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-
-                    {influencer.languages.length > 0 && (
-                      <p className="text-[11px] text-[#999]">
-                        🗣 {influencer.languages.join(", ")}
-                      </p>
-                    )}
 
                     <div className="mt-auto pt-1">
                       <Link

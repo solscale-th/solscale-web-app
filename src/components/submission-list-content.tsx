@@ -202,7 +202,7 @@ export default function SubmissionListContent() {
   };
 
   /* ── Influencer: sorted submissions ── */
-  const rawSubs = isInfluencer ? (MOCK_SUBMISSIONS[user.id] ?? []) : [];
+  const rawSubs = isInfluencer ? (MOCK_SUBMISSIONS[user.id] ?? MOCK_SUBMISSIONS["1"] ?? []) : [];
   const sortedSubs = [...rawSubs].sort((a, b) => {
     if (sortKey === "dateAdded") {
       const n = notifFirst(a.hasUpdate, a.id, b.hasUpdate, b.id);
@@ -219,7 +219,7 @@ export default function SubmissionListContent() {
   });
 
   /* ── Entrepreneur: sorted received submissions ── */
-  const rawReceived = isInfluencer ? [] : (MOCK_RECEIVED_SUBMISSIONS[user.id] ?? []);
+  const rawReceived = isInfluencer ? [] : (MOCK_RECEIVED_SUBMISSIONS[user.id] ?? MOCK_RECEIVED_SUBMISSIONS["2"] ?? []);
   const sortedReceived = [...rawReceived].sort((a, b) => {
     if (sortKey === "dateAdded") {
       const n = notifFirst(a.hasUpdate, a.id, b.hasUpdate, b.id);

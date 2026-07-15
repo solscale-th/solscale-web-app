@@ -19,9 +19,18 @@ export type Submission = {
 /** Keyed by influencer userId */
 export const MOCK_SUBMISSIONS: Record<string, Submission[]> = {
   "1": [
-    { id: "sub-1", jobId: "j1", submittedDaysAgo: 0, updatedDaysAgo: 0, hasUpdate: true  },
-    { id: "sub-2", jobId: "j8", submittedDaysAgo: 2, updatedDaysAgo: 1, hasUpdate: true  },
-    { id: "sub-3", jobId: "j3", submittedDaysAgo: 4, updatedDaysAgo: 4, hasUpdate: false },
+    { id: "sub-1",  jobId: "j1",  submittedDaysAgo: 0, updatedDaysAgo: 0, hasUpdate: true  },
+    { id: "sub-2",  jobId: "j8",  submittedDaysAgo: 2, updatedDaysAgo: 1, hasUpdate: true  },
+    { id: "sub-3",  jobId: "j3",  submittedDaysAgo: 4, updatedDaysAgo: 4, hasUpdate: false },
+    { id: "sub-4",  jobId: "j13", submittedDaysAgo: 1, updatedDaysAgo: 0, hasUpdate: true  },
+    { id: "sub-5",  jobId: "j16", submittedDaysAgo: 3, updatedDaysAgo: 2, hasUpdate: true  },
+    { id: "sub-6",  jobId: "j9",  submittedDaysAgo: 7, updatedDaysAgo: 6, hasUpdate: false },
+    { id: "sub-7",  jobId: "j18", submittedDaysAgo: 0, updatedDaysAgo: 0, hasUpdate: true  },
+    { id: "sub-8",  jobId: "j10", submittedDaysAgo: 5, updatedDaysAgo: 5, hasUpdate: false },
+    { id: "sub-9",  jobId: "j11", submittedDaysAgo: 2, updatedDaysAgo: 1, hasUpdate: false },
+    { id: "sub-10", jobId: "j6",  submittedDaysAgo: 6, updatedDaysAgo: 4, hasUpdate: false },
+    { id: "sub-11", jobId: "j14", submittedDaysAgo: 1, updatedDaysAgo: 0, hasUpdate: true  },
+    { id: "sub-12", jobId: "j17", submittedDaysAgo: 3, updatedDaysAgo: 3, hasUpdate: false },
   ],
 };
 
@@ -76,6 +85,61 @@ export const MOCK_RECEIVED_SUBMISSIONS: Record<string, ReceivedSubmission[]> = {
       updatedDaysAgo: 4,
       hasUpdate: false,
     },
+    {
+      id: "rsub-E4",
+      jobId: "j16",
+      influencerId: "inf11",
+      influencerName: "Dao Beauty",
+      influencerHandle: "@dao.makeup",
+      influencerAvatarBg: "bg-[#ffe0ec]",
+      submittedDaysAgo: 2,
+      updatedDaysAgo: 1,
+      hasUpdate: true,
+    },
+    {
+      id: "rsub-E5",
+      jobId: "j10",
+      influencerId: "inf15",
+      influencerName: "Born Invests",
+      influencerHandle: "@born.invests",
+      influencerAvatarBg: "bg-[#e4e0ff]",
+      submittedDaysAgo: 2,
+      updatedDaysAgo: 2,
+      hasUpdate: true,
+    },
+    {
+      id: "rsub-E6",
+      jobId: "j8",
+      influencerId: "inf4",
+      influencerName: "Maya Fit",
+      influencerHandle: "@maya.moves",
+      influencerAvatarBg: "bg-[#d0f0e8]",
+      submittedDaysAgo: 5,
+      updatedDaysAgo: 5,
+      hasUpdate: false,
+    },
+    {
+      id: "rsub-E7",
+      jobId: "j11",
+      influencerId: "inf7",
+      influencerName: "Beam Gamer",
+      influencerHandle: "@beam.plays",
+      influencerAvatarBg: "bg-[#f0e6ff]",
+      submittedDaysAgo: 0,
+      updatedDaysAgo: 0,
+      hasUpdate: true,
+    },
+    {
+      id: "rsub-E8",
+      jobId: "j9",
+      influencerId: "inf16",
+      influencerName: "Som Adventures",
+      influencerHandle: "@som.outdoors",
+      influencerAvatarBg: "bg-[#dcf0d4]",
+      submittedDaysAgo: 3,
+      updatedDaysAgo: 2,
+      hasUpdate: false,
+    },
   ],
   "2": [
     {
@@ -111,6 +175,83 @@ export const MOCK_RECEIVED_SUBMISSIONS: Record<string, ReceivedSubmission[]> = {
       updatedDaysAgo: 3,
       hasUpdate: false,
     },
+    {
+      id: "rsub-4",
+      jobId: "j13",
+      influencerId: "inf10",
+      influencerName: "Fern Wellness",
+      influencerHandle: "@fern.calm",
+      influencerAvatarBg: "bg-[#d8f0e0]",
+      submittedDaysAgo: 1,
+      updatedDaysAgo: 0,
+      hasUpdate: true,
+    },
+    {
+      id: "rsub-5",
+      jobId: "j17",
+      influencerId: "inf2",
+      influencerName: "Tom Foodie",
+      influencerHandle: "@tom.eats.th",
+      influencerAvatarBg: "bg-[#ffe8cc]",
+      submittedDaysAgo: 2,
+      updatedDaysAgo: 2,
+      hasUpdate: true,
+    },
+    {
+      id: "rsub-6",
+      jobId: "j15",
+      influencerId: "inf5",
+      influencerName: "James Wallet",
+      influencerHandle: "@james.wallet",
+      influencerAvatarBg: "bg-[#e8e0ff]",
+      submittedDaysAgo: 6,
+      updatedDaysAgo: 6,
+      hasUpdate: false,
+    },
+    {
+      id: "rsub-7",
+      jobId: "j8",
+      influencerId: "inf4",
+      influencerName: "Maya Fit",
+      influencerHandle: "@maya.moves",
+      influencerAvatarBg: "bg-[#d0f0e8]",
+      submittedDaysAgo: 0,
+      updatedDaysAgo: 0,
+      hasUpdate: true,
+    },
+    {
+      id: "rsub-8",
+      jobId: "j3",
+      influencerId: "inf3",
+      influencerName: "Arkin Tech",
+      influencerHandle: "@arkin.unbox",
+      influencerAvatarBg: "bg-[#cce4ff]",
+      submittedDaysAgo: 4,
+      updatedDaysAgo: 4,
+      hasUpdate: false,
+    },
+    {
+      id: "rsub-9",
+      jobId: "j1",
+      influencerId: "inf1",
+      influencerName: "Nina Somchai",
+      influencerHandle: "@nina.glows",
+      influencerAvatarBg: "bg-[#fce8ee]",
+      submittedDaysAgo: 5,
+      updatedDaysAgo: 5,
+      hasUpdate: false,
+    },
+    {
+      id: "rsub-10",
+      jobId: "j10",
+      influencerId: "inf15",
+      influencerName: "Born Invests",
+      influencerHandle: "@born.invests",
+      influencerAvatarBg: "bg-[#e4e0ff]",
+      submittedDaysAgo: 2,
+      updatedDaysAgo: 1,
+      hasUpdate: true,
+    },
   ],
 };
 
@@ -122,10 +263,10 @@ export function getSubmissionBadgeCount(
   seenIds: Set<string> = new Set(),
 ): number {
   if (role === "influencer") {
-    return (MOCK_SUBMISSIONS[userId] ?? [])
+    return (MOCK_SUBMISSIONS[userId] ?? MOCK_SUBMISSIONS["1"] ?? [])
       .filter((s) => s.hasUpdate && !seenIds.has(s.id)).length;
   }
-  return (MOCK_RECEIVED_SUBMISSIONS[userId] ?? [])
+  return (MOCK_RECEIVED_SUBMISSIONS[userId] ?? MOCK_RECEIVED_SUBMISSIONS["2"] ?? [])
     .filter((s) => s.hasUpdate && !seenIds.has(s.id)).length;
 }
 

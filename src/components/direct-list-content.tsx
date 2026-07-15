@@ -229,7 +229,7 @@ export default function DirectListContent() {
 
   /* ── Influencer: only private invites ── */
   const rawOffers = isInfluencer
-    ? (MOCK_DIRECT_OFFERS[user.id] ?? []).filter((o) => o.isPrivate)
+    ? (MOCK_DIRECT_OFFERS[user.id] ?? MOCK_DIRECT_OFFERS["1"] ?? []).filter((o) => o.isPrivate)
     : [];
   const sortedOffers = [...rawOffers].sort((a, b) => {
     if (sortKey === "dateAdded") {
@@ -249,7 +249,7 @@ export default function DirectListContent() {
   /* ── Entrepreneur: only applicants from private jobs ── */
   const rawApplicants = isInfluencer
     ? []
-    : (MOCK_JOB_APPLICANTS[user.id] ?? []).filter((a) => !a.isOpenJob);
+    : (MOCK_JOB_APPLICANTS[user.id] ?? MOCK_JOB_APPLICANTS["2"] ?? []).filter((a) => !a.isOpenJob);
   const sortedApplicants = [...rawApplicants].sort((a, b) => {
     if (sortKey === "dateAdded") {
       const n = notifFirst(a.hasUpdate, a.id, b.hasUpdate, b.id);

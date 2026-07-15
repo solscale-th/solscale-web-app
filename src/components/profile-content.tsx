@@ -368,7 +368,7 @@ export default function ProfileContent() {
               )}
 
               {/* Role switcher */}
-              <div className="w-full border-t border-[#f0f0f0] pt-3">
+              {/* <div className="w-full border-t border-[#f0f0f0] pt-3">
                 <button
                   type="button"
                   onClick={handleSwitchRole}
@@ -381,7 +381,7 @@ export default function ProfileContent() {
                     ? t("profile.switchToEntrepreneur")
                     : t("profile.switchToInfluencer")}
                 </button>
-              </div>
+              </div> */}
             </div>
 
             {/* ── Right content ── */}

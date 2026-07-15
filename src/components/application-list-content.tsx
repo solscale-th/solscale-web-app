@@ -254,7 +254,7 @@ export default function ApplicationListContent() {
   };
 
   /* ── Sorted influencer list ── */
-  const rawApps = isInfluencer ? (MOCK_INFLUENCER_APPLICATIONS[user.id] ?? []) : [];
+  const rawApps = isInfluencer ? (MOCK_INFLUENCER_APPLICATIONS[user.id] ?? MOCK_INFLUENCER_APPLICATIONS["1"] ?? []) : [];
   const sortedApps = [...rawApps].sort((a, b) => {
     // Notification items always come first on the default sort
     if (sortKey === "dateAdded") {
@@ -270,7 +270,7 @@ export default function ApplicationListContent() {
   });
 
   /* ── Sorted entrepreneur list ── */
-  const rawPostings = isInfluencer ? [] : (MOCK_ENTREPRENEUR_POSTINGS[user.id] ?? []);
+  const rawPostings = isInfluencer ? [] : (MOCK_ENTREPRENEUR_POSTINGS[user.id] ?? MOCK_ENTREPRENEUR_POSTINGS["2"] ?? []);
   const sortedPostings = [...rawPostings].sort((a, b) => {
     if (sortKey === "dateAdded") {
       const n = notifFirst(a.hasUpdate, a.id, b.hasUpdate, b.id);

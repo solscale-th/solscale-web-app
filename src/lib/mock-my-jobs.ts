@@ -101,6 +101,81 @@ export const MOCK_MY_JOBS_INFLUENCER: Record<string, JobEngagement[]> = {
       ],
       hasUpdate: true,
     },
+    {
+      id: "eng-6",
+      jobId: "j13",
+      influencerId: "inf1",
+      influencerName: "Nina Somchai",
+      influencerHandle: "@nina.glows",
+      influencerAvatarBg: "bg-[#fce8ee]",
+      acceptedDaysAgo: 2,
+      workStatus: "submitted",
+      submissionNote:
+        "Completed the 2-hour Facebook Live session. Total viewers peaked at 3,200. Recording link shared via DM. Post-event Stories are live.",
+      reviewNote: "",
+      messages: [
+        { id: "m13", from: "entrepreneur", text: "Looking forward to the live session tomorrow. Let me know if you need anything.", sentDaysAgo: 3 },
+        { id: "m14", from: "influencer",   text: "All set! I will go live at 7 PM as agreed.", sentDaysAgo: 2 },
+        { id: "m15", from: "influencer",   text: "The session went great! Submission details sent.", sentDaysAgo: 1 },
+      ],
+      hasUpdate: true,
+    },
+    {
+      id: "eng-7",
+      jobId: "j16",
+      influencerId: "inf1",
+      influencerName: "Nina Somchai",
+      influencerHandle: "@nina.glows",
+      influencerAvatarBg: "bg-[#fce8ee]",
+      acceptedDaysAgo: 4,
+      workStatus: "approved",
+      submissionNote:
+        "All 3 TikTok videos are live with the campaign hashtag and brand tag. Total combined views after 48h: 180K.",
+      reviewNote:
+        "Fantastic results! All three videos exceeded our benchmarks. Payment scheduled for this Friday.",
+      messages: [
+        { id: "m16", from: "entrepreneur", text: "Hey! Excited to have you on board for the lip collection launch.", sentDaysAgo: 5 },
+        { id: "m17", from: "influencer",   text: "Love the products! I will do the swatch video first.", sentDaysAgo: 4 },
+        { id: "m18", from: "entrepreneur", text: "Amazing — all content approved!", sentDaysAgo: 1 },
+      ],
+      hasUpdate: false,
+    },
+    {
+      id: "eng-8",
+      jobId: "j18",
+      influencerId: "inf1",
+      influencerName: "Nina Somchai",
+      influencerHandle: "@nina.glows",
+      influencerAvatarBg: "bg-[#fce8ee]",
+      acceptedDaysAgo: 0,
+      workStatus: "not_submitted",
+      submissionNote: "",
+      reviewNote: "",
+      messages: [
+        { id: "m19", from: "entrepreneur", text: "Welcome to the PeakForm SS26 campaign! Products will be shipped to you by tomorrow.", sentDaysAgo: 0 },
+      ],
+      hasUpdate: true,
+    },
+    {
+      id: "eng-9",
+      jobId: "j9",
+      influencerId: "inf1",
+      influencerName: "Nina Somchai",
+      influencerHandle: "@nina.glows",
+      influencerAvatarBg: "bg-[#fce8ee]",
+      acceptedDaysAgo: 8,
+      workStatus: "approved",
+      submissionNote:
+        "3 feed posts, 6 Stories, and 1 Reel published during the stay. Reach across all posts exceeded 95K. Links sent via DM.",
+      reviewNote:
+        "Outstanding work! The Reel especially performed beyond expectations. Full payment released today.",
+      messages: [
+        { id: "m20", from: "entrepreneur", text: "We are so excited to host you at the resort next week!", sentDaysAgo: 9 },
+        { id: "m21", from: "influencer",   text: "I cannot wait — the property looks stunning.", sentDaysAgo: 9 },
+        { id: "m22", from: "entrepreneur", text: "Everything approved. Wonderful content, thank you!", sentDaysAgo: 2 },
+      ],
+      hasUpdate: false,
+    },
   ],
 };
 
@@ -161,6 +236,61 @@ export const MOCK_MY_JOBS_ENTREPRENEUR: Record<string, JobEngagement[]> = {
       ],
       hasUpdate: false,
     },
+    {
+      id: "eng-E4",
+      jobId: "j16",
+      influencerId: "inf11",
+      influencerName: "Dao Beauty",
+      influencerHandle: "@dao.makeup",
+      influencerAvatarBg: "bg-[#ffe0ec]",
+      acceptedDaysAgo: 3,
+      workStatus: "revision_requested",
+      submissionNote:
+        "All 3 TikTok videos published. Links: tiktok.com/@dao.makeup/video/a, /b, /c. Used #ColorBoomLips in all captions.",
+      reviewNote:
+        "Great swatches! Please re-shoot the wear-test video — the lighting is too dark. Resubmit by end of week.",
+      messages: [
+        { id: "mE8",  from: "entrepreneur", text: "Hi Dao! Products shipped today, should arrive in 2 days.", sentDaysAgo: 5 },
+        { id: "mE9",  from: "influencer",   text: "Received! Obsessed with the shades — filming this weekend.", sentDaysAgo: 4 },
+        { id: "mE10", from: "entrepreneur", text: "Reviewed — small revision needed on the wear-test video.", sentDaysAgo: 1 },
+      ],
+      hasUpdate: true,
+    },
+    {
+      id: "eng-E5",
+      jobId: "j18",
+      influencerId: "inf9",
+      influencerName: "Kai Streetwear",
+      influencerHandle: "@kai.fits",
+      influencerAvatarBg: "bg-[#e0ecff]",
+      acceptedDaysAgo: 1,
+      workStatus: "not_submitted",
+      submissionNote: "",
+      reviewNote: "",
+      messages: [
+        { id: "mE11", from: "entrepreneur", text: "Welcome to the PeakForm SS26 campaign, Kai! Activewear set will be delivered tomorrow.", sentDaysAgo: 1 },
+        { id: "mE12", from: "influencer",   text: "Can't wait! I have a gym session planned for the shoot.", sentDaysAgo: 0 },
+      ],
+      hasUpdate: false,
+    },
+    {
+      id: "eng-E6",
+      jobId: "j10",
+      influencerId: "inf15",
+      influencerName: "Born Invests",
+      influencerHandle: "@born.invests",
+      influencerAvatarBg: "bg-[#e4e0ff]",
+      acceptedDaysAgo: 5,
+      workStatus: "submitted",
+      submissionNote:
+        "YouTube video published: youtube.com/watch?v=stockdee-review. Covered account setup, key features, fees, and referral link included in description. Shorts also live.",
+      reviewNote: "",
+      messages: [
+        { id: "mE13", from: "entrepreneur", text: "Script outline looks great. You are clear to film!", sentDaysAgo: 6 },
+        { id: "mE14", from: "influencer",   text: "Video is live — performing well already, 12K views in 24h.", sentDaysAgo: 2 },
+      ],
+      hasUpdate: true,
+    },
   ],
   "2": [
     {
@@ -196,6 +326,64 @@ export const MOCK_MY_JOBS_ENTREPRENEUR: Record<string, JobEngagement[]> = {
       messages: [],
       hasUpdate: false,
     },
+    {
+      id: "eng-10",
+      jobId: "j13",
+      influencerId: "inf10",
+      influencerName: "Fern Wellness",
+      influencerHandle: "@fern.calm",
+      influencerAvatarBg: "bg-[#d8f0e0]",
+      acceptedDaysAgo: 2,
+      workStatus: "submitted",
+      submissionNote:
+        "Facebook Live completed. Peaked at 2,800 live viewers and sold 148 units during the session. Recording and post-event Stories links sent via DM.",
+      reviewNote: "",
+      messages: [
+        { id: "m23", from: "entrepreneur", text: "Fern, the brief and product info deck is in the shared folder.", sentDaysAgo: 3 },
+        { id: "m24", from: "influencer",   text: "Reviewed everything — ready for the live session!", sentDaysAgo: 2 },
+        { id: "m25", from: "influencer",   text: "Live done! Really great response from the audience.", sentDaysAgo: 1 },
+      ],
+      hasUpdate: true,
+    },
+    {
+      id: "eng-11",
+      jobId: "j17",
+      influencerId: "inf2",
+      influencerName: "Tom Foodie",
+      influencerHandle: "@tom.eats.th",
+      influencerAvatarBg: "bg-[#ffe8cc]",
+      acceptedDaysAgo: 3,
+      workStatus: "revision_requested",
+      submissionNote:
+        "YouTube video and Shorts submitted. Video link: youtube.com/watch?v=krua-tour. Covered market visit, cooking, and final dish.",
+      reviewNote:
+        "Great content! However the booking link in the description is incorrect. Please update it to the correct URL and re-submit.",
+      messages: [
+        { id: "m26", from: "entrepreneur", text: "Tom! We are so excited for your class visit next week.", sentDaysAgo: 4 },
+        { id: "m27", from: "influencer",   text: "Looking forward to it! Love Thai cooking.", sentDaysAgo: 4 },
+        { id: "m28", from: "entrepreneur", text: "Small fix needed on the description link — see revision note.", sentDaysAgo: 1 },
+      ],
+      hasUpdate: true,
+    },
+    {
+      id: "eng-12",
+      jobId: "j15",
+      influencerId: "inf5",
+      influencerName: "James Wallet",
+      influencerHandle: "@james.wallet",
+      influencerAvatarBg: "bg-[#e8e0ff]",
+      acceptedDaysAgo: 7,
+      workStatus: "approved",
+      submissionNote:
+        "Episode recorded and published on Spotify and Apple Podcasts. Shared on LinkedIn and Instagram. Episode link in DM.",
+      reviewNote:
+        "Brilliant episode! Listener feedback has been overwhelmingly positive. Payment released today.",
+      messages: [
+        { id: "m29", from: "entrepreneur", text: "James, your episode was one of our best performers this quarter!", sentDaysAgo: 2 },
+        { id: "m30", from: "influencer",   text: "Really enjoyed the conversation. Thanks for having me!", sentDaysAgo: 2 },
+      ],
+      hasUpdate: false,
+    },
   ],
 };
 
@@ -208,8 +396,8 @@ export function getMyJobsBadgeCount(
 ): number {
   const list =
     role === "influencer"
-      ? (MOCK_MY_JOBS_INFLUENCER[userId] ?? [])
-      : (MOCK_MY_JOBS_ENTREPRENEUR[userId] ?? []);
+      ? (MOCK_MY_JOBS_INFLUENCER[userId] ?? MOCK_MY_JOBS_INFLUENCER["1"] ?? [])
+      : (MOCK_MY_JOBS_ENTREPRENEUR[userId] ?? MOCK_MY_JOBS_ENTREPRENEUR["2"] ?? []);
   return list.filter((e) => e.hasUpdate && !seenIds.has(e.id)).length;
 }
 

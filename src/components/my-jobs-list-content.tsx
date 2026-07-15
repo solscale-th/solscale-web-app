@@ -214,8 +214,8 @@ export default function MyJobsListContent() {
   };
 
   const rawList = isInfluencer
-    ? (MOCK_MY_JOBS_INFLUENCER[user.id] ?? [])
-    : (MOCK_MY_JOBS_ENTREPRENEUR[user.id] ?? []);
+    ? (MOCK_MY_JOBS_INFLUENCER[user.id] ?? MOCK_MY_JOBS_INFLUENCER["1"] ?? [])
+    : (MOCK_MY_JOBS_ENTREPRENEUR[user.id] ?? MOCK_MY_JOBS_ENTREPRENEUR["2"] ?? []);
 
   const sortedList = [...rawList].sort((a, b) => {
     if (sortKey === "dateAdded") {

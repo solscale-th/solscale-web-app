@@ -7,6 +7,8 @@
   },
   "scripts": {
     "dev": "next dev",
+    "dev:local": "NEXT_PUBLIC_MARKETPLACE_API_URL=http://localhost:8000/graphql next dev",
+    "dev:remote": "NEXT_PUBLIC_MARKETPLACE_API_URL=https://api-dev.solscale.co/graphql next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
