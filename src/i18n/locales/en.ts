@@ -259,6 +259,12 @@ const en = {
       selectRole: "Sign in as",
       roleInfluencer: "Influencer",
       roleEntrepreneur: "Entrepreneur",
+      selectRoleFirst: "Please choose Influencer or Entrepreneur first.",
+      googleLoginFailed: "Google sign-in failed. Please try again.",
+      completeProfileTitle: "One more step",
+      completeProfileSubtitle: "Tell us your company name to finish setting up your account.",
+      companyNameSaveFailed: "Couldn't save your company name. Please try again.",
+      continueButton: "Continue",
     },
     signup: {
       title: "Create your account",

@@ -22,6 +22,7 @@ type ApiEntrepreneurAccount = {
 };
 
 type LoginResult = { token: string; user: MockUser };
+type GoogleEntrepreneurLoginResult = LoginResult & { needsCompanyName: boolean };
 
 const LOGIN_INFLUENCER = /* GraphQL */ `
   mutation LoginInfluencer($input: LoginInfluencerInput!) {
@@ -77,6 +78,85 @@ type LoginInfluencerResponse = {
 type LoginEntrepreneurResponse = {
   loginEntrepreneur: {
     data: { token: string; entrepreneur: ApiEntrepreneurAccount } | null;
+    status?: { error?: string | null };
+  };
+};
+
+const LOGIN_INFLUENCER_WITH_GOOGLE = /* GraphQL */ `
+  mutation LoginInfluencerWithGoogle($input: LoginInfluencerWithGoogleInput!) {
+    loginInfluencerWithGoogle(input: $input) {
+      data {
+        token
+        influencer {
+          id
+          email
+          firstName
+          lastName
+          stageName
+          bankName
+          bankAccountName
+          bankAccountNumber
+        }
+      }
+      status {
+        error
+      }
+    }
+  }
+`;
+
+const LOGIN_ENTREPRENEUR_WITH_GOOGLE = /* GraphQL */ `
+  mutation LoginEntrepreneurWithGoogle($input: LoginEntrepreneurWithGoogleInput!) {
+    loginEntrepreneurWithGoogle(input: $input) {
+      data {
+        token
+        entrepreneur {
+          id
+          email
+          companyName
+          bankName
+          bankAccountName
+          bankAccountNumber
+        }
+      }
+      status {
+        error
+      }
+    }
+  }
+`;
+
+const UPDATE_ENTREPRENEUR = /* GraphQL */ `
+  mutation UpdateEntrepreneur($input: UpdateEntrepreneurInput!) {
+    updateEntrepreneur(input: $input) {
+      data {
+        id
+        companyName
+      }
+      status {
+        error
+      }
+    }
+  }
+`;
+
+type LoginInfluencerWithGoogleResponse = {
+  loginInfluencerWithGoogle: {
+    data: { token: string; influencer: ApiInfluencerAccount } | null;
+    status?: { error?: string | null };
+  };
+};
+
+type LoginEntrepreneurWithGoogleResponse = {
+  loginEntrepreneurWithGoogle: {
+    data: { token: string; entrepreneur: ApiEntrepreneurAccount } | null;
+    status?: { error?: string | null };
+  };
+};
+
+type UpdateEntrepreneurResponse = {
+  updateEntrepreneur: {
+    data: { id: number; companyName?: string | null } | null;
     status?: { error?: string | null };
   };
 };
@@ -237,4 +317,84 @@ export async function loginEntrepreneur(
   };
 
   return { token, user };
+}
+
+// ── Google login mutations ───────────────────────────────────────────────────
+
+export async function loginInfluencerWithGoogle(
+  idToken: string
+): Promise<LoginResult> {
+  const res = await graphqlRequest<LoginInfluencerWithGoogleResponse>(
+    LOGIN_INFLUENCER_WITH_GOOGLE,
+    { input: { idToken } }
+  );
+
+  const { data, status } = res.loginInfluencerWithGoogle;
+  if (!data) throw new Error(status?.error ?? "Google login failed");
+
+  const { token, influencer } = data;
+  const name =
+    influencer.stageName?.trim() ||
+    `${influencer.firstName ?? ""} ${influencer.lastName ?? ""}`.trim() ||
+    influencer.email;
+
+  const user: MockUser = {
+    id: String(influencer.id),
+    name,
+    email: influencer.email,
+    password: "",
+    role: "influencer",
+    countryCode: "+66",
+    phone: "",
+    paymentAccount: {
+      bankName: influencer.bankName ?? "",
+      accountNumber: influencer.bankAccountNumber ?? "",
+      accountHolder: influencer.bankAccountName ?? "",
+    },
+  };
+
+  return { token, user };
+}
+
+export async function loginEntrepreneurWithGoogle(
+  idToken: string
+): Promise<GoogleEntrepreneurLoginResult> {
+  const res = await graphqlRequest<LoginEntrepreneurWithGoogleResponse>(
+    LOGIN_ENTREPRENEUR_WITH_GOOGLE,
+    { input: { idToken } }
+  );
+
+  const { data, status } = res.loginEntrepreneurWithGoogle;
+  if (!data) throw new Error(status?.error ?? "Google login failed");
+
+  const { token, entrepreneur } = data;
+
+  const user: MockUser = {
+    id: String(entrepreneur.id),
+    name: entrepreneur.companyName?.trim() || entrepreneur.email,
+    email: entrepreneur.email,
+    password: "",
+    role: "entrepreneur",
+    countryCode: "+66",
+    phone: "",
+    paymentAccount: {
+      bankName: entrepreneur.bankName ?? "",
+      accountNumber: entrepreneur.bankAccountNumber ?? "",
+      accountHolder: entrepreneur.bankAccountName ?? "",
+    },
+  };
+
+  return { token, user, needsCompanyName: !entrepreneur.companyName?.trim() };
+}
+
+export async function updateEntrepreneurCompanyName(
+  companyName: string
+): Promise<void> {
+  const res = await graphqlRequest<UpdateEntrepreneurResponse>(
+    UPDATE_ENTREPRENEUR,
+    { input: { companyName } }
+  );
+
+  const { data, status } = res.updateEntrepreneur;
+  if (!data) throw new Error(status?.error ?? "Failed to save company name");
 }

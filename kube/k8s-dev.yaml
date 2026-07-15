@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: solscale-web-app
+  namespace: sol-scale-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: solscale-web-app
+      tier: frontend
+      track: stable
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  template:
+    metadata:
+      annotations:
+        cloud.google.com/neg: '{"ingress": true}'
+      labels:
+        app: solscale-web-app
+        tier: frontend
+        track: stable
+    spec:
+      containers:
+        - name: solscale-web-app
+          image: asia-southeast2-docker.pkg.dev/project-fc5426d4-53ee-47af-8fb/development/solscale-web-app
+          resources:
+            limits:
+              memory: "512Mi"
+            requests:
+              memory: "256Mi"
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: APP_NAME
+              value: "Solscale Web App"
+            - name: APP_VERSION
+              value: "0.1.0"
+
+          ports:
+            - containerPort: 3000
+          livenessProbe:
+            httpGet:
+              path: "/"
+              port: 3000
+            initialDelaySeconds: 10
+            timeoutSeconds: 10
+            periodSeconds: 30
+            failureThreshold: 5
+
+          readinessProbe:
+            httpGet:
+              path: "/"
+              port: 3000
+            initialDelaySeconds: 10
+            timeoutSeconds: 10
+            periodSeconds: 30
+            failureThreshold: 5
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: solscale-web-app
+  namespace: sol-scale-dev
+  labels:
+    name: solscale-web-app
+spec:
+  type: NodePort
+  ports:
+    - port: 3000
+      targetPort: 3000
+      name: solscale-web-app
+  selector:
+    app: solscale-web-app
+    tier: frontend

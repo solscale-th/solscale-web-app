@@ -1,11 +1,19 @@
 "use client";
 
+import { GoogleLogin, type CredentialResponse } from "@react-oauth/google";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { useLanguage } from "@/i18n/language-provider";
 import { getSafeReturnTo, setAuthToken, setStoredUser } from "@/lib/auth";
-import { loginEntrepreneur, loginInfluencer } from "@/lib/auth-api";
+import {
+  loginEntrepreneur,
+  loginEntrepreneurWithGoogle,
+  loginInfluencer,
+  loginInfluencerWithGoogle,
+  updateEntrepreneurCompanyName,
+} from "@/lib/auth-api";
+import type { MockUser } from "@/lib/mock-users";
 
 type Role = "influencer" | "entrepreneur";
 
@@ -21,6 +29,10 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const [pendingGoogleUser, setPendingGoogleUser] = useState<MockUser | null>(null);
+  const [companyName, setCompanyName] = useState("");
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const canSubmit =
     email.trim() !== "" && password.trim() !== "" && role !== null && !loading;
@@ -43,6 +55,102 @@ function LoginForm() {
       setError(t("auth.login.invalidCredentials"));
       setLoading(false);
     }
+  }
+
+  async function handleGoogleSuccess(credentialResponse: CredentialResponse) {
+    if (!role) {
+      setError(t("auth.login.selectRoleFirst"));
+      return;
+    }
+    const idToken = credentialResponse.credential;
+    if (!idToken) return;
+
+    setError("");
+    setGoogleLoading(true);
+
+    try {
+      if (role === "influencer") {
+        const { token, user } = await loginInfluencerWithGoogle(idToken);
+        setAuthToken(token);
+        setStoredUser(user);
+        router.push(returnTo);
+      } else {
+        const { token, user, needsCompanyName } =
+          await loginEntrepreneurWithGoogle(idToken);
+        setAuthToken(token);
+        setStoredUser(user);
+        if (needsCompanyName) {
+          setPendingGoogleUser(user);
+          setGoogleLoading(false);
+        } else {
+          router.push(returnTo);
+        }
+      }
+    } catch {
+      setError(t("auth.login.googleLoginFailed"));
+      setGoogleLoading(false);
+    }
+  }
+
+  async function handleCompanyNameSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!pendingGoogleUser || !companyName.trim()) return;
+    setError("");
+    setGoogleLoading(true);
+
+    try {
+      await updateEntrepreneurCompanyName(companyName.trim());
+      setStoredUser({ ...pendingGoogleUser, name: companyName.trim() });
+      router.push(returnTo);
+    } catch {
+      setError(t("auth.login.companyNameSaveFailed"));
+      setGoogleLoading(false);
+    }
+  }
+
+  if (pendingGoogleUser) {
+    return (
+      <div className="w-full max-w-[460px]">
+        <div className="mb-8 text-center">
+          <h1 className="text-[32px] font-bold text-[#111] tracking-tight">
+            {t("auth.login.completeProfileTitle")}
+          </h1>
+          <p className="mt-1.5 text-[15px] text-[#777]">
+            {t("auth.login.completeProfileSubtitle")}
+          </p>
+        </div>
+
+        <form onSubmit={handleCompanyNameSubmit} className="flex flex-col gap-4">
+          <div>
+            <label className="block text-[14px] font-medium text-[#333] mb-1.5">
+              {t("auth.signup.companyName")}
+            </label>
+            <input
+              type="text"
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+              placeholder={t("auth.signup.companyNamePlaceholder")}
+              required
+              className="w-full rounded-xl border border-[#ddd] bg-white px-3.5 py-3 text-[14px] text-[#111] outline-none focus:border-[#9d003b] focus:ring-1 focus:ring-[#9d003b]"
+            />
+          </div>
+
+          {error && (
+            <p className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-[13px] text-red-600">
+              {error}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={googleLoading || !companyName.trim()}
+            className="mt-1 flex items-center justify-center gap-2 h-[48px] w-full rounded-xl bg-[#9d003b] text-[15px] font-semibold text-white shadow-[0_4px_14px_rgba(157,0,59,0.35)] hover:bg-[#850030] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {googleLoading ? t("auth.login.submitting") : t("auth.login.continueButton")}
+          </button>
+        </form>
+      </div>
+    );
   }
 
   return (
@@ -175,15 +283,20 @@ function LoginForm() {
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <button className="flex items-center justify-center gap-2 h-[44px] rounded-xl border border-[#ddd] bg-white text-[14px] font-medium text-[#333] hover:bg-[#fafafa] transition-colors">
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-            <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4" />
-            <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853" />
-            <path d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05" />
-            <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335" />
-          </svg>
-          Google
-        </button>
+        <div
+          className={`flex h-[44px] items-center justify-center overflow-hidden rounded-xl ${
+            !role || googleLoading ? "pointer-events-none opacity-50" : ""
+          }`}
+        >
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={() => setError(t("auth.login.googleLoginFailed"))}
+            theme="outline"
+            shape="rectangular"
+            text="continue_with"
+            size="large"
+          />
+        </div>
         <button className="flex items-center justify-center gap-2 h-[44px] rounded-xl border border-[#ddd] bg-white text-[14px] font-medium text-[#333] hover:bg-[#fafafa] transition-colors">
           <div className="h-5 w-5 rounded-full bg-[#06C755] grid place-items-center">
             <svg width="12" height="12" viewBox="0 0 12 12" fill="white">

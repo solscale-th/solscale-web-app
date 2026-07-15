@@ -1,0 +1,29 @@
+apiVersion: skaffold/v4beta9
+kind: Config
+metadata:
+  name: solscale-web-app
+
+build:
+  artifacts:
+    - image: asia-southeast2-docker.pkg.dev/project-fc5426d4-53ee-47af-8fb/development/solscale-web-app
+      docker:
+        dockerfile: Dockerfile
+        buildArgs:
+          NEXT_PUBLIC_MARKETPLACE_API_URL: https://api-dev.solscale.co/graphql
+          NEXT_PUBLIC_GOOGLE_CLIENT_ID: 670549849584-po46qh9j1b6khdlpccr83djp8a35s07g.apps.googleusercontent.com
+  local:
+    push: true
+
+manifests:
+  rawYaml:
+    - kube/k8s-dev.yaml
+
+deploy:
+  kubectl: {}
+
+portForward:
+  - resourceType: Service
+    resourceName: solscale-web-app
+    namespace: sol-scale-dev
+    port: 3000
+    localPort: 3000

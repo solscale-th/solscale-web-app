@@ -1,3 +1,5 @@
+import { getAuthToken } from "./auth";
+
 export const MARKETPLACE_API_URL =
   process.env.NEXT_PUBLIC_MARKETPLACE_API_URL ?? "http://localhost:8000/graphql";
 
@@ -11,9 +13,14 @@ export async function graphqlRequest<T>(
   variables?: Record<string, unknown>,
   signal?: AbortSignal
 ): Promise<T> {
+  const token = getAuthToken();
+
   const res = await fetch(MARKETPLACE_API_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     body: JSON.stringify({ query, variables }),
     signal,
   });

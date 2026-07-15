@@ -1,0 +1,24 @@
+FROM node:24-alpine
+
+RUN apk add --no-cache tzdata
+ENV TZ Asia/Bangkok
+
+WORKDIR /app
+
+ADD . /app/
+
+RUN mkdir /app/node_modules
+
+RUN npm ci
+
+ARG NEXT_PUBLIC_MARKETPLACE_API_URL
+ENV NEXT_PUBLIC_MARKETPLACE_API_URL=$NEXT_PUBLIC_MARKETPLACE_API_URL
+
+ARG NEXT_PUBLIC_GOOGLE_CLIENT_ID
+ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=$NEXT_PUBLIC_GOOGLE_CLIENT_ID
+
+RUN npm run build
+
+ENTRYPOINT ["npm", "run", "start", "--", "-p", "3000"]
+
+EXPOSE 3000

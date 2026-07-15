@@ -259,6 +259,12 @@ const th = {
       selectRole: "เข้าสู่ระบบในฐานะ",
       roleInfluencer: "อินฟลูเอนเซอร์",
       roleEntrepreneur: "ผู้ประกอบการ",
+      selectRoleFirst: "กรุณาเลือกอินฟลูเอนเซอร์หรือผู้ประกอบการก่อน",
+      googleLoginFailed: "เข้าสู่ระบบด้วย Google ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง",
+      completeProfileTitle: "อีกขั้นตอนเดียว",
+      completeProfileSubtitle: "กรอกชื่อบริษัทของคุณเพื่อตั้งค่าบัญชีให้เสร็จสมบูรณ์",
+      companyNameSaveFailed: "ไม่สามารถบันทึกชื่อบริษัทได้ กรุณาลองใหม่อีกครั้ง",
+      continueButton: "ดำเนินการต่อ",
     },
     signup: {
       title: "สร้างบัญชีของคุณ",
