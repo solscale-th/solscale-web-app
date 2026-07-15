@@ -4,8 +4,10 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { useLanguage } from "@/i18n/language-provider";
-import { getSafeReturnTo, setStoredUser } from "@/lib/auth";
-import { findUserByCredentials } from "@/lib/mock-users";
+import { getSafeReturnTo, setAuthToken, setStoredUser } from "@/lib/auth";
+import { loginEntrepreneur, loginInfluencer } from "@/lib/auth-api";
+
+type Role = "influencer" | "entrepreneur";
 
 function LoginForm() {
   const router = useRouter();
@@ -15,25 +17,32 @@ function LoginForm() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState<Role | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  const canSubmit =
+    email.trim() !== "" && password.trim() !== "" && role !== null && !loading;
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!role) return;
     setError("");
     setLoading(true);
 
-    setTimeout(() => {
-      const user = findUserByCredentials(email, password);
-      if (user) {
-        setStoredUser(user);
-        router.push(returnTo);
-      } else {
-        setError(t("auth.login.invalidCredentials"));
-        setLoading(false);
-      }
-    }, 600);
+    try {
+      const { token, user } =
+        role === "influencer"
+          ? await loginInfluencer(email, password)
+          : await loginEntrepreneur(email, password);
+      setAuthToken(token);
+      setStoredUser(user);
+      router.push(returnTo);
+    } catch {
+      setError(t("auth.login.invalidCredentials"));
+      setLoading(false);
+    }
   }
 
   return (
@@ -107,6 +116,31 @@ function LoginForm() {
           </div>
         </div>
 
+        <div className="flex rounded-xl bg-[#e3dfd7] p-1">
+          <button
+            type="button"
+            onClick={() => setRole("influencer")}
+            className={`flex-1 rounded-lg py-2.5 text-[14px] font-semibold transition-colors ${
+              role === "influencer"
+                ? "bg-[#9d003b] text-white shadow-sm"
+                : "text-[#888] hover:text-[#555]"
+            }`}
+          >
+            {t("auth.login.roleInfluencer")}
+          </button>
+          <button
+            type="button"
+            onClick={() => setRole("entrepreneur")}
+            className={`flex-1 rounded-lg py-2.5 text-[14px] font-semibold transition-colors ${
+              role === "entrepreneur"
+                ? "bg-[#9d003b] text-white shadow-sm"
+                : "text-[#888] hover:text-[#555]"
+            }`}
+          >
+            {t("auth.login.roleEntrepreneur")}
+          </button>
+        </div>
+
         <label className="flex items-center gap-2.5 cursor-pointer select-none">
           <input type="checkbox" className="h-4 w-4 rounded border-[#ccc] accent-[#9d003b]" />
           <span className="text-[14px] text-[#555]">{t("auth.login.rememberMe")}</span>
@@ -120,7 +154,7 @@ function LoginForm() {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={!canSubmit}
           className="mt-1 flex items-center justify-center gap-2 h-[48px] w-full rounded-xl bg-[#9d003b] text-[15px] font-semibold text-white shadow-[0_4px_14px_rgba(157,0,59,0.35)] hover:bg-[#850030] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {loading ? t("auth.login.submitting") : (

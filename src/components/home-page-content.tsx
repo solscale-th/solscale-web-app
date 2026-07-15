@@ -1,18 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import MainHeader from "@/components/main-header";
 import SiteFooter from "@/components/site-footer";
+import { useAuth } from "@/hooks/use-auth";
 import { useLanguage } from "@/i18n/language-provider";
 import {
-  INFLUENCER_CATEGORY_KEYS,
-  MOCK_INFLUENCERS,
+  fetchInfluencers,
   filterInfluencersByCategories,
-  formatFollowers,
+  type InfluencerListItem,
+} from "@/lib/influencers";
+import {
+  INFLUENCER_CATEGORY_KEYS,
   type InfluencerCategoryKey,
 } from "@/lib/mock-influencers";
-import { PLATFORM_COLORS, type Platform } from "@/lib/mock-jobs";
+import {
+  formatBudgetRange,
+  MOCK_JOBS,
+  PLATFORM_COLORS,
+  type Platform,
+} from "@/lib/mock-jobs";
 
 function PlatformBadge({ platform }: { platform: Platform }) {
   const c = PLATFORM_COLORS[platform];
@@ -35,19 +43,65 @@ function StarIcon() {
 
 export default function HomePageContent() {
   const { t, dictionary } = useLanguage();
+  const { user } = useAuth();
+  const isInfluencer = user?.role === "influencer";
   const [selectedCategories, setSelectedCategories] = useState<
     InfluencerCategoryKey[]
   >([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  const [influencers, setInfluencers] = useState<InfluencerListItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  const INFLUENCERS_PER_PAGE = 8;
+  const [visibleCount, setVisibleCount] = useState(INFLUENCERS_PER_PAGE);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    fetchInfluencers(controller.signal)
+      .then((data) => {
+        if (controller.signal.aborted) return;
+        setInfluencers(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        if (controller.signal.aborted) return;
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        setError(true);
+        setLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [reloadKey]);
+
+  function retryLoad() {
+    setInfluencers([]);
+    setLoading(true);
+    setError(false);
+    setReloadKey((k) => k + 1);
+  }
+
   const categoryLabel = (key: InfluencerCategoryKey) =>
     t(`categories.${key}`);
 
   const filteredInfluencers = useMemo(
-    () => filterInfluencersByCategories(MOCK_INFLUENCERS, selectedCategories),
-    [selectedCategories]
+    () => filterInfluencersByCategories(influencers, selectedCategories),
+    [influencers, selectedCategories]
   );
+
+  useEffect(() => {
+    setVisibleCount(INFLUENCERS_PER_PAGE);
+  }, [selectedCategories, influencers]);
+
+  const visibleInfluencers = filteredInfluencers.slice(0, visibleCount);
+  const hasMoreInfluencers = visibleCount < filteredInfluencers.length;
+
+  const visibleJobs = MOCK_JOBS.slice(0, visibleCount);
+  const hasMoreJobs = visibleCount < MOCK_JOBS.length;
 
   const availableCategories = INFLUENCER_CATEGORY_KEYS.filter(
     (cat) => !selectedCategories.includes(cat)
@@ -83,7 +137,7 @@ export default function HomePageContent() {
             {t("hero.titleBefore")}{" "}
             <span className="text-[#d7ff2f]">{t("hero.titleHighlight")}</span>
             <br className="hidden sm:block" />
-            {" "}{t("hero.titleAfter")}
+            <span className="mt-3 inline-block">{t("hero.titleAfter")}</span>
           </h1>
 
           {/* Search bar with inline category picker */}
@@ -184,7 +238,93 @@ export default function HomePageContent() {
         </div>
       </section>
 
-      {/* Influencers section */}
+      {/* Jobs section — shown to logged-in influencers */}
+      {isInfluencer ? (
+        <section className="bg-white px-4 sm:px-8 pb-16 pt-10">
+          <div className="mx-auto max-w-7xl">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div>
+                <h2 className="text-[17px] font-bold text-[#111]">
+                  {t("homeJobs.title")}
+                </h2>
+                <p className="text-[13px] text-[#888]">
+                  {t("homeJobs.found", { count: MOCK_JOBS.length })}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 text-[13px] text-[#555]">
+                <span className="hidden sm:inline">{t("common.sortBy")}</span>
+                <button className="flex items-center gap-1 rounded-lg border border-[#eee] bg-white px-3 py-1.5 font-medium hover:border-[#ccc] transition-colors">
+                  {t("homeJobs.sortNewest")}
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Job cards: 1 col → 2 col → 3 col → 4 col */}
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {visibleJobs.map((job) => (
+                <div
+                  key={job.id}
+                  className="flex flex-col overflow-hidden rounded-2xl border border-[#f0f0f0] bg-white shadow-[0_2px_10px_rgba(0,0,0,0.07)] hover:shadow-[0_4px_18px_rgba(0,0,0,0.12)] transition-shadow"
+                >
+                  <div className={`relative h-28 ${job.thumbnailBg}`}>
+                    <span className="absolute right-2.5 top-2.5">
+                      <PlatformBadge platform={job.platform} />
+                    </span>
+                  </div>
+
+                  <div className="flex flex-1 flex-col gap-2 p-3.5">
+                    <h3 className="line-clamp-2 text-[14px] font-bold leading-snug text-[#111]">
+                      {job.title}
+                    </h3>
+                    <p className="text-[12px] text-[#888]">{job.company}</p>
+                    <p className="text-[11px] text-[#999]">
+                      📍 {job.location} · {job.duration}
+                    </p>
+                    <p className="text-[12px] font-semibold text-[#333]">
+                      {formatBudgetRange(job.budgetMin, job.budgetMax)}
+                    </p>
+
+                    <div className="mt-auto pt-1">
+                      <Link
+                        href={`/jobs/${job.id}`}
+                        className="block w-full rounded-xl bg-[#9d003b] px-3.5 py-2 text-center text-[12px] font-semibold text-white hover:bg-[#850030] transition-colors"
+                      >
+                        {t("homeJobs.viewJob")}
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {MOCK_JOBS.length === 0 && (
+              <p className="mt-8 text-center text-[14px] text-[#888]">
+                {t("homeJobs.none")}
+              </p>
+            )}
+
+            {hasMoreJobs && (
+              <div className="mt-8 flex justify-center">
+                <button
+                  onClick={() =>
+                    setVisibleCount((count) => count + INFLUENCERS_PER_PAGE)
+                  }
+                  className="flex items-center gap-2 rounded-2xl border border-[#ddd] bg-white px-8 py-3 text-[14px] font-semibold text-[#555] hover:border-[#9d003b] hover:text-[#9d003b] transition-colors"
+                >
+                  {t("homeJobs.loadMore")}
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path d="M3 5L7 9L11 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+              </div>
+            )}
+          </div>
+        </section>
+      ) : (
+      /* Influencers section */
       <section className="bg-white px-4 sm:px-8 pb-16 pt-10">
         <div className="mx-auto max-w-7xl">
           <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -208,90 +348,126 @@ export default function HomePageContent() {
           </div>
 
           {/* Influencer cards: 1 col → 2 col → 3 col → 4 col */}
-          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filteredInfluencers.map((influencer) => (
-              <div
-                key={influencer.id}
-                className="flex flex-col overflow-hidden rounded-2xl border border-[#f0f0f0] bg-white shadow-[0_2px_10px_rgba(0,0,0,0.07)] hover:shadow-[0_4px_18px_rgba(0,0,0,0.12)] transition-shadow"
-              >
-                <div className={`relative h-28 ${influencer.avatarBg} flex items-center justify-center`}>
-                  <div className="grid h-16 w-16 place-items-center rounded-full bg-white/80 text-2xl font-bold text-[#9d003b]">
-                    {influencer.name.charAt(0)}
-                  </div>
-                  {/* <span className="absolute right-2.5 top-2.5">
-                    <PlatformBadge platform={influencer.platform} />
-                  </span> */}
-                </div>
-
-                <div className="flex flex-1 flex-col gap-2 p-3.5">
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <h3 className="truncate text-[14px] font-bold text-[#111]">
-                        {influencer.name}
-                      </h3>
-                      {influencer.verified && (
-                        <span className="text-[10px] font-semibold text-[#059669]">✓</span>
-                      )}
-                    </div>
-                    <p className="text-[12px] text-[#888]">{influencer.handle}</p>
-                  </div>
-
-                  <div className="flex items-center gap-1 text-[11px] text-[#888]">
-                    <StarIcon />
-                    <span className="font-semibold text-[#333]">{influencer.rating}</span>
-                    <span>({influencer.reviews})</span>
-                    <span className="mx-1">·</span>
-                    <span>
-                      {formatFollowers(influencer.followers)} {t("common.followers")}
-                    </span>
-                  </div>
-
-                  <p className="line-clamp-2 text-[11px] leading-relaxed text-[#888]">
-                    {influencer.bio}
-                  </p>
-
-                  <div className="flex flex-wrap gap-1">
-                    {influencer.categories.map((cat) => (
-                      <span
-                        key={cat}
-                        className="rounded-full bg-[#f5f5f5] px-2 py-0.5 text-[10px] font-medium text-[#666]"
-                      >
-                        {categoryLabel(cat)}
-                      </span>
-                    ))}
-                  </div>
-
-                  <p className="text-[11px] text-[#999]">📍 {influencer.location}</p>
-
-                  <div className="mt-auto pt-1">
-                    <Link
-                      href={`/influencers/${influencer.id}`}
-                      className="block w-full rounded-xl bg-[#9d003b] px-3.5 py-2 text-center text-[12px] font-semibold text-white hover:bg-[#850030] transition-colors"
-                    >
-                      {t("influencers.viewProfile")}
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {filteredInfluencers.length === 0 && (
+          {loading ? (
             <p className="mt-8 text-center text-[14px] text-[#888]">
-              {t("influencers.empty")}
+              {t("influencers.loading")}
+            </p>
+          ) : error ? (
+            <div className="mt-8 flex flex-col items-center gap-3">
+              <p className="text-center text-[14px] text-[#c0392b]">
+                {t("influencers.error")}
+              </p>
+              <button
+                onClick={retryLoad}
+                className="rounded-xl border border-[#ddd] bg-white px-5 py-2 text-[13px] font-semibold text-[#555] hover:border-[#9d003b] hover:text-[#9d003b] transition-colors"
+              >
+                {t("influencers.retry")}
+              </button>
+            </div>
+          ) : (
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {visibleInfluencers.map((influencer) => (
+                <div
+                  key={influencer.id}
+                  className="flex flex-col overflow-hidden rounded-2xl border border-[#f0f0f0] bg-white shadow-[0_2px_10px_rgba(0,0,0,0.07)] hover:shadow-[0_4px_18px_rgba(0,0,0,0.12)] transition-shadow"
+                >
+                  <div
+                    className={`relative h-28 ${influencer.avatarBg} flex items-center justify-center bg-cover bg-center`}
+                    style={
+                      influencer.avatarUrl
+                        ? { backgroundImage: `url(${influencer.avatarUrl})` }
+                        : undefined
+                    }
+                  >
+                    {!influencer.avatarUrl && (
+                      <div className="grid h-16 w-16 place-items-center rounded-full bg-white/80 text-2xl font-bold text-[#9d003b]">
+                        {influencer.name.charAt(0)}
+                      </div>
+                    )}
+                    {influencer.platform && (
+                      <span className="absolute right-2.5 top-2.5">
+                        <PlatformBadge platform={influencer.platform} />
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex flex-1 flex-col gap-2 p-3.5">
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <h3 className="truncate text-[14px] font-bold text-[#111]">
+                          {influencer.name}
+                        </h3>
+                      </div>
+                      <p className="text-[12px] text-[#888]">{influencer.handle}</p>
+                    </div>
+
+                    <div className="flex items-center gap-1 text-[11px] text-[#888]">
+                      <StarIcon />
+                      <span className="font-semibold text-[#333]">
+                        {influencer.rating.toFixed(1)}
+                      </span>
+                      <span>({influencer.reviews})</span>
+                    </div>
+
+                    {influencer.categories.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {influencer.categories.map((cat) => (
+                          <span
+                            key={cat}
+                            className="rounded-full bg-[#f5f5f5] px-2 py-0.5 text-[10px] font-medium text-[#666]"
+                          >
+                            {categoryLabel(cat)}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {influencer.languages.length > 0 && (
+                      <p className="text-[11px] text-[#999]">
+                        🗣 {influencer.languages.join(", ")}
+                      </p>
+                    )}
+
+                    <div className="mt-auto pt-1">
+                      <Link
+                        href={`/influencers/${influencer.id}`}
+                        className="block w-full rounded-xl bg-[#9d003b] px-3.5 py-2 text-center text-[12px] font-semibold text-white hover:bg-[#850030] transition-colors"
+                      >
+                        {t("influencers.viewProfile")}
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {!loading && !error && filteredInfluencers.length === 0 && (
+            <p className="mt-8 text-center text-[14px] text-[#888]">
+              {selectedCategories.length > 0
+                ? t("influencers.empty")
+                : t("influencers.none")}
             </p>
           )}
 
-          <div className="mt-8 flex justify-center">
-            <button className="flex items-center gap-2 rounded-2xl border border-[#ddd] bg-white px-8 py-3 text-[14px] font-semibold text-[#555] hover:border-[#9d003b] hover:text-[#9d003b] transition-colors">
-              {t("influencers.loadMore")}
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M3 5L7 9L11 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-          </div>
+          {!loading && !error && hasMoreInfluencers && (
+            <div className="mt-8 flex justify-center">
+              <button
+                onClick={() =>
+                  setVisibleCount((count) => count + INFLUENCERS_PER_PAGE)
+                }
+                className="flex items-center gap-2 rounded-2xl border border-[#ddd] bg-white px-8 py-3 text-[14px] font-semibold text-[#555] hover:border-[#9d003b] hover:text-[#9d003b] transition-colors"
+              >
+                {t("influencers.loadMore")}
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M3 5L7 9L11 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            </div>
+          )}
         </div>
       </section>
+      )}
 
       {/* How Solscale Works */}
       <section className="bg-[#f0ede5] px-4 sm:px-6 py-12 sm:py-16 text-[#141414]">

@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import MainHeader from "@/components/main-header";
 import SiteFooter from "@/components/site-footer";
 import { useLanguage } from "@/i18n/language-provider";
 import { useAuth } from "@/hooks/use-auth";
 import { setStoredUser } from "@/lib/auth";
+import { fetchEntrepreneurByEmail, type ApiEntrepreneur } from "@/lib/entrepreneurs";
+import { fetchInfluencerByEmail, type ApiInfluencer } from "@/lib/influencers";
 import type { MockUser } from "@/lib/mock-users";
 
 // ─── Country data ─────────────────────────────────────────────────────────────
@@ -119,6 +121,30 @@ function Field({ label, value }: { label: string; value: string | null | undefin
   );
 }
 
+// ─── Read-only chips field ────────────────────────────────────────────────────
+
+function ChipsField({ label, values }: { label: string; values: string[] }) {
+  return (
+    <div className="flex flex-col gap-1.5 py-3 [&:not(:last-child)]:border-b [&:not(:last-child)]:border-[#f5f5f5]">
+      <span className="text-[11px] font-medium text-[#aaa]">{label}</span>
+      {values.length > 0 ? (
+        <div className="flex flex-wrap gap-1.5">
+          {values.map((v) => (
+            <span
+              key={v}
+              className="rounded-full bg-[#f5f5f5] px-2.5 py-0.5 text-[12px] font-medium text-[#555]"
+            >
+              {v}
+            </span>
+          ))}
+        </div>
+      ) : (
+        <span className="text-[14px] font-medium text-[#ccc]">—</span>
+      )}
+    </div>
+  );
+}
+
 // ─── Editable text field ──────────────────────────────────────────────────────
 
 function EditField({
@@ -172,6 +198,46 @@ export default function ProfileContent() {
     accountNumber: string;
     accountHolder: string;
   } | null>(null);
+
+  const [apiInfluencer, setApiInfluencer] = useState<ApiInfluencer | null>(null);
+  const [apiEntrepreneur, setApiEntrepreneur] =
+    useState<ApiEntrepreneur | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState(false);
+
+  const userEmail = user?.email;
+  const userRole = user?.role;
+
+  useEffect(() => {
+    if (!userEmail || !userRole) return;
+    const controller = new AbortController();
+
+    async function loadDetails() {
+      setDetailLoading(true);
+      setDetailError(false);
+      setApiInfluencer(null);
+      setApiEntrepreneur(null);
+      try {
+        if (userRole === "influencer") {
+          const data = await fetchInfluencerByEmail(userEmail!, controller.signal);
+          if (!controller.signal.aborted) setApiInfluencer(data);
+        } else {
+          const data = await fetchEntrepreneurByEmail(userEmail!, controller.signal);
+          if (!controller.signal.aborted) setApiEntrepreneur(data);
+        }
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        setDetailError(true);
+      } finally {
+        if (!controller.signal.aborted) setDetailLoading(false);
+      }
+    }
+
+    loadDetails();
+
+    return () => controller.abort();
+  }, [userEmail, userRole]);
 
   if (!user) return null;
 
@@ -243,6 +309,9 @@ export default function ProfileContent() {
 
   const phoneCountry = COUNTRIES.find((c) => c.code === (user.countryCode ?? "+66")) ?? COUNTRIES[0];
 
+  const avatarImage =
+    user.role === "influencer" ? apiInfluencer?.avatarUrl : apiEntrepreneur?.logoUrl;
+
   return (
     <div className="flex min-h-screen flex-col bg-[#f5f5f3]">
       <MainHeader />
@@ -253,8 +322,13 @@ export default function ProfileContent() {
 
             {/* ── Left sidebar ── */}
             <div className="flex w-full flex-col items-center gap-4 rounded-2xl border border-[#f0f0f0] bg-white p-6 shadow-[0_2px_10px_rgba(0,0,0,0.06)] lg:w-56 lg:shrink-0">
-              <div className="grid h-24 w-24 place-items-center rounded-full bg-[#fce8ee] text-3xl font-black text-[#9d003b]">
-                {initials}
+              <div
+                className="grid h-24 w-24 place-items-center overflow-hidden rounded-full bg-[#fce8ee] bg-cover bg-center text-3xl font-black text-[#9d003b]"
+                style={
+                  avatarImage ? { backgroundImage: `url(${avatarImage})` } : undefined
+                }
+              >
+                {!avatarImage && initials}
               </div>
 
               <div className="text-center">
@@ -363,6 +437,70 @@ export default function ProfileContent() {
                   </>
                 )}
               </Section>
+
+              {/* Extra details from the marketplace API (read-only) */}
+              {user.role === "influencer" ? (
+                <Section title={t("profile.sectionCreator")}>
+                  {detailLoading ? (
+                    <p className="py-3 text-[13px] text-[#888]">{t("profile.detailLoading")}</p>
+                  ) : detailError ? (
+                    <p className="py-3 text-[13px] text-[#c0392b]">{t("profile.detailError")}</p>
+                  ) : !apiInfluencer ? (
+                    <p className="py-3 text-[13px] text-[#888]">{t("profile.detailEmpty")}</p>
+                  ) : (
+                    <>
+                      <Field label={t("profile.labelStageName")} value={apiInfluencer.stageName} />
+                      <Field label={t("profile.labelFirstName")} value={apiInfluencer.firstName} />
+                      <Field label={t("profile.labelLastName")} value={apiInfluencer.lastName} />
+                      <Field
+                        label={t("profile.labelAge")}
+                        value={apiInfluencer.age != null ? String(apiInfluencer.age) : undefined}
+                      />
+                      <ChipsField label={t("profile.labelPlatforms")} values={apiInfluencer.platforms ?? []} />
+                      <ChipsField label={t("profile.labelCategories")} values={apiInfluencer.contentCategories ?? []} />
+                      <ChipsField label={t("profile.labelLanguages")} values={apiInfluencer.languages ?? []} />
+                      <Field
+                        label={t("profile.labelRating")}
+                        value={t("profile.ratingValue", {
+                          rating: Number(apiInfluencer.averageRating ?? 0).toFixed(1),
+                          count: apiInfluencer.reviewCount ?? 0,
+                        })}
+                      />
+                      {(apiInfluencer.otherPhotos?.length ?? 0) > 0 && (
+                        <div className="flex flex-col gap-1.5 py-3">
+                          <span className="text-[11px] font-medium text-[#aaa]">
+                            {t("profile.labelOtherPhotos")}
+                          </span>
+                          <div className="flex flex-wrap gap-2">
+                            {apiInfluencer.otherPhotos!.map((src) => (
+                              <span
+                                key={src}
+                                className="h-16 w-16 rounded-lg border border-[#eee] bg-cover bg-center"
+                                style={{ backgroundImage: `url(${src})` }}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </Section>
+              ) : (
+                <Section title={t("profile.sectionBusiness")}>
+                  {detailLoading ? (
+                    <p className="py-3 text-[13px] text-[#888]">{t("profile.detailLoading")}</p>
+                  ) : detailError ? (
+                    <p className="py-3 text-[13px] text-[#c0392b]">{t("profile.detailError")}</p>
+                  ) : !apiEntrepreneur ? (
+                    <p className="py-3 text-[13px] text-[#888]">{t("profile.detailEmpty")}</p>
+                  ) : (
+                    <>
+                      <Field label={t("profile.labelCompanyName")} value={apiEntrepreneur.companyName} />
+                      <Field label={t("profile.labelBrandDescription")} value={apiEntrepreneur.brandDescription} />
+                    </>
+                  )}
+                </Section>
+              )}
             </div>
 
           </div>

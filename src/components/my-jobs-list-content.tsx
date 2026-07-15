@@ -62,9 +62,9 @@ function EngagementCard({
     .join("")
     .toUpperCase();
 
-  function handleViewDetails() {
+  function handleViewJob() {
     if (engagement.hasUpdate) markMyJobSeen(engagement.id);
-    router.push(`/my-jobs/${engagement.id}`);
+    router.push(`/jobs/${engagement.jobId}`);
   }
 
   return (
@@ -104,7 +104,7 @@ function EngagementCard({
         <div className="mt-auto flex flex-col gap-1.5 pt-1">
           <button
             type="button"
-            onClick={handleViewDetails}
+            onClick={handleViewJob}
             className="block w-full rounded-xl bg-[#9d003b] px-3.5 py-2 text-center text-[12px] font-semibold text-white transition-colors hover:bg-[#850030]"
           >
             {t("myJob.viewDetails")}
@@ -112,14 +112,14 @@ function EngagementCard({
           <div className="grid grid-cols-2 gap-1.5">
             <button
               type="button"
-              onClick={handleViewDetails}
+              onClick={handleViewJob}
               className="rounded-xl border border-[#9d003b] px-2 py-1.5 text-[11px] font-semibold text-[#9d003b] transition-colors hover:bg-[#9d003b]/5"
             >
               {isInfluencer ? t("myJob.submitWork") : t("myJob.reviewWork")}
             </button>
             <button
               type="button"
-              onClick={handleViewDetails}
+              onClick={handleViewJob}
               className="rounded-xl border border-[#ccc] px-2 py-1.5 text-[11px] font-medium text-[#555] transition-colors hover:bg-[#fafafa]"
             >
               {t("myJob.askQuestion")}

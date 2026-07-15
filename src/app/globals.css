@@ -20,7 +20,7 @@ body {
 }
 
 /*
-  Thai locale: reassign --font-sans to Kanit.
+  Thai locale: reassign --font-sans to Noto Serif Thai.
   Because @theme (non-inline) publishes --font-sans as a real CSS variable,
   overriding it here cascades into body, all utility classes, and every
   descendant automatically — no wildcard selector needed.

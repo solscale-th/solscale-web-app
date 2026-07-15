@@ -1,6 +1,17 @@
 import type { MockUser } from "./mock-users";
 
 export const USER_STORAGE_KEY = "solscale_user";
+export const TOKEN_STORAGE_KEY = "solscale_token";
+
+export function getAuthToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(TOKEN_STORAGE_KEY);
+}
+
+export function setAuthToken(token: string): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(TOKEN_STORAGE_KEY, token);
+}
 
 export function getStoredUser(): MockUser | null {
   if (typeof window === "undefined") return null;
@@ -39,5 +50,6 @@ export function setStoredUser(user: MockUser): void {
 export function clearStoredUser(): void {
   if (typeof window === "undefined") return;
   localStorage.removeItem(USER_STORAGE_KEY);
+  localStorage.removeItem(TOKEN_STORAGE_KEY);
   window.dispatchEvent(new Event(AUTH_CHANGE_EVENT));
 }

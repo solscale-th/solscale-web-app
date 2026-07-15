@@ -33,7 +33,17 @@ function readStoredLocale(): Locale {
 }
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>(readStoredLocale);
+  // Always start with defaultLocale so the server-rendered HTML and the first
+  // client render agree, preventing a hydration mismatch.  After hydration the
+  // effect below syncs the real stored preference from localStorage.
+  const [locale, setLocaleState] = useState<Locale>(defaultLocale);
+
+  useEffect(() => {
+    const stored = readStoredLocale();
+    if (stored !== defaultLocale) {
+      setLocaleState(stored);
+    }
+  }, []);
 
   useEffect(() => {
     document.documentElement.lang = locale;
