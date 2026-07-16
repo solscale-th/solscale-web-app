@@ -45,6 +45,7 @@ export default function HomePageContent() {
   const { t, dictionary } = useLanguage();
   const { user } = useAuth();
   const isInfluencer = user?.role === "influencer";
+  const postJobHref = user?.role === "entrepreneur" ? "/create-job" : "/login";
   const [selectedCategories, setSelectedCategories] = useState<
     InfluencerCategoryKey[]
   >([]);
@@ -260,19 +261,21 @@ export default function HomePageContent() {
             )}
           </div>
 
-          {/* CTA */}
-          <div className="mt-6 sm:mt-7">
-            <Link
-              href="/signup"
-              className="inline-flex items-center gap-2 rounded-2xl bg-[#d7ff2f] px-6 sm:px-8 py-3.5 text-[14px] sm:text-[15px] font-extrabold text-[#151515] shadow-[0_6px_20px_rgba(215,255,47,0.4)] hover:bg-[#c8f020] transition-colors"
-            >
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <circle cx="9" cy="9" r="8" stroke="currentColor" strokeWidth="1.5" />
-                <path d="M9 5.5V12.5M5.5 9H12.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
-              {t("hero.postJobCta")}
-            </Link>
-          </div>
+          {/* CTA — hidden for logged-in influencers */}
+          {!isInfluencer && (
+            <div className="mt-6 sm:mt-7">
+              <Link
+                href={postJobHref}
+                className="inline-flex items-center gap-2 rounded-2xl bg-[#d7ff2f] px-6 sm:px-8 py-3.5 text-[14px] sm:text-[15px] font-extrabold text-[#151515] shadow-[0_6px_20px_rgba(215,255,47,0.4)] hover:bg-[#c8f020] transition-colors"
+              >
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                  <circle cx="9" cy="9" r="8" stroke="currentColor" strokeWidth="1.5" />
+                  <path d="M9 5.5V12.5M5.5 9H12.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+                {t("hero.postJobCta")}
+              </Link>
+            </div>
+          )}
         </div>
       </section>
 

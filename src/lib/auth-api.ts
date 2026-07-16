@@ -126,6 +126,8 @@ const LOGIN_ENTREPRENEUR_WITH_GOOGLE = /* GraphQL */ `
   }
 `;
 
+
+
 const UPDATE_ENTREPRENEUR = /* GraphQL */ `
   mutation UpdateEntrepreneur($input: UpdateEntrepreneurInput!) {
     updateEntrepreneur(input: $input) {
@@ -322,11 +324,11 @@ export async function loginEntrepreneur(
 // ── Google login mutations ───────────────────────────────────────────────────
 
 export async function loginInfluencerWithGoogle(
-  idToken: string
+  accessToken: string
 ): Promise<LoginResult> {
   const res = await graphqlRequest<LoginInfluencerWithGoogleResponse>(
     LOGIN_INFLUENCER_WITH_GOOGLE,
-    { input: { idToken } }
+    { input: { accessToken } }
   );
 
   const { data, status } = res.loginInfluencerWithGoogle;
@@ -357,11 +359,11 @@ export async function loginInfluencerWithGoogle(
 }
 
 export async function loginEntrepreneurWithGoogle(
-  idToken: string
+  accessToken: string
 ): Promise<GoogleEntrepreneurLoginResult> {
   const res = await graphqlRequest<LoginEntrepreneurWithGoogleResponse>(
     LOGIN_ENTREPRENEUR_WITH_GOOGLE,
-    { input: { idToken } }
+    { input: { accessToken } }
   );
 
   const { data, status } = res.loginEntrepreneurWithGoogle;
