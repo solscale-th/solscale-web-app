@@ -11,6 +11,7 @@ build:
         buildArgs:
           NEXT_PUBLIC_MARKETPLACE_API_URL: https://api-dev.solscale.co/graphql
           NEXT_PUBLIC_GOOGLE_CLIENT_ID: 670549849584-po46qh9j1b6khdlpccr83djp8a35s07g.apps.googleusercontent.com
+          NEXT_PUBLIC_LINE_CHANNEL_ID: "2010730980"
   local:
     push: true
 

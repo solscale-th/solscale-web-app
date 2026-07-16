@@ -1,16 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import MainHeader from "@/components/main-header";
 import SiteFooter from "@/components/site-footer";
 import { useAuth } from "@/hooks/use-auth";
 import { useLanguage } from "@/i18n/language-provider";
-import {
-  fetchInfluencers,
-  filterInfluencersByCategories,
-  type InfluencerListItem,
-} from "@/lib/influencers";
+import { fetchInfluencers, type InfluencerListItem } from "@/lib/influencers";
 import {
   INFLUENCER_CATEGORY_KEYS,
   type InfluencerCategoryKey,
@@ -45,19 +41,32 @@ export default function HomePageContent() {
   const { t, dictionary } = useLanguage();
   const { user } = useAuth();
   const isInfluencer = user?.role === "influencer";
+  const postJobHref = user?.role === "entrepreneur" ? "/jobs/new" : "/signup";
   const [selectedCategories, setSelectedCategories] = useState<
     InfluencerCategoryKey[]
   >([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
+
   const [influencers, setInfluencers] = useState<InfluencerListItem[]>([]);
+  const [influencersOffset, setInfluencersOffset] = useState(0);
+  const [hasMoreInfluencers, setHasMoreInfluencers] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadingMoreInfluencers, setLoadingMoreInfluencers] = useState(false);
   const [error, setError] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
 
   const INFLUENCERS_PER_PAGE = 8;
   const [visibleCount, setVisibleCount] = useState(INFLUENCERS_PER_PAGE);
+
+  // Debounce the search box so we don't re-query on every keystroke
+  useEffect(() => {
+    const timer = setTimeout(() => setSearch(searchInput.trim()), 400);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   // Scroll offset used to drift the hero background shapes in different directions
   const [scrollY, setScrollY] = useState(0);
@@ -79,11 +88,23 @@ export default function HomePageContent() {
 
   useEffect(() => {
     const controller = new AbortController();
+    setLoading(true);
+    setError(false);
 
-    fetchInfluencers(controller.signal)
+    fetchInfluencers(
+      {
+        limit: INFLUENCERS_PER_PAGE,
+        offset: 0,
+        search: search || undefined,
+        categories: selectedCategories.length > 0 ? selectedCategories : undefined,
+      },
+      controller.signal
+    )
       .then((data) => {
         if (controller.signal.aborted) return;
         setInfluencers(data);
+        setInfluencersOffset(data.length);
+        setHasMoreInfluencers(data.length === INFLUENCERS_PER_PAGE);
         setLoading(false);
       })
       .catch((err) => {
@@ -94,7 +115,26 @@ export default function HomePageContent() {
       });
 
     return () => controller.abort();
-  }, [reloadKey]);
+  }, [search, selectedCategories, reloadKey]);
+
+  async function loadMoreInfluencers() {
+    setLoadingMoreInfluencers(true);
+    try {
+      const more = await fetchInfluencers({
+        limit: INFLUENCERS_PER_PAGE,
+        offset: influencersOffset,
+        search: search || undefined,
+        categories: selectedCategories.length > 0 ? selectedCategories : undefined,
+      });
+      setInfluencers((prev) => [...prev, ...more]);
+      setInfluencersOffset((prev) => prev + more.length);
+      setHasMoreInfluencers(more.length === INFLUENCERS_PER_PAGE);
+    } catch {
+      setHasMoreInfluencers(false);
+    } finally {
+      setLoadingMoreInfluencers(false);
+    }
+  }
 
   function retryLoad() {
     setInfluencers([]);
@@ -105,18 +145,6 @@ export default function HomePageContent() {
 
   const categoryLabel = (key: InfluencerCategoryKey) =>
     t(`categories.${key}`);
-
-  const filteredInfluencers = useMemo(
-    () => filterInfluencersByCategories(influencers, selectedCategories),
-    [influencers, selectedCategories]
-  );
-
-  useEffect(() => {
-    setVisibleCount(INFLUENCERS_PER_PAGE);
-  }, [selectedCategories, influencers]);
-
-  const visibleInfluencers = filteredInfluencers.slice(0, visibleCount);
-  const hasMoreInfluencers = visibleCount < filteredInfluencers.length;
 
   const visibleJobs = MOCK_JOBS.slice(0, visibleCount);
   const hasMoreJobs = visibleCount < MOCK_JOBS.length;
@@ -180,12 +208,20 @@ export default function HomePageContent() {
 
           {/* Search bar with inline category picker */}
           <div className="mx-auto mt-6 sm:mt-8 max-w-2xl">
-            <div className="flex items-center rounded-2xl bg-white p-2 shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                setSearch(searchInput.trim());
+              }}
+              className="flex items-center rounded-2xl bg-white p-2 shadow-[0_8px_24px_rgba(0,0,0,0.35)]"
+            >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="ml-1 shrink-0 text-[#9a003b]">
                 <circle cx="7" cy="7" r="4.5" stroke="currentColor" strokeWidth="1.5" />
                 <path d="M10.5 10.5L13 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
               </svg>
               <input
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
                 placeholder={t("hero.searchPlaceholder")}
                 aria-label={t("hero.searchAria")}
                 className="mx-2 h-11 flex-1 bg-transparent text-sm text-[#333] outline-none placeholder:text-[#aaa]"
@@ -232,10 +268,13 @@ export default function HomePageContent() {
               {/* Divider */}
               <span className="mx-1 h-6 w-px shrink-0 bg-[#e5e5e5]" />
 
-              <button className="h-9 shrink-0 rounded-xl bg-[#9d003b] px-4 sm:px-5 text-sm font-semibold text-white transition-colors hover:bg-[#850030]">
+              <button
+                type="submit"
+                className="h-9 shrink-0 rounded-xl bg-[#9d003b] px-4 sm:px-5 text-sm font-semibold text-white transition-colors hover:bg-[#850030]"
+              >
                 {t("common.search")}
               </button>
-            </div>
+            </form>
 
             {/* Selected category chips */}
             {selectedCategories.length > 0 && (
@@ -263,7 +302,7 @@ export default function HomePageContent() {
           {/* CTA */}
           <div className="mt-6 sm:mt-7">
             <Link
-              href="/signup"
+              href={postJobHref}
               className="inline-flex items-center gap-2 rounded-2xl bg-[#d7ff2f] px-6 sm:px-8 py-3.5 text-[14px] sm:text-[15px] font-extrabold text-[#151515] shadow-[0_6px_20px_rgba(215,255,47,0.4)] hover:bg-[#c8f020] transition-colors"
             >
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -364,7 +403,7 @@ export default function HomePageContent() {
                 {t("influencers.title")}
               </h2>
               <p className="text-[13px] text-[#888]">
-                {t("influencers.found", { count: filteredInfluencers.length })}
+                {t("influencers.found", { count: influencers.length })}
               </p>
             </div>
             <div className="flex items-center gap-2 text-[13px] text-[#555]">
@@ -397,7 +436,7 @@ export default function HomePageContent() {
             </div>
           ) : (
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {visibleInfluencers.map((influencer) => (
+              {influencers.map((influencer) => (
                 <div
                   key={influencer.id}
                   className="flex flex-col overflow-hidden rounded-2xl border border-[#f0f0f0] bg-white shadow-[0_2px_10px_rgba(0,0,0,0.07)] hover:shadow-[0_4px_18px_rgba(0,0,0,0.12)] transition-shadow"
@@ -449,9 +488,9 @@ export default function HomePageContent() {
             </div>
           )}
 
-          {!loading && !error && filteredInfluencers.length === 0 && (
+          {!loading && !error && influencers.length === 0 && (
             <p className="mt-8 text-center text-[14px] text-[#888]">
-              {selectedCategories.length > 0
+              {selectedCategories.length > 0 || search
                 ? t("influencers.empty")
                 : t("influencers.none")}
             </p>
@@ -460,12 +499,11 @@ export default function HomePageContent() {
           {!loading && !error && hasMoreInfluencers && (
             <div className="mt-8 flex justify-center">
               <button
-                onClick={() =>
-                  setVisibleCount((count) => count + INFLUENCERS_PER_PAGE)
-                }
-                className="flex items-center gap-2 rounded-2xl border border-[#ddd] bg-white px-8 py-3 text-[14px] font-semibold text-[#555] hover:border-[#9d003b] hover:text-[#9d003b] transition-colors"
+                onClick={loadMoreInfluencers}
+                disabled={loadingMoreInfluencers}
+                className="flex items-center gap-2 rounded-2xl border border-[#ddd] bg-white px-8 py-3 text-[14px] font-semibold text-[#555] hover:border-[#9d003b] hover:text-[#9d003b] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {t("influencers.loadMore")}
+                {loadingMoreInfluencers ? t("influencers.loading") : t("influencers.loadMore")}
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                   <path d="M3 5L7 9L11 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
