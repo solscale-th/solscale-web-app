@@ -88,8 +88,13 @@ export default function HomePageContent() {
 
   useEffect(() => {
     const controller = new AbortController();
+    // Resetting loading/error before a new fetch starts is the standard
+    // data-fetching effect pattern; deferring it would delay the loading
+    // indicator by a frame, so these two are intentionally exempted.
+    /* eslint-disable react-hooks/set-state-in-effect */
     setLoading(true);
     setError(false);
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     fetchInfluencers(
       {

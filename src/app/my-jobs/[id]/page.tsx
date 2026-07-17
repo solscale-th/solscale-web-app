@@ -9,7 +9,7 @@ export default async function MyJobDetailPage({ params }: Props) {
   const { id } = await params;
   return (
     <RequireAuth returnTo={`/my-jobs/${id}`}>
-      <MyJobDetailContent engagementId={id} />
+      <MyJobDetailContent key={id} engagementId={id} />
     </RequireAuth>
   );
 }

@@ -312,15 +312,16 @@ export default function MyJobDetailContent({ engagementId }: { engagementId: str
   const { user } = useAuth();
   const router = useRouter();
 
-  // Local mutable copy of the engagement
-  const [engagement, setEngagement] = useState<JobEngagement | null>(null);
+  // Local mutable copy of the engagement. Lazy-initialized from the runtime
+  // store on mount (the route remounts per engagementId, see `key` in
+  // src/app/my-jobs/[id]/page.tsx) so this doesn't need an effect + setState.
+  const [engagement, setEngagement] = useState<JobEngagement | null>(() => {
+    const eng = getOrInit(engagementId);
+    return eng ? { ...eng, messages: [...eng.messages] } : null;
+  });
 
   useEffect(() => {
-    const eng = getOrInit(engagementId);
-    if (eng) {
-      setEngagement({ ...eng, messages: [...eng.messages] });
-      markMyJobSeen(engagementId);
-    }
+    markMyJobSeen(engagementId);
   }, [engagementId]);
 
   if (!user || !engagement) return null;

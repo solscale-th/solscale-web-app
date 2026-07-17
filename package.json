@@ -11,7 +11,8 @@
     "dev:remote": "NEXT_PUBLIC_MARKETPLACE_API_URL=https://api-dev.solscale.co/graphql next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@react-oauth/google": "^0.13.5",

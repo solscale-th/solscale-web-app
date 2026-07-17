@@ -1,0 +1,20 @@
+# RBAC for the web-app-deployer GCP service account used by
+# .github/workflows/development.yml to deploy via kubectl.
+#
+# This app has no Ingress/ManagedCertificate manifests of its own (routing
+# for dev.solscale.co is defined in sol-scale-api's kube/ingress.yaml), so
+# the built-in "edit" ClusterRole (Deployments/Services) is sufficient —
+# unlike sol-scale-api's github-deployer, no extra CRD role is needed.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: web-app-deployer-edit
+  namespace: sol-scale-dev
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: edit
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: web-app-deployer@project-fc5426d4-53ee-47af-8fb.iam.gserviceaccount.com
