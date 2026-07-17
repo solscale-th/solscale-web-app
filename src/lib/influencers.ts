@@ -90,8 +90,8 @@ export function mapInfluencer(influencer: ApiInfluencer): InfluencerListItem {
 }
 
 const INFLUENCERS_QUERY = /* GraphQL */ `
-  query Influencers {
-    influencers {
+  query Influencers($limit: Int, $offset: Int, $search: String, $filter: InfluencerFilterInput) {
+    influencers(limit: $limit, offset: $offset, search: $search, filter: $filter) {
       data {
         id
         firstName
@@ -120,12 +120,27 @@ type InfluencersQueryResult = {
   };
 };
 
+export type FetchInfluencersParams = {
+  limit?: number;
+  offset?: number;
+  search?: string;
+  categories?: string[];
+};
+
 export async function fetchInfluencers(
+  params: FetchInfluencersParams = {},
   signal?: AbortSignal
 ): Promise<InfluencerListItem[]> {
+  const { limit, offset, search, categories } = params;
+
   const result = await graphqlRequest<InfluencersQueryResult>(
     INFLUENCERS_QUERY,
-    undefined,
+    {
+      limit,
+      offset,
+      search: search?.trim() || undefined,
+      filter: categories && categories.length > 0 ? { categories } : undefined,
+    },
     signal
   );
 

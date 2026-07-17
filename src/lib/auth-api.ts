@@ -3,7 +3,7 @@ import type { MockUser } from "./mock-users";
 
 type ApiInfluencerAccount = {
   id: number;
-  email: string;
+  email?: string | null;
   firstName?: string | null;
   lastName?: string | null;
   stageName?: string | null;
@@ -14,7 +14,7 @@ type ApiInfluencerAccount = {
 
 type ApiEntrepreneurAccount = {
   id: number;
-  email: string;
+  email?: string | null;
   companyName?: string | null;
   bankName?: string | null;
   bankAccountName?: string | null;
@@ -23,6 +23,8 @@ type ApiEntrepreneurAccount = {
 
 type LoginResult = { token: string; user: MockUser };
 type GoogleEntrepreneurLoginResult = LoginResult & { needsCompanyName: boolean };
+type LineInfluencerLoginResult = LoginResult & { needsEmail: boolean };
+type LineEntrepreneurLoginResult = LoginResult & { needsEmail: boolean; needsCompanyName: boolean };
 
 const LOGIN_INFLUENCER = /* GraphQL */ `
   mutation LoginInfluencer($input: LoginInfluencerInput!) {
@@ -126,20 +128,6 @@ const LOGIN_ENTREPRENEUR_WITH_GOOGLE = /* GraphQL */ `
   }
 `;
 
-const UPDATE_ENTREPRENEUR = /* GraphQL */ `
-  mutation UpdateEntrepreneur($input: UpdateEntrepreneurInput!) {
-    updateEntrepreneur(input: $input) {
-      data {
-        id
-        companyName
-      }
-      status {
-        error
-      }
-    }
-  }
-`;
-
 type LoginInfluencerWithGoogleResponse = {
   loginInfluencerWithGoogle: {
     data: { token: string; influencer: ApiInfluencerAccount } | null;
@@ -154,9 +142,103 @@ type LoginEntrepreneurWithGoogleResponse = {
   };
 };
 
+const LOGIN_INFLUENCER_WITH_LINE = /* GraphQL */ `
+  mutation LoginInfluencerWithLine($input: LoginInfluencerWithLineInput!) {
+    loginInfluencerWithLine(input: $input) {
+      data {
+        token
+        influencer {
+          id
+          email
+          firstName
+          lastName
+          stageName
+          bankName
+          bankAccountName
+          bankAccountNumber
+        }
+      }
+      status {
+        error
+      }
+    }
+  }
+`;
+
+const LOGIN_ENTREPRENEUR_WITH_LINE = /* GraphQL */ `
+  mutation LoginEntrepreneurWithLine($input: LoginEntrepreneurWithLineInput!) {
+    loginEntrepreneurWithLine(input: $input) {
+      data {
+        token
+        entrepreneur {
+          id
+          email
+          companyName
+          bankName
+          bankAccountName
+          bankAccountNumber
+        }
+      }
+      status {
+        error
+      }
+    }
+  }
+`;
+
+type LoginInfluencerWithLineResponse = {
+  loginInfluencerWithLine: {
+    data: { token: string; influencer: ApiInfluencerAccount } | null;
+    status?: { error?: string | null };
+  };
+};
+
+type LoginEntrepreneurWithLineResponse = {
+  loginEntrepreneurWithLine: {
+    data: { token: string; entrepreneur: ApiEntrepreneurAccount } | null;
+    status?: { error?: string | null };
+  };
+};
+
+const UPDATE_ENTREPRENEUR = /* GraphQL */ `
+  mutation UpdateEntrepreneur($input: UpdateEntrepreneurInput!) {
+    updateEntrepreneur(input: $input) {
+      data {
+        id
+        email
+        companyName
+      }
+      status {
+        error
+      }
+    }
+  }
+`;
+
+const UPDATE_INFLUENCER = /* GraphQL */ `
+  mutation UpdateInfluencer($input: UpdateInfluencerInput!) {
+    updateInfluencer(input: $input) {
+      data {
+        id
+        email
+      }
+      status {
+        error
+      }
+    }
+  }
+`;
+
 type UpdateEntrepreneurResponse = {
   updateEntrepreneur: {
-    data: { id: number; companyName?: string | null } | null;
+    data: { id: number; email?: string | null; companyName?: string | null } | null;
+    status?: { error?: string | null };
+  };
+};
+
+type UpdateInfluencerResponse = {
+  updateInfluencer: {
+    data: { id: number; email?: string | null } | null;
     status?: { error?: string | null };
   };
 };
@@ -267,12 +349,13 @@ export async function loginInfluencer(
   const name =
     influencer.stageName?.trim() ||
     `${influencer.firstName ?? ""} ${influencer.lastName ?? ""}`.trim() ||
-    influencer.email;
+    influencer.email ||
+    "";
 
   const user: MockUser = {
     id: String(influencer.id),
     name,
-    email: influencer.email,
+    email: influencer.email ?? "",
     password,
     role: "influencer",
     countryCode: "+66",
@@ -303,8 +386,8 @@ export async function loginEntrepreneur(
 
   const user: MockUser = {
     id: String(entrepreneur.id),
-    name: entrepreneur.companyName?.trim() || entrepreneur.email,
-    email: entrepreneur.email,
+    name: entrepreneur.companyName?.trim() || entrepreneur.email || "",
+    email: entrepreneur.email ?? "",
     password,
     role: "entrepreneur",
     countryCode: "+66",
@@ -322,11 +405,11 @@ export async function loginEntrepreneur(
 // ── Google login mutations ───────────────────────────────────────────────────
 
 export async function loginInfluencerWithGoogle(
-  idToken: string
+  accessToken: string
 ): Promise<LoginResult> {
   const res = await graphqlRequest<LoginInfluencerWithGoogleResponse>(
     LOGIN_INFLUENCER_WITH_GOOGLE,
-    { input: { idToken } }
+    { input: { accessToken } }
   );
 
   const { data, status } = res.loginInfluencerWithGoogle;
@@ -336,12 +419,13 @@ export async function loginInfluencerWithGoogle(
   const name =
     influencer.stageName?.trim() ||
     `${influencer.firstName ?? ""} ${influencer.lastName ?? ""}`.trim() ||
-    influencer.email;
+    influencer.email ||
+    "";
 
   const user: MockUser = {
     id: String(influencer.id),
     name,
-    email: influencer.email,
+    email: influencer.email ?? "",
     password: "",
     role: "influencer",
     countryCode: "+66",
@@ -357,11 +441,11 @@ export async function loginInfluencerWithGoogle(
 }
 
 export async function loginEntrepreneurWithGoogle(
-  idToken: string
+  accessToken: string
 ): Promise<GoogleEntrepreneurLoginResult> {
   const res = await graphqlRequest<LoginEntrepreneurWithGoogleResponse>(
     LOGIN_ENTREPRENEUR_WITH_GOOGLE,
-    { input: { idToken } }
+    { input: { accessToken } }
   );
 
   const { data, status } = res.loginEntrepreneurWithGoogle;
@@ -371,8 +455,8 @@ export async function loginEntrepreneurWithGoogle(
 
   const user: MockUser = {
     id: String(entrepreneur.id),
-    name: entrepreneur.companyName?.trim() || entrepreneur.email,
-    email: entrepreneur.email,
+    name: entrepreneur.companyName?.trim() || entrepreneur.email || "",
+    email: entrepreneur.email ?? "",
     password: "",
     role: "entrepreneur",
     countryCode: "+66",
@@ -387,14 +471,105 @@ export async function loginEntrepreneurWithGoogle(
   return { token, user, needsCompanyName: !entrepreneur.companyName?.trim() };
 }
 
-export async function updateEntrepreneurCompanyName(
-  companyName: string
-): Promise<void> {
+// ── LINE login mutations ─────────────────────────────────────────────────────
+
+export async function loginInfluencerWithLine(
+  code: string,
+  redirectUri: string
+): Promise<LineInfluencerLoginResult> {
+  const res = await graphqlRequest<LoginInfluencerWithLineResponse>(
+    LOGIN_INFLUENCER_WITH_LINE,
+    { input: { code, redirectUri } }
+  );
+
+  const { data, status } = res.loginInfluencerWithLine;
+  if (!data) throw new Error(status?.error ?? "LINE login failed");
+
+  const { token, influencer } = data;
+  const name =
+    influencer.stageName?.trim() ||
+    `${influencer.firstName ?? ""} ${influencer.lastName ?? ""}`.trim() ||
+    influencer.email ||
+    "";
+
+  const user: MockUser = {
+    id: String(influencer.id),
+    name,
+    email: influencer.email ?? "",
+    password: "",
+    role: "influencer",
+    countryCode: "+66",
+    phone: "",
+    paymentAccount: {
+      bankName: influencer.bankName ?? "",
+      accountNumber: influencer.bankAccountNumber ?? "",
+      accountHolder: influencer.bankAccountName ?? "",
+    },
+  };
+
+  return { token, user, needsEmail: !influencer.email?.trim() };
+}
+
+export async function loginEntrepreneurWithLine(
+  code: string,
+  redirectUri: string
+): Promise<LineEntrepreneurLoginResult> {
+  const res = await graphqlRequest<LoginEntrepreneurWithLineResponse>(
+    LOGIN_ENTREPRENEUR_WITH_LINE,
+    { input: { code, redirectUri } }
+  );
+
+  const { data, status } = res.loginEntrepreneurWithLine;
+  if (!data) throw new Error(status?.error ?? "LINE login failed");
+
+  const { token, entrepreneur } = data;
+
+  const user: MockUser = {
+    id: String(entrepreneur.id),
+    name: entrepreneur.companyName?.trim() || entrepreneur.email || "",
+    email: entrepreneur.email ?? "",
+    password: "",
+    role: "entrepreneur",
+    countryCode: "+66",
+    phone: "",
+    paymentAccount: {
+      bankName: entrepreneur.bankName ?? "",
+      accountNumber: entrepreneur.bankAccountNumber ?? "",
+      accountHolder: entrepreneur.bankAccountName ?? "",
+    },
+  };
+
+  return {
+    token,
+    user,
+    needsEmail: !entrepreneur.email?.trim(),
+    needsCompanyName: !entrepreneur.companyName?.trim(),
+  };
+}
+
+// ── Profile completion mutations ─────────────────────────────────────────────
+
+export async function updateEntrepreneurProfile(input: {
+  companyName?: string;
+  email?: string;
+}): Promise<void> {
   const res = await graphqlRequest<UpdateEntrepreneurResponse>(
     UPDATE_ENTREPRENEUR,
-    { input: { companyName } }
+    { input }
   );
 
   const { data, status } = res.updateEntrepreneur;
-  if (!data) throw new Error(status?.error ?? "Failed to save company name");
+  if (!data) throw new Error(status?.error ?? "Failed to save profile");
+}
+
+export async function updateInfluencerProfile(input: {
+  email: string;
+}): Promise<void> {
+  const res = await graphqlRequest<UpdateInfluencerResponse>(
+    UPDATE_INFLUENCER,
+    { input }
+  );
+
+  const { data, status } = res.updateInfluencer;
+  if (!data) throw new Error(status?.error ?? "Failed to save profile");
 }
