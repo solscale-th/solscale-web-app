@@ -143,52 +143,49 @@ function StepIndicator({
   labels: [string, string];
 }) {
   return (
-    <div className="mb-8" aria-hidden="true">
-      <div className="flex items-center">
+    <div className="mb-8 mx-auto w-[180px]" aria-hidden="true">
+      <div className="relative flex items-start justify-between">
+        {/* 40px = 32px circle + 8px gap on each side */}
+        <div
+          className={`absolute left-10 right-10 top-4 h-0.5 -translate-y-1/2 rounded-full transition-colors ${
+            step > 1 ? "bg-[#9d003b]" : "bg-[#e8e4dc]"
+          }`}
+        />
         {labels.map((label, index) => {
           const stepNumber = (index + 1) as SignupStep;
           const isActive = step === stepNumber;
           const isDone = step > stepNumber;
 
           return (
-            <div key={label} className="flex flex-1 items-center last:flex-none">
-              <div className="flex flex-col items-center gap-1.5">
-                <div
-                  className={`flex h-8 w-8 items-center justify-center rounded-full text-[13px] font-semibold transition-colors ${
-                    isActive || isDone
-                      ? "bg-[#9d003b] text-white"
-                      : "bg-[#e8e4dc] text-[#999]"
-                  }`}
-                >
-                  {isDone ? (
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                      <path
-                        d="M3 7.5l2.5 2.5L11 4"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  ) : (
-                    stepNumber
-                  )}
-                </div>
-                <span
-                  className={`text-[12px] font-medium ${
-                    isActive ? "text-[#9d003b]" : isDone ? "text-[#555]" : "text-[#aaa]"
-                  }`}
-                >
-                  {label}
-                </span>
+            <div key={label} className="relative z-10 flex w-8 flex-col items-center gap-1.5">
+              <div
+                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[13px] font-semibold transition-colors ${
+                  isActive || isDone
+                    ? "bg-[#9d003b] text-white"
+                    : "bg-[#e8e4dc] text-[#999]"
+                }`}
+              >
+                {isDone ? (
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path
+                      d="M3 7.5l2.5 2.5L11 4"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                ) : (
+                  stepNumber
+                )}
               </div>
-              {index < labels.length - 1 && (
-                <div
-                  className={`mx-3 mb-5 h-0.5 flex-1 rounded-full transition-colors ${
-                    isDone ? "bg-[#9d003b]" : "bg-[#e8e4dc]"
-                  }`}
-                />
-              )}
+              <span
+                className={`whitespace-nowrap text-center text-[12px] font-medium ${
+                  isActive ? "text-[#9d003b]" : isDone ? "text-[#555]" : "text-[#aaa]"
+                }`}
+              >
+                {label}
+              </span>
             </div>
           );
         })}
