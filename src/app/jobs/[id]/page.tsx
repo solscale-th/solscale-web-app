@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import JobDetailContent from "@/components/job-detail-content";
-import { getJobById, getRelatedJobs } from "@/lib/mock-jobs";
+import { getJobById } from "@/lib/mock-jobs";
 
 export default async function JobDetailPage({
   params,
@@ -11,7 +11,5 @@ export default async function JobDetailPage({
   const job = getJobById(id);
   if (!job) notFound();
 
-  const relatedJobs = getRelatedJobs(job, 1);
-
-  return <JobDetailContent job={job} relatedJobs={relatedJobs} />;
+  return <JobDetailContent job={job} />;
 }

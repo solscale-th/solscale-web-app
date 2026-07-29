@@ -33,6 +33,18 @@ body {
 */
 html[lang="th"] {
   --font-sans: var(--font-kanit);
+  /* Kanit reads heavier than Geist at the same numeric weight */
+  --font-weight-semibold: 400;
+  --font-weight-bold: 500;
+  --font-weight-extrabold: 500;
+  --font-weight-black: 600;
+}
+
+/* Thai glyphs need room for vowel/tone marks; tight tracking clips them */
+html[lang="th"] .tracking-tight,
+html[lang="th"] .tracking-wider,
+html[lang="th"] .tracking-widest {
+  letter-spacing: 0;
 }
 
 * {
