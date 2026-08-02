@@ -171,13 +171,22 @@ export type FetchInfluencersParams = {
   offset?: number;
   search?: string;
   categories?: string[];
+  platforms?: string[];
 };
 
 export async function fetchInfluencers(
   params: FetchInfluencersParams = {},
   signal?: AbortSignal
 ): Promise<InfluencerListItem[]> {
-  const { limit, offset, search, categories } = params;
+  const { limit, offset, search, categories, platforms } = params;
+
+  const filter =
+    (categories && categories.length > 0) || (platforms && platforms.length > 0)
+      ? {
+          ...(categories && categories.length > 0 ? { categories } : {}),
+          ...(platforms && platforms.length > 0 ? { platforms } : {}),
+        }
+      : undefined;
 
   const result = await graphqlRequest<InfluencersQueryResult>(
     INFLUENCERS_QUERY,
@@ -185,7 +194,7 @@ export async function fetchInfluencers(
       limit,
       offset,
       search: search?.trim() || undefined,
-      filter: categories && categories.length > 0 ? { categories } : undefined,
+      filter,
     },
     signal
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import MainHeader from "@/components/main-header";
 import SiteFooter from "@/components/site-footer";
 import { useAuth } from "@/hooks/use-auth";
@@ -9,26 +9,28 @@ import { useLanguage } from "@/i18n/language-provider";
 import { fetchInfluencers, type InfluencerListItem } from "@/lib/influencers";
 import {
   INFLUENCER_CATEGORY_KEYS,
+  MOCK_INFLUENCERS,
   type InfluencerCategoryKey,
 } from "@/lib/mock-influencers";
 import {
   formatBudgetRange,
   MOCK_JOBS,
-  PLATFORM_COLORS,
   type Platform,
 } from "@/lib/mock-jobs";
+import {
+  FILTER_COUNTRIES,
+  FILTER_PLATFORMS,
+  FOLLOWER_RANGES,
+  PRICE_RANGES,
+  matchesCountry,
+  matchesFollowerRange,
+  matchesPlatform,
+  matchesPriceRange,
+  type FilterCountryId,
+  type FollowerRangeId,
+  type PriceRangeId,
+} from "@/lib/search-filters";
 
-function PlatformBadge({ platform }: { platform: Platform }) {
-  const c = PLATFORM_COLORS[platform];
-  return (
-    <span
-      className="inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold"
-      style={{ backgroundColor: c.bg, color: c.text }}
-    >
-      {platform}
-    </span>
-  );
-}
 function StarIcon() {
   return (
     <svg width="11" height="11" viewBox="0 0 11 11" fill="#F59E0B">
@@ -37,16 +39,106 @@ function StarIcon() {
   );
 }
 
+type OpenFilter =
+  | "category"
+  | "country"
+  | "platform"
+  | "followers"
+  | "price"
+  | null;
+
+function FilterDropdown({
+  id,
+  label,
+  openFilter,
+  setOpenFilter,
+  hasValue = false,
+  children,
+}: {
+  id: Exclude<OpenFilter, null>;
+  label: string;
+  openFilter: OpenFilter;
+  setOpenFilter: (id: OpenFilter) => void;
+  hasValue?: boolean;
+  children: React.ReactNode;
+}) {
+  const open = openFilter === id;
+  return (
+    <div className="relative shrink-0">
+      <button
+        type="button"
+        onClick={() => setOpenFilter(open ? null : id)}
+        className={`flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm font-medium transition-colors ${
+          open || hasValue
+            ? "bg-[#fce8ee] text-[#9d003b]"
+            : "text-[#555] hover:bg-[#f5f5f5]"
+        }`}
+      >
+        {label}
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+          <path
+            d="M2 3.5L5 6.5L8 3.5"
+            stroke="currentColor"
+            strokeWidth="1.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
+      {open && (
+        <div className="absolute left-0 top-full z-20 mt-2 max-h-64 w-52 overflow-y-auto rounded-xl border border-[#eee] bg-white py-1 shadow-lg sm:left-auto sm:right-0">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FilterOption({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`block w-full px-4 py-2.5 text-left text-[13px] hover:bg-[#fafafa] ${
+        active ? "font-semibold text-[#9d003b]" : "text-[#333]"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
 export default function HomePageContent() {
   const { t, dictionary } = useLanguage();
   const { user } = useAuth();
   const isInfluencer = user?.role === "influencer";
+  const isEntrepreneur = user?.role === "entrepreneur";
+  const showFollowerRange = !isInfluencer;
+  const showPriceRange = !isEntrepreneur;
   const postJobHref = user?.role === "entrepreneur" ? "/jobs/new" : "/signup";
   const [selectedCategories, setSelectedCategories] = useState<
     InfluencerCategoryKey[]
   >([]);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [selectedCountry, setSelectedCountry] = useState<FilterCountryId | null>(
+    null
+  );
+  const [selectedPlatform, setSelectedPlatform] = useState<Platform | null>(
+    null
+  );
+  const [selectedFollowerRange, setSelectedFollowerRange] =
+    useState<FollowerRangeId | null>(null);
+  const [selectedPriceRange, setSelectedPriceRange] =
+    useState<PriceRangeId | null>(null);
+  const [openFilter, setOpenFilter] = useState<OpenFilter>(null);
+  const filtersRef = useRef<HTMLDivElement>(null);
 
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
@@ -62,11 +154,31 @@ export default function HomePageContent() {
   const INFLUENCERS_PER_PAGE = 8;
   const [visibleCount, setVisibleCount] = useState(INFLUENCERS_PER_PAGE);
 
+  // Role-gated filters stay in state but are ignored when not applicable
+  const activeFollowerRange = showFollowerRange ? selectedFollowerRange : null;
+  const activePriceRange = showPriceRange ? selectedPriceRange : null;
+
   // Debounce the search box so we don't re-query on every keystroke
   useEffect(() => {
-    const timer = setTimeout(() => setSearch(searchInput.trim()), 400);
+    const timer = setTimeout(() => {
+      setSearch(searchInput.trim());
+      setVisibleCount(INFLUENCERS_PER_PAGE);
+    }, 400);
     return () => clearTimeout(timer);
   }, [searchInput]);
+
+  useEffect(() => {
+    function onPointerDown(event: MouseEvent) {
+      if (
+        filtersRef.current &&
+        !filtersRef.current.contains(event.target as Node)
+      ) {
+        setOpenFilter(null);
+      }
+    }
+    document.addEventListener("mousedown", onPointerDown);
+    return () => document.removeEventListener("mousedown", onPointerDown);
+  }, []);
 
   // Scroll offset used to drift the hero background shapes in different directions
   const [scrollY, setScrollY] = useState(0);
@@ -86,6 +198,13 @@ export default function HomePageContent() {
     };
   }, []);
 
+  const influencerFetchParams = {
+    search: search || undefined,
+    categories:
+      selectedCategories.length > 0 ? selectedCategories : undefined,
+    platforms: selectedPlatform ? [selectedPlatform] : undefined,
+  };
+
   useEffect(() => {
     const controller = new AbortController();
     // Resetting loading/error before a new fetch starts is the standard
@@ -100,8 +219,7 @@ export default function HomePageContent() {
       {
         limit: INFLUENCERS_PER_PAGE,
         offset: 0,
-        search: search || undefined,
-        categories: selectedCategories.length > 0 ? selectedCategories : undefined,
+        ...influencerFetchParams,
       },
       controller.signal
     )
@@ -120,7 +238,8 @@ export default function HomePageContent() {
       });
 
     return () => controller.abort();
-  }, [search, selectedCategories, reloadKey]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- params object rebuilt each render; deps listed explicitly
+  }, [search, selectedCategories, selectedPlatform, reloadKey]);
 
   async function loadMoreInfluencers() {
     setLoadingMoreInfluencers(true);
@@ -128,8 +247,7 @@ export default function HomePageContent() {
       const more = await fetchInfluencers({
         limit: INFLUENCERS_PER_PAGE,
         offset: influencersOffset,
-        search: search || undefined,
-        categories: selectedCategories.length > 0 ? selectedCategories : undefined,
+        ...influencerFetchParams,
       });
       setInfluencers((prev) => [...prev, ...more]);
       setInfluencersOffset((prev) => prev + more.length);
@@ -151,21 +269,109 @@ export default function HomePageContent() {
   const categoryLabel = (key: InfluencerCategoryKey) =>
     t(`categories.${key}`);
 
-  const visibleJobs = MOCK_JOBS.slice(0, visibleCount);
-  const hasMoreJobs = visibleCount < MOCK_JOBS.length;
+  const filteredJobs = useMemo(() => {
+    return MOCK_JOBS.filter((job) => {
+      if (!matchesCountry(job.location, selectedCountry)) return false;
+      if (!matchesPlatform(job.platform, undefined, selectedPlatform))
+        return false;
+      if (
+        !matchesPriceRange(job.budgetMin, job.budgetMax, activePriceRange)
+      ) {
+        return false;
+      }
+      if (search) {
+        const q = search.toLowerCase();
+        const haystack =
+          `${job.title} ${job.company} ${job.description}`.toLowerCase();
+        if (!haystack.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [search, selectedCountry, selectedPlatform, activePriceRange]);
+
+  const filteredInfluencers = useMemo(() => {
+    if (!selectedCountry && !activeFollowerRange) {
+      return influencers;
+    }
+
+    return influencers.filter((inf) => {
+      const mock = MOCK_INFLUENCERS.find(
+        (m) =>
+          m.name.toLowerCase() === inf.name.toLowerCase() ||
+          m.handle === inf.handle
+      );
+      if (!mock) return true;
+      if (!matchesCountry(mock.location, selectedCountry)) return false;
+      if (!matchesFollowerRange(mock.followers, activeFollowerRange)) {
+        return false;
+      }
+      return true;
+    });
+  }, [influencers, selectedCountry, activeFollowerRange]);
+
+  const visibleJobs = filteredJobs.slice(0, visibleCount);
+  const hasMoreJobs = visibleCount < filteredJobs.length;
 
   const availableCategories = INFLUENCER_CATEGORY_KEYS.filter(
     (cat) => !selectedCategories.includes(cat)
   );
 
+  const hasActiveFilters =
+    selectedCategories.length > 0 ||
+    !!selectedCountry ||
+    !!selectedPlatform ||
+    !!activeFollowerRange ||
+    !!activePriceRange ||
+    !!search;
+
+  function resetJobPage() {
+    setVisibleCount(INFLUENCERS_PER_PAGE);
+  }
+
   function addCategory(category: InfluencerCategoryKey) {
     setSelectedCategories((prev) => [...prev, category]);
-    setDropdownOpen(false);
+    setOpenFilter(null);
+    resetJobPage();
   }
 
   function removeCategory(category: InfluencerCategoryKey) {
     setSelectedCategories((prev) => prev.filter((c) => c !== category));
+    resetJobPage();
   }
+
+  function selectCountry(id: FilterCountryId | null) {
+    setSelectedCountry(id);
+    setOpenFilter(null);
+    resetJobPage();
+  }
+
+  function selectPlatform(platform: Platform | null) {
+    setSelectedPlatform(platform);
+    setOpenFilter(null);
+    resetJobPage();
+  }
+
+  function selectFollowerRange(id: FollowerRangeId | null) {
+    setSelectedFollowerRange(id);
+    setOpenFilter(null);
+    resetJobPage();
+  }
+
+  function selectPriceRange(id: PriceRangeId | null) {
+    setSelectedPriceRange(id);
+    setOpenFilter(null);
+    resetJobPage();
+  }
+
+  const countryChipLabel = selectedCountry
+    ? t(`filterCountries.${selectedCountry}`)
+    : null;
+  const followerChipLabel = activeFollowerRange
+    ? t(`filterFollowerRanges.${activeFollowerRange}`)
+    : null;
+  const priceChipLabel = activePriceRange
+    ? t(`filterPriceRanges.${activePriceRange}`)
+    : null;
 
   return (
     <div className="flex min-h-screen flex-col bg-white">
@@ -212,8 +418,8 @@ export default function HomePageContent() {
             <span className="mt-3 inline-block">{t("hero.titleAfter")}</span>
           </h1>
 
-          {/* Search bar with inline category picker */}
-          <div className="mx-auto mt-6 sm:mt-8 max-w-2xl">
+          {/* Search bar with filters */}
+          <div ref={filtersRef} className="mx-auto mt-6 sm:mt-8 max-w-2xl">
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -233,47 +439,6 @@ export default function HomePageContent() {
                 className="mx-2 h-11 flex-1 bg-transparent text-sm text-[#333] outline-none placeholder:text-[#aaa]"
               />
 
-              {/* Divider */}
-              <span className="h-6 w-px shrink-0 bg-[#e5e5e5]" />
-
-              {/* Category dropdown – inside the bar */}
-              <div ref={dropdownRef} className="relative shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setDropdownOpen((open) => !open)}
-                  className="flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-[#555] transition-colors hover:bg-[#f5f5f5]"
-                >
-                  {t("common.category")}
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                    <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </button>
-
-                {dropdownOpen && (
-                  <div className="absolute right-0 top-full z-20 mt-2 w-56 overflow-hidden rounded-xl border border-[#eee] bg-white py-1 shadow-lg">
-                    {availableCategories.length === 0 ? (
-                      <p className="px-4 py-3 text-[13px] text-[#888]">
-                        {t("hero.allCategoriesSelected")}
-                      </p>
-                    ) : (
-                      availableCategories.map((category) => (
-                        <button
-                          key={category}
-                          type="button"
-                          onClick={() => addCategory(category)}
-                          className="block w-full px-4 py-2.5 text-left text-[13px] text-[#333] hover:bg-[#fafafa]"
-                        >
-                          {categoryLabel(category)}
-                        </button>
-                      ))
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Divider */}
-              <span className="mx-1 h-6 w-px shrink-0 bg-[#e5e5e5]" />
-
               <button
                 type="submit"
                 className="h-9 shrink-0 rounded-xl bg-[#9d003b] px-4 sm:px-5 text-sm font-semibold text-white transition-colors hover:bg-[#850030]"
@@ -282,9 +447,156 @@ export default function HomePageContent() {
               </button>
             </form>
 
-            {/* Selected category chips */}
-            {selectedCategories.length > 0 && (
-              <div className="mt-3 flex flex-wrap gap-2">
+            {/* Filter row */}
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-1 rounded-2xl bg-white p-1.5 shadow-[0_8px_24px_rgba(0,0,0,0.2)] sm:gap-1.5 sm:p-2">
+              <FilterDropdown
+                id="category"
+                label={t("common.category")}
+                openFilter={openFilter}
+                setOpenFilter={setOpenFilter}
+                hasValue={selectedCategories.length > 0}
+              >
+                {availableCategories.length === 0 ? (
+                  <p className="px-4 py-3 text-[13px] text-[#888]">
+                    {t("hero.allCategoriesSelected")}
+                  </p>
+                ) : (
+                  availableCategories.map((category) => (
+                    <FilterOption
+                      key={category}
+                      active={false}
+                      onClick={() => addCategory(category)}
+                    >
+                      {categoryLabel(category)}
+                    </FilterOption>
+                  ))
+                )}
+              </FilterDropdown>
+
+              <span className="hidden h-5 w-px shrink-0 bg-[#eee] sm:block" />
+
+              <FilterDropdown
+                id="country"
+                label={
+                  selectedCountry
+                    ? t(`filterCountries.${selectedCountry}`)
+                    : t("common.country")
+                }
+                openFilter={openFilter}
+                setOpenFilter={setOpenFilter}
+                hasValue={!!selectedCountry}
+              >
+                <FilterOption
+                  active={!selectedCountry}
+                  onClick={() => selectCountry(null)}
+                >
+                  {t("common.any")}
+                </FilterOption>
+                {FILTER_COUNTRIES.map((country) => (
+                  <FilterOption
+                    key={country.id}
+                    active={selectedCountry === country.id}
+                    onClick={() => selectCountry(country.id)}
+                  >
+                    {t(`filterCountries.${country.id}`)}
+                  </FilterOption>
+                ))}
+              </FilterDropdown>
+
+              <span className="hidden h-5 w-px shrink-0 bg-[#eee] sm:block" />
+
+              <FilterDropdown
+                id="platform"
+                label={selectedPlatform ?? t("common.platform")}
+                openFilter={openFilter}
+                setOpenFilter={setOpenFilter}
+                hasValue={!!selectedPlatform}
+              >
+                <FilterOption
+                  active={!selectedPlatform}
+                  onClick={() => selectPlatform(null)}
+                >
+                  {t("common.any")}
+                </FilterOption>
+                {FILTER_PLATFORMS.map((platform) => (
+                  <FilterOption
+                    key={platform}
+                    active={selectedPlatform === platform}
+                    onClick={() => selectPlatform(platform)}
+                  >
+                    {platform}
+                  </FilterOption>
+                ))}
+              </FilterDropdown>
+
+              {showFollowerRange && (
+                <>
+                  <span className="hidden h-5 w-px shrink-0 bg-[#eee] sm:block" />
+                  <FilterDropdown
+                    id="followers"
+                    label={
+                      followerChipLabel ?? t("common.followerRange")
+                    }
+                    openFilter={openFilter}
+                    setOpenFilter={setOpenFilter}
+                    hasValue={!!activeFollowerRange}
+                  >
+                    <FilterOption
+                      active={!activeFollowerRange}
+                      onClick={() => selectFollowerRange(null)}
+                    >
+                      {t("common.any")}
+                    </FilterOption>
+                    {FOLLOWER_RANGES.map((range) => (
+                      <FilterOption
+                        key={range.id}
+                        active={activeFollowerRange === range.id}
+                        onClick={() => selectFollowerRange(range.id)}
+                      >
+                        {t(`filterFollowerRanges.${range.id}`)}
+                      </FilterOption>
+                    ))}
+                  </FilterDropdown>
+                </>
+              )}
+
+              {showPriceRange && (
+                <>
+                  <span className="hidden h-5 w-px shrink-0 bg-[#eee] sm:block" />
+                  <FilterDropdown
+                    id="price"
+                    label={priceChipLabel ?? t("common.priceRange")}
+                    openFilter={openFilter}
+                    setOpenFilter={setOpenFilter}
+                    hasValue={!!activePriceRange}
+                  >
+                    <FilterOption
+                      active={!activePriceRange}
+                      onClick={() => selectPriceRange(null)}
+                    >
+                      {t("common.any")}
+                    </FilterOption>
+                    {PRICE_RANGES.map((range) => (
+                      <FilterOption
+                        key={range.id}
+                        active={activePriceRange === range.id}
+                        onClick={() => selectPriceRange(range.id)}
+                      >
+                        {t(`filterPriceRanges.${range.id}`)}
+                      </FilterOption>
+                    ))}
+                  </FilterDropdown>
+                </>
+              )}
+            </div>
+
+            {/* Active filter chips */}
+            {(selectedCategories.length > 0 ||
+              selectedCountry ||
+              selectedPlatform ||
+              activeFollowerRange ||
+              activePriceRange) && (
+              <div className="mt-3 flex flex-wrap justify-center gap-2">
                 {selectedCategories.map((category) => (
                   <span
                     key={category}
@@ -294,13 +606,75 @@ export default function HomePageContent() {
                     <button
                       type="button"
                       onClick={() => removeCategory(category)}
-                      aria-label={t("hero.removeCategory", { category: categoryLabel(category) })}
+                      aria-label={t("hero.removeCategory", {
+                        category: categoryLabel(category),
+                      })}
                       className="grid h-4 w-4 place-items-center rounded-full bg-white/20 text-[10px] hover:bg-white/30"
                     >
                       ×
                     </button>
                   </span>
                 ))}
+                {selectedCountry && countryChipLabel && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/15 px-3 py-1 text-[12px] font-medium text-white backdrop-blur-sm">
+                    {countryChipLabel}
+                    <button
+                      type="button"
+                      onClick={() => selectCountry(null)}
+                      aria-label={t("hero.removeFilter", {
+                        filter: countryChipLabel,
+                      })}
+                      className="grid h-4 w-4 place-items-center rounded-full bg-white/20 text-[10px] hover:bg-white/30"
+                    >
+                      ×
+                    </button>
+                  </span>
+                )}
+                {selectedPlatform && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/15 px-3 py-1 text-[12px] font-medium text-white backdrop-blur-sm">
+                    {selectedPlatform}
+                    <button
+                      type="button"
+                      onClick={() => selectPlatform(null)}
+                      aria-label={t("hero.removeFilter", {
+                        filter: selectedPlatform,
+                      })}
+                      className="grid h-4 w-4 place-items-center rounded-full bg-white/20 text-[10px] hover:bg-white/30"
+                    >
+                      ×
+                    </button>
+                  </span>
+                )}
+                {activeFollowerRange && followerChipLabel && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/15 px-3 py-1 text-[12px] font-medium text-white backdrop-blur-sm">
+                    {followerChipLabel}
+                    <button
+                      type="button"
+                      onClick={() => selectFollowerRange(null)}
+                      aria-label={t("hero.removeFilter", {
+                        filter: followerChipLabel,
+                      })}
+                      className="grid h-4 w-4 place-items-center rounded-full bg-white/20 text-[10px] hover:bg-white/30"
+                    >
+                      ×
+                    </button>
+                  </span>
+                )}
+                {activePriceRange && priceChipLabel && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/15 px-3 py-1 text-[12px] font-medium text-white backdrop-blur-sm">
+                    {priceChipLabel}
+                    <button
+                      type="button"
+                      onClick={() => selectPriceRange(null)}
+                      aria-label={t("hero.removeFilter", {
+                        filter: priceChipLabel,
+                      })}
+                      className="grid h-4 w-4 place-items-center rounded-full bg-white/20 text-[10px] hover:bg-white/30"
+                    >
+                      ×
+                    </button>
+                  </span>
+                )}
               </div>
             )}
           </div>
@@ -333,7 +707,7 @@ export default function HomePageContent() {
                   {t("homeJobs.title")}
                 </h2>
                 <p className="text-[13px] text-[#888]">
-                  {t("homeJobs.found", { count: MOCK_JOBS.length })}
+                  {t("homeJobs.found", { count: filteredJobs.length })}
                 </p>
               </div>
               <div className="flex items-center gap-2 text-[13px] text-[#555]">
@@ -378,9 +752,9 @@ export default function HomePageContent() {
               ))}
             </div>
 
-            {MOCK_JOBS.length === 0 && (
+            {filteredJobs.length === 0 && (
               <p className="mt-8 text-center text-[14px] text-[#888]">
-                {t("homeJobs.none")}
+                {hasActiveFilters ? t("homeJobs.empty") : t("homeJobs.none")}
               </p>
             )}
 
@@ -411,7 +785,7 @@ export default function HomePageContent() {
                 {t("influencers.title")}
               </h2>
               <p className="text-[13px] text-[#888]">
-                {t("influencers.found", { count: influencers.length })}
+                {t("influencers.found", { count: filteredInfluencers.length })}
               </p>
             </div>
             <div className="flex items-center gap-2 text-[13px] text-[#555]">
@@ -444,7 +818,7 @@ export default function HomePageContent() {
             </div>
           ) : (
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {influencers.map((influencer) => (
+              {filteredInfluencers.map((influencer) => (
                 <div
                   key={influencer.id}
                   className="flex flex-col overflow-hidden rounded-2xl border border-[#f0f0f0] bg-white shadow-[0_2px_10px_rgba(0,0,0,0.07)] hover:shadow-[0_4px_18px_rgba(0,0,0,0.12)] transition-shadow"
@@ -496,15 +870,15 @@ export default function HomePageContent() {
             </div>
           )}
 
-          {!loading && !error && influencers.length === 0 && (
+          {!loading && !error && filteredInfluencers.length === 0 && (
             <p className="mt-8 text-center text-[14px] text-[#888]">
-              {selectedCategories.length > 0 || search
+              {hasActiveFilters
                 ? t("influencers.empty")
                 : t("influencers.none")}
             </p>
           )}
 
-          {!loading && !error && hasMoreInfluencers && (
+          {!loading && !error && hasMoreInfluencers && filteredInfluencers.length > 0 && (
             <div className="mt-8 flex justify-center">
               <button
                 onClick={loadMoreInfluencers}
