@@ -16,6 +16,7 @@ import {
   MOCK_DIRECT_OFFERS,
   type DirectOfferStatus,
 } from "@/lib/mock-direct";
+import { MOCK_INFLUENCER_APPLICATIONS } from "@/lib/mock-applications";
 
 function CheckIcon({ className = "mt-0.5 shrink-0 text-[#9d003b]" }: { className?: string }) {
   return (
@@ -82,6 +83,13 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
   const isPendingOffer = offerStatus === "pending";
   const isDeclinedOffer = offerStatus === "declined";
 
+  const hasApplied = useMemo(() => {
+    if (user?.role !== "influencer") return false;
+    const apps =
+      MOCK_INFLUENCER_APPLICATIONS[user.id] ?? MOCK_INFLUENCER_APPLICATIONS["1"] ?? [];
+    return apps.some((app) => app.jobId === job.id);
+  }, [user, job.id]);
+
   const pageRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: pageRef,
@@ -92,9 +100,9 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
     scrollYProgress,
     [0, 0.4, 1],
     [
-      "0 4px 24px rgba(0,0,0,0.05)",
-      "0 10px 32px rgba(157,0,59,0.12)",
-      "0 14px 36px rgba(157,0,59,0.14)",
+      "0 6px 28px rgba(0,0,0,0.10)",
+      "0 12px 36px rgba(0,0,0,0.16)",
+      "0 16px 44px rgba(0,0,0,0.20)",
     ]
   );
 
@@ -111,11 +119,14 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
   }
 
   return (
-    <div ref={pageRef} className="relative min-h-screen bg-[#f5f5f3]">
-      {/* Soft atmospheric wash — same palette, no new hues */}
+    <div
+      ref={pageRef}
+      className="relative min-h-screen bg-[#f5f5f3]"
+    >
+      {/* v3 page wash: 40% faint brand red (#9d003b) / 60% #D6EE3A */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-[420px] bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(157,0,59,0.07),transparent_70%)]"
+        className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(157,0,59,0.10)_0%,rgba(157,0,59,0.05)_25%,rgba(157,0,59,0.03)_40%,rgba(214,238,58,0.08)_55%,rgba(214,238,58,0.14)_100%)]"
       />
 
       <MainHeader />
@@ -463,7 +474,7 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
             >
               <motion.div
                 style={{ y: sidebarScrollY, boxShadow: sidebarShadow }}
-                className="overflow-hidden rounded-2xl border border-[#ebebeb] bg-[linear-gradient(135deg,rgba(157,0,59,0.10)_0%,rgba(157,0,59,0.05)_25%,rgba(157,0,59,0.02)_40%,rgba(214,238,58,0.08)_60%,rgba(214,238,58,0.14)_100%)]"
+                className="overflow-hidden rounded-2xl border border-[#ebebeb] bg-white"
               >
               {/* Entrepreneur — only the › button navigates to profile */}
               <motion.div
@@ -613,14 +624,16 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
                   </div>
                 ) : (
                   <>
-                    <motion.a
-                      href="#work-submission-form"
-                      whileHover={{ scale: 1.01, y: -1 }}
-                      whileTap={{ scale: 0.99 }}
-                      className="flex h-11 w-full items-center justify-center rounded-xl bg-[#9d003b] text-[14px] font-semibold text-white hover:bg-[#850030] transition-colors"
-                    >
-                      {t("jobDetail.applyNow")}
-                    </motion.a>
+                    {!hasApplied && (
+                      <motion.a
+                        href="#work-submission-form"
+                        whileHover={{ scale: 1.01, y: -1 }}
+                        whileTap={{ scale: 0.99 }}
+                        className="flex h-11 w-full items-center justify-center rounded-xl bg-[#9d003b] text-[14px] font-semibold text-white hover:bg-[#850030] transition-colors"
+                      >
+                        {t("jobDetail.applyNow")}
+                      </motion.a>
+                    )}
                     {offerStatus !== "accepted" && (
                       <motion.button
                         type="button"

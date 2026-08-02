@@ -372,7 +372,7 @@ const th = {
     applicants: "ผู้สมัคร",
     applied: "สมัครแล้ว {{count}} คน",
     posted: "โพสต์เมื่อ",
-    applyNow: "ส่งผลงาน",
+    applyNow: "สมัครงาน",
     saveForLater: "บันทึกไว้ภายหลัง",
     acceptOffer: "รับข้อเสนอ",
     declineOffer: "ปฏิเสธ",

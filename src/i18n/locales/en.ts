@@ -372,7 +372,7 @@ const en = {
     applicants: "Applicants",
     applied: "{{count}} applied",
     posted: "Posted",
-    applyNow: "Submit Work",
+    applyNow: "Apply for Work",
     saveForLater: "Save for later",
     acceptOffer: "Accept Offer",
     declineOffer: "Decline",
