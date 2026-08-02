@@ -318,10 +318,10 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
                     </div>
                     <motion.button
                       type="submit"
-                      disabled={askStatus === "sending"}
-                      whileHover={{ scale: 1.01 }}
-                      whileTap={{ scale: 0.99 }}
-                      className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#9d003b] bg-white text-[14px] font-semibold text-[#9d003b] hover:bg-[#9d003b]/5 disabled:opacity-60 transition-colors"
+                      disabled={askStatus === "sending" || !question.trim()}
+                      whileHover={question.trim() && askStatus !== "sending" ? { scale: 1.01 } : undefined}
+                      whileTap={question.trim() && askStatus !== "sending" ? { scale: 0.99 } : undefined}
+                      className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#9d003b] bg-white text-[14px] font-semibold text-[#9d003b] hover:bg-[#9d003b]/5 disabled:opacity-40 disabled:hover:bg-white disabled:cursor-not-allowed transition-colors"
                     >
                       {askStatus === "sending" ? (
                         <>
@@ -423,10 +423,10 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
                       </div>
                       <motion.button
                         type="submit"
-                        disabled={applyStatus === "submitting"}
-                        whileHover={{ scale: 1.01 }}
-                        whileTap={{ scale: 0.99 }}
-                        className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#9d003b] text-[14px] font-semibold text-white hover:bg-[#850030] disabled:opacity-60 transition-colors"
+                        disabled={applyStatus === "submitting" || !coverMessage.trim()}
+                        whileHover={coverMessage.trim() && applyStatus !== "submitting" ? { scale: 1.01 } : undefined}
+                        whileTap={coverMessage.trim() && applyStatus !== "submitting" ? { scale: 0.99 } : undefined}
+                        className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#9d003b] text-[14px] font-semibold text-white hover:bg-[#850030] disabled:opacity-40 disabled:hover:bg-[#9d003b] disabled:cursor-not-allowed transition-colors"
                       >
                         {applyStatus === "submitting" ? (
                           <>
