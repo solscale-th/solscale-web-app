@@ -438,6 +438,27 @@ const th = {
     moreInfluencers: "อินฟลูเอนเซอร์ {{platform}} เพิ่มเติม",
     viewProfile: "ดูโปรไฟล์",
   },
+  entrepreneurDetail: {
+    back: "กลับ",
+    brand: "แบรนด์",
+    aboutBrand: "เกี่ยวกับแบรนด์",
+    activeCampaigns: "แคมเปญที่เปิดอยู่",
+    emptyCampaigns: "แบรนด์นี้ยังไม่มีแคมเปญที่เปิดรับอยู่ตอนนี้",
+    openCampaigns: "เปิด {{count}}",
+    campaigns: "แคมเปญ",
+    memberSince: "สมาชิกตั้งแต่",
+    contact: "ติดต่อ",
+    browseCampaigns: "ดูแคมเปญ",
+    contactBrand: "ติดต่อแบรนด์",
+    noDescription: "แบรนด์นี้ยังไม่ได้เพิ่มคำอธิบาย",
+    whyCollaborateTitle: "ทำไมต้องร่วมงานผ่าน Solscale?",
+    whyCollaborateItems: [
+      "ระบบ Escrow ปกป้องการชำระเงิน",
+      "โปรไฟล์แบรนด์ที่ยืนยันแล้ว",
+      "แชทกับแบรนด์ในแอป",
+      "บรีฟแคมเปญที่ชัดเจน",
+    ],
+  },
 } as const;
 
 export default th;

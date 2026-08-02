@@ -438,6 +438,27 @@ const en = {
     moreInfluencers: "More {{platform}} Influencers",
     viewProfile: "View Profile",
   },
+  entrepreneurDetail: {
+    back: "Back",
+    brand: "Brand",
+    aboutBrand: "About the Brand",
+    activeCampaigns: "Active Campaigns",
+    emptyCampaigns: "This brand has no open campaigns right now.",
+    openCampaigns: "{{count}} open",
+    campaigns: "Campaigns",
+    memberSince: "Member since",
+    contact: "Contact",
+    browseCampaigns: "Browse Campaigns",
+    contactBrand: "Contact Brand",
+    noDescription: "This brand hasn’t added a description yet.",
+    whyCollaborateTitle: "Why collaborate on Solscale?",
+    whyCollaborateItems: [
+      "Escrow payment protection",
+      "Verified brand profiles",
+      "In-app messaging with brand",
+      "Clear campaign briefs",
+    ],
+  },
 } as const;
 
 export default en;
