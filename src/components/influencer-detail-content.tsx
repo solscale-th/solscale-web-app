@@ -1,331 +1,427 @@
 "use client";
 
+import { useRef } from "react";
 import Link from "next/link";
+import { motion, useScroll, useTransform } from "motion/react";
 import MainHeader from "@/components/main-header";
 import SiteFooter from "@/components/site-footer";
 import { useLanguage } from "@/i18n/language-provider";
+import type { InfluencerProfile } from "@/lib/influencers";
 import {
-  formatAvgViews,
-  formatFollowers,
-  type Influencer,
+  INFLUENCER_CATEGORY_KEYS,
   type InfluencerCategoryKey,
 } from "@/lib/mock-influencers";
-import { PLATFORM_COLORS, type Platform } from "@/lib/mock-jobs";
 
-function PlatformBadge({ platform }: { platform: Platform }) {
-  const c = PLATFORM_COLORS[platform];
+function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
-    <span
-      className="inline-block rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
-      style={{ backgroundColor: c.bg, color: c.text }}
+    <div className="mb-5 flex items-center gap-3">
+      <span className="h-6 w-1 shrink-0 rounded-full bg-[#9d003b]" />
+      <h2 className="text-[17px] sm:text-[18px] font-extrabold tracking-tight text-[#111]">
+        {children}
+      </h2>
+    </div>
+  );
+}
+
+function ProfileAvatar({
+  name,
+  avatarUrl,
+  fallbackClass,
+  size = "lg",
+}: {
+  name: string;
+  avatarUrl?: string | null;
+  fallbackClass?: string;
+  size?: "lg" | "md";
+}) {
+  const dim =
+    size === "lg"
+      ? "h-20 w-20 sm:h-24 sm:w-24 text-2xl sm:text-3xl"
+      : "h-14 w-14 text-xl";
+  const initial = name.trim().charAt(0).toUpperCase() || "?";
+
+  if (avatarUrl) {
+    return (
+      <div
+        className={`shrink-0 overflow-hidden rounded-2xl bg-[#fce8ee] bg-cover bg-center shadow-sm ring-2 ring-white ${dim}`}
+        style={{ backgroundImage: `url(${avatarUrl})` }}
+        role="img"
+        aria-label={name}
+      />
+    );
+  }
+
+  return (
+    <div
+      className={`grid shrink-0 place-items-center rounded-2xl font-bold text-[#9d003b] shadow-sm ring-2 ring-white ${dim} ${
+        fallbackClass ?? "bg-[#fce8ee]"
+      }`}
     >
-      {platform}
-    </span>
+      {initial}
+    </div>
   );
 }
 
 function StarIcon() {
   return (
-    <svg width="12" height="12" viewBox="0 0 11 11" fill="#F59E0B">
+    <svg width="12" height="12" viewBox="0 0 11 11" fill="#F59E0B" aria-hidden>
       <path d="M5.5 1L6.9 4.1H10.3L7.7 6.2L8.7 9.4L5.5 7.5L2.3 9.4L3.3 6.2L0.7 4.1H4.1L5.5 1Z" />
     </svg>
   );
 }
 
-type InfluencerDetailContentProps = {
-  influencer: Influencer;
-  relatedInfluencers: Influencer[];
+function formatMemberSince(iso?: string | null): string | null {
+  if (!iso) return null;
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleDateString(undefined, { month: "short", year: "numeric" });
+}
+
+const KNOWN_CATEGORIES = new Set<string>(INFLUENCER_CATEGORY_KEYS);
+
+type Props = {
+  influencer: InfluencerProfile;
 };
 
-export default function InfluencerDetailContent({
-  influencer,
-  relatedInfluencers,
-}: InfluencerDetailContentProps) {
-  const { t, dictionary } = useLanguage();
+export default function InfluencerDetailContent({ influencer }: Props) {
+  const { t } = useLanguage();
+  const pageRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: pageRef,
+    offset: ["start start", "end end"],
+  });
+  const sidebarScrollY = useTransform(scrollYProgress, [0, 1], [0, 28]);
+  const sidebarShadow = useTransform(
+    scrollYProgress,
+    [0, 0.4, 1],
+    [
+      "0 6px 28px rgba(0,0,0,0.10)",
+      "0 12px 36px rgba(0,0,0,0.16)",
+      "0 16px 44px rgba(0,0,0,0.20)",
+    ]
+  );
 
-  const categoryLabel = (key: InfluencerCategoryKey) => t(`categories.${key}`);
-  const whyHireIcons = ["✓", "🔒", "💬", "📊"];
+  const memberSince = formatMemberSince(influencer.createdAt);
+  const hasRating = influencer.averageRating > 0 || influencer.reviewCount > 0;
+  const about =
+    influencer.about?.trim() || t("influencerDetail.noDescription");
+
+  function categoryLabel(raw: string): string {
+    const key = raw.toLowerCase();
+    if (KNOWN_CATEGORIES.has(key)) {
+      return t(`categories.${key as InfluencerCategoryKey}`);
+    }
+    return raw;
+  }
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#f5f5f3]">
+    <div
+      ref={pageRef}
+      className="relative flex min-h-screen flex-col bg-[#f5f5f3]"
+    >
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(157,0,59,0.10)_0%,rgba(157,0,59,0.05)_25%,rgba(157,0,59,0.03)_40%,rgba(214,238,58,0.08)_55%,rgba(214,238,58,0.14)_100%)]"
+      />
+
       <MainHeader />
 
-      <div className="flex-1">
-      {/* Hero */}
-      <section className={`relative h-[280px] sm:h-[380px] ${influencer.avatarBg}`}>
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.15)_0%,rgba(0,0,0,0.65)_100%)]" />
+      <div className="relative flex-1">
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-8 pt-5 pb-2">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-[#555] hover:bg-white/70 transition-colors"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path
+                d="M9 2L4 7L9 12"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            {t("influencerDetail.back")}
+          </Link>
+        </div>
 
-        <div className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-between px-4 sm:px-8 py-5 sm:py-6">
-          <div className="flex items-center justify-between">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 rounded-xl bg-black/40 px-3 sm:px-4 py-2 text-sm font-medium text-white backdrop-blur-sm hover:bg-black/55 transition-colors"
-            >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M9 2L4 7L9 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              {t("influencerDetail.back")}
-            </Link>
-            <div className="flex items-center gap-2">
-              <button className="grid h-9 w-9 place-items-center rounded-full bg-black/40 text-white backdrop-blur-sm hover:bg-black/55 transition-colors">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <path d="M11 1.5L14.5 5V14.5H10.5V10H5.5V14.5H1.5V5L5 1.5H11Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
-                </svg>
-              </button>
-              <button className="grid h-9 w-9 place-items-center rounded-full bg-black/40 text-white backdrop-blur-sm hover:bg-black/55 transition-colors">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <path d="M4 2.5H12V13.5L8 10.5L4 13.5V2.5Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          <div>
-            {influencer.featured && (
-              <span className="mb-3 inline-flex items-center gap-1 rounded-full bg-[#d7ff2f] px-3 py-1 text-[12px] font-bold text-[#333]">
-                ✦ {t("influencerDetail.featured")}
-              </span>
-            )}
-            <div className="flex items-end gap-3 sm:gap-4">
-              <div className="grid h-16 w-16 sm:h-20 sm:w-20 place-items-center rounded-full bg-white/90 text-2xl sm:text-3xl font-bold text-[#9d003b] shadow-lg shrink-0">
-                {influencer.name.charAt(0)}
-              </div>
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-black leading-tight tracking-tight text-white">
-                    {influencer.name}
-                  </h1>
-                  {influencer.verified && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-white/20 px-2.5 py-0.5 text-[11px] font-semibold text-white backdrop-blur-sm">
-                      ✓ {t("common.verified")}
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-8 pb-12 sm:pb-16 pt-4">
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-8 lg:gap-10 items-start">
+            {/* ── Main column ── */}
+            <div className="min-w-0">
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+              >
+                <div className="mb-4 flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-[#9d003b]/20 bg-[#9d003b]/8 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-[#9d003b]">
+                    {t("influencerDetail.role")}
+                  </span>
+                  {hasRating && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#d7ff2f] px-3 py-1.5 text-[12px] font-medium leading-none text-[#333]">
+                      <StarIcon />
+                      {influencer.averageRating.toFixed(1)}
+                      {influencer.reviewCount > 0 && (
+                        <span className="text-[#666]">
+                          ({influencer.reviewCount})
+                        </span>
+                      )}
                     </span>
                   )}
                 </div>
-                <p className="mt-1 text-[14px] sm:text-[15px] text-white/80">{influencer.handle}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
-      {/* Main content */}
-      <div className="mx-auto max-w-7xl px-4 sm:px-8 py-6 sm:py-8">
-        {/* Sidebar stacks below on mobile, floats right on lg */}
-        <div className="flex flex-col-reverse lg:flex-row gap-6 lg:gap-8">
-
-          {/* Left column */}
-          <div className="min-w-0 flex-1 space-y-4 sm:space-y-5">
-            {/* Profile card */}
-            <div className="rounded-2xl border border-[#eee] bg-white p-4 sm:p-5 shadow-sm">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-3 sm:gap-4">
-                  <div className={`grid h-12 w-12 sm:h-14 sm:w-14 shrink-0 place-items-center rounded-xl text-xl font-bold text-[#9d003b] ${influencer.avatarBg}`}>
-                    {influencer.name.charAt(0)}
-                  </div>
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="text-[15px] sm:text-[16px] font-bold text-[#111]">{influencer.name}</h2>
-                      {influencer.verified && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-[#ecfdf5] px-2 py-0.5 text-[11px] font-semibold text-[#059669]">
-                          ✓ {t("common.verified")}
-                        </span>
-                      )}
-                    </div>
-                    <div className="mt-1 flex items-center gap-1 text-[13px] text-[#666]">
-                      <StarIcon />
-                      <span className="font-semibold text-[#111]">{influencer.rating}</span>
-                      <span>({influencer.reviews} {t("common.reviews")})</span>
-                    </div>
-                    <p className="mt-0.5 text-[13px] text-[#888]">{influencer.handle}</p>
+                <div className="flex items-center gap-4 sm:gap-5">
+                  <ProfileAvatar
+                    name={influencer.name}
+                    avatarUrl={influencer.avatarUrl}
+                    fallbackClass={influencer.avatarFallbackClass}
+                  />
+                  <div className="min-w-0 pt-1">
+                    <h1 className="text-[1.75rem] sm:text-3xl lg:text-[2.45rem] font-extrabold leading-[1.25] tracking-tight text-[#111]">
+                      {influencer.name}
+                    </h1>
+                    <p className="mt-2 truncate text-[14px] text-[#666]">
+                      {influencer.handle}
+                    </p>
                   </div>
                 </div>
-                <PlatformBadge platform={influencer.platform} />
-              </div>
-            </div>
+              </motion.div>
 
-            {/* Stats pills */}
-            <div className="flex flex-wrap gap-2">
-              {[
-                `📍 ${influencer.location}`,
-                `${formatFollowers(influencer.followers)} ${t("common.followers")}`,
-                `${influencer.engagementRate}% engagement`,
-                t("influencerDetail.completedCampaigns", {
-                  count: influencer.collaborations,
-                }),
-              ].map((pill) => (
-                <span
-                  key={pill}
-                  className="rounded-full border border-[#e5e5e5] bg-white px-3.5 py-1.5 text-[12px] font-medium text-[#555]"
-                >
-                  {pill}
-                </span>
-              ))}
-            </div>
-
-            {/* About */}
-            <section className="rounded-2xl border border-[#eee] bg-white p-5 sm:p-6 shadow-sm">
-              <h3 className="text-[16px] font-bold text-[#111]">{t("influencerDetail.about")}</h3>
-              <p className="mt-3 text-[14px] leading-relaxed text-[#555]">{influencer.about}</p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {influencer.categories.map((cat) => (
-                  <span
-                    key={cat}
-                    className="rounded-full bg-[#f5f5f5] px-3 py-1 text-[12px] font-medium text-[#666]"
-                  >
-                    {categoryLabel(cat)}
-                  </span>
-                ))}
-              </div>
-            </section>
-
-            {/* Content Types */}
-            <section className="rounded-2xl border border-[#eee] bg-white p-5 sm:p-6 shadow-sm">
-              <h3 className="text-[16px] font-bold text-[#111]">{t("influencerDetail.contentTypes")}</h3>
-              <ol className="mt-4 space-y-3">
-                {influencer.contentTypes.map((item, idx) => (
-                  <li key={item} className="flex items-start gap-3">
-                    <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[#fce8ee] text-[12px] font-bold text-[#9d003b]">
-                      {idx + 1}
-                    </span>
-                    <span className="text-[14px] leading-relaxed text-[#555]">{item}</span>
-                  </li>
-                ))}
-              </ol>
-            </section>
-
-            {/* Highlights */}
-            <section className="rounded-2xl border border-[#eee] bg-white p-5 sm:p-6 shadow-sm">
-              <h3 className="text-[16px] font-bold text-[#111]">{t("influencerDetail.highlights")}</h3>
-              <ul className="mt-4 space-y-2.5">
-                {influencer.highlights.map((item) => (
-                  <li key={item} className="flex items-start gap-2.5 text-[14px] text-[#555]">
-                    <span className="mt-0.5 text-[#059669]">✓</span>
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </section>
-
-            {/* Audience */}
-            <section className="rounded-2xl border border-[#eee] bg-white p-5 sm:p-6 shadow-sm">
-              <h3 className="text-[16px] font-bold text-[#111]">{t("influencerDetail.audience")}</h3>
-              <ul className="mt-4 space-y-2.5">
-                {influencer.audienceNotes.map((note) => (
-                  <li key={note} className="flex items-start gap-2.5 text-[14px] text-[#555]">
-                    <span className="mt-0.5 text-[#9d003b]">•</span>
-                    {note}
-                  </li>
-                ))}
-              </ul>
-            </section>
-          </div>
-
-          {/* Right sidebar */}
-          <aside className="w-full lg:w-[300px] lg:shrink-0">
-            <div className="lg:sticky lg:top-24 space-y-4">
-              <div className="rounded-2xl border border-[#eee] bg-white p-5 shadow-sm">
-                <p className="text-[12px] font-medium text-[#888]">{t("influencerDetail.followers")}</p>
-                <p className="mt-1 text-[22px] font-black text-[#9d003b]">
-                  {formatFollowers(influencer.followers)}
+              <motion.section
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.18, duration: 0.4 }}
+                className="mt-8 rounded-2xl border border-[#ebebeb] bg-white p-5 sm:p-7 shadow-[0_2px_12px_rgba(0,0,0,0.04)]"
+              >
+                <SectionHeading>{t("influencerDetail.about")}</SectionHeading>
+                <p className="text-[15px] leading-[1.85] text-[#333] whitespace-pre-line">
+                  {about}
                 </p>
-
-                <dl className="mt-4 space-y-2.5 text-[13px]">
-                  {[
-                    [t("influencerDetail.engagementRate"), `${influencer.engagementRate}%`],
-                    [t("influencerDetail.avgViews"), formatAvgViews(influencer.avgViews)],
-                    [t("influencerDetail.responseTime"), influencer.responseTime],
-                    [
-                      t("influencerDetail.collaborations"),
-                      t("influencerDetail.completedCampaigns", {
-                        count: influencer.collaborations,
-                      }),
-                    ],
-                  ].map(([label, value]) => (
-                    <div key={label} className="flex justify-between gap-4">
-                      <dt className="text-[#888]">{label}</dt>
-                      <dd className="font-medium text-[#333] text-right">{value}</dd>
-                    </div>
-                  ))}
-                </dl>
-
-                <button className="mt-5 flex h-11 w-full items-center justify-center rounded-xl bg-[#9d003b] text-[14px] font-semibold text-white hover:bg-[#850030] transition-colors">
-                  {t("influencerDetail.hireInfluencer")}
-                </button>
-                <button className="mt-2 flex h-11 w-full items-center justify-center rounded-xl border border-[#ddd] bg-white text-[14px] font-medium text-[#555] hover:border-[#9d003b] hover:text-[#9d003b] transition-colors">
-                  {t("influencerDetail.sendMessage")}
-                </button>
-                <button className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#ddd] bg-white text-[14px] font-medium text-[#555] hover:border-[#9d003b] hover:text-[#9d003b] transition-colors">
-                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                    <path d="M4 2.5H12V13.5L8 10.5L4 13.5V2.5Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
-                  </svg>
-                  {t("influencerDetail.saveForLater")}
-                </button>
-              </div>
-
-              <div className="rounded-2xl border border-[#e8e4da] bg-[#faf8f3] p-5">
-                <p className="text-[13px] font-bold text-[#333]">{t("influencerDetail.whyHireTitle")}</p>
-                <ul className="mt-3 space-y-2.5 text-[12px] text-[#666]">
-                  {dictionary.influencerDetail.whyHireItems.map((text, index) => (
-                    <li key={text} className="flex items-start gap-2">
-                      <span>{whyHireIcons[index]}</span>
-                      <span>{text}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </aside>
-        </div>
-
-        {/* Related influencers */}
-        {relatedInfluencers.length > 0 && (
-          <section className="mt-10 sm:mt-12">
-            <h2 className="text-[17px] font-bold text-[#111]">
-              {t("influencerDetail.moreInfluencers", { platform: influencer.platform })}
-            </h2>
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {relatedInfluencers.map((related) => (
-                <Link
-                  key={related.id}
-                  href={`/influencers/${related.id}`}
-                  className="flex flex-col overflow-hidden rounded-2xl border border-[#f0f0f0] bg-white shadow-[0_2px_10px_rgba(0,0,0,0.07)] hover:shadow-[0_4px_18px_rgba(0,0,0,0.12)] transition-shadow"
-                >
-                  <div className={`relative h-36 ${related.avatarBg} flex items-center justify-center`}>
-                    <div className="grid h-16 w-16 place-items-center rounded-full bg-white/80 text-2xl font-bold text-[#9d003b]">
-                      {related.name.charAt(0)}
-                    </div>
-                    <span className="absolute right-2.5 top-2.5">
-                      <PlatformBadge platform={related.platform} />
-                    </span>
-                  </div>
-                  <div className="flex flex-1 flex-col gap-2 p-3.5">
-                    <div className="flex items-center gap-1.5">
-                      <h3 className="truncate text-[13px] font-bold text-[#111]">{related.name}</h3>
-                      {related.verified && (
-                        <span className="text-[10px] font-semibold text-[#059669]">✓</span>
-                      )}
-                    </div>
-                    <p className="text-[11px] text-[#888]">{related.handle}</p>
-                    <div className="flex items-center gap-1 text-[11px] text-[#888]">
-                      <StarIcon />
-                      <span className="font-semibold text-[#333]">{related.rating}</span>
-                      <span className="mx-1">·</span>
-                      <span>{formatFollowers(related.followers)}</span>
-                    </div>
-                    <p className="line-clamp-2 text-[11px] leading-relaxed text-[#888]">{related.bio}</p>
-                    <div className="mt-auto flex items-center justify-between pt-1">
-                      <span className="text-[11px] text-[#999]">📍 {related.location}</span>
-                      <span className="rounded-xl bg-[#9d003b] px-3 py-1.5 text-[11px] font-semibold text-white">
-                        {t("influencerDetail.viewProfile")}
+                {influencer.contentCategories.length > 0 && (
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    {influencer.contentCategories.map((cat) => (
+                      <span
+                        key={cat}
+                        className="rounded-lg border border-[#9d003b]/15 bg-[#9d003b]/5 px-3 py-1.5 text-[12px] font-semibold text-[#9d003b]"
+                      >
+                        {categoryLabel(cat)}
                       </span>
+                    ))}
+                  </div>
+                )}
+              </motion.section>
+
+              <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <motion.section
+                  initial={{ opacity: 0, y: 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.24, duration: 0.4 }}
+                  className="rounded-2xl border border-[#ebebeb] bg-white p-5 sm:p-7 shadow-[0_2px_12px_rgba(0,0,0,0.04)]"
+                >
+                  <SectionHeading>
+                    {t("influencerDetail.platforms")}
+                  </SectionHeading>
+                  {influencer.platforms.length === 0 ? (
+                    <p className="text-[14px] text-[#888]">
+                      {t("influencerDetail.emptyPlatforms")}
+                    </p>
+                  ) : (
+                    <ul className="space-y-3">
+                      {influencer.platforms.map((platform, i) => (
+                        <motion.li
+                          key={platform}
+                          initial={{ opacity: 0, x: -8 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.28 + i * 0.05 }}
+                          className="flex items-center gap-3 rounded-xl bg-[#f5f5f3] px-3.5 py-3"
+                        >
+                          <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-[#9d003b]/10 text-[12px] font-bold text-[#9d003b]">
+                            {i + 1}
+                          </span>
+                          <span className="text-[14px] font-medium text-[#333]">
+                            {platform}
+                          </span>
+                        </motion.li>
+                      ))}
+                    </ul>
+                  )}
+                </motion.section>
+
+                <motion.section
+                  initial={{ opacity: 0, y: 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3, duration: 0.4 }}
+                  className="rounded-2xl border border-[#ebebeb] bg-white p-5 sm:p-7 shadow-[0_2px_12px_rgba(0,0,0,0.04)]"
+                >
+                  <SectionHeading>
+                    {t("influencerDetail.languages")}
+                  </SectionHeading>
+                  {influencer.languages.length === 0 ? (
+                    <p className="text-[14px] text-[#888]">
+                      {t("influencerDetail.emptyLanguages")}
+                    </p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {influencer.languages.map((lang) => (
+                        <span
+                          key={lang}
+                          className="rounded-xl bg-[#f5f5f3] px-3.5 py-2 text-[13px] font-semibold text-[#333]"
+                        >
+                          {lang}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </motion.section>
+              </div>
+
+              {influencer.otherPhotos.length > 0 && (
+                <motion.section
+                  initial={{ opacity: 0, y: 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.36, duration: 0.4 }}
+                  className="mt-5 rounded-2xl border border-[#ebebeb] bg-white p-5 sm:p-7 shadow-[0_2px_12px_rgba(0,0,0,0.04)]"
+                >
+                  <SectionHeading>
+                    {t("influencerDetail.photos")}
+                  </SectionHeading>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {influencer.otherPhotos.map((photo, i) => (
+                      <div
+                        key={`${photo}-${i}`}
+                        className="aspect-square overflow-hidden rounded-xl bg-[#f5f5f3] bg-cover bg-center"
+                        style={{ backgroundImage: `url(${photo})` }}
+                        role="img"
+                        aria-label={`${influencer.name} photo ${i + 1}`}
+                      />
+                    ))}
+                  </div>
+                </motion.section>
+              )}
+            </div>
+
+            {/* ── Sticky sidebar ── */}
+            <aside className="self-start lg:sticky lg:top-20 lg:z-10">
+              <motion.div
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.18, duration: 0.4 }}
+              >
+                <motion.div
+                  style={{ y: sidebarScrollY, boxShadow: sidebarShadow }}
+                  className="overflow-hidden rounded-2xl border border-[#ebebeb] bg-white"
+                >
+                  <div className="flex flex-col items-center gap-3 px-5 pt-6 pb-5 text-center">
+                    <ProfileAvatar
+                      name={influencer.name}
+                      avatarUrl={influencer.avatarUrl}
+                      fallbackClass={influencer.avatarFallbackClass}
+                      size="md"
+                    />
+                    <div className="min-w-0 w-full">
+                      <p className="text-[10px] font-semibold tracking-[0.14em] text-[#9d003b]">
+                        {t("influencerDetail.role")}
+                      </p>
+                      <p className="mt-1 truncate text-[16px] font-bold text-[#111]">
+                        {influencer.name}
+                      </p>
+                      <p className="mt-0.5 truncate text-[13px] text-[#888]">
+                        {influencer.handle}
+                      </p>
                     </div>
                   </div>
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
-      </div>
+
+                  <div className="grid grid-cols-2 border-t border-[#f0f0f0]">
+                    <div className="px-4 py-3.5">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-[#999]">
+                        {t("influencerDetail.rating")}
+                      </p>
+                      <p className="mt-1 flex items-center gap-1 truncate text-[13px] font-bold text-[#222]">
+                        {hasRating ? (
+                          <>
+                            <StarIcon />
+                            {influencer.averageRating.toFixed(1)}
+                          </>
+                        ) : (
+                          "—"
+                        )}
+                      </p>
+                    </div>
+                    <div className="px-4 py-3.5">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-[#999]">
+                        {t("common.reviews")}
+                      </p>
+                      <p className="mt-1 truncate text-[13px] font-bold text-[#222]">
+                        {influencer.reviewCount}
+                      </p>
+                    </div>
+                    <div className="px-4 py-3.5">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-[#999]">
+                        {t("influencerDetail.age")}
+                      </p>
+                      <p className="mt-1 truncate text-[13px] font-bold text-[#222]">
+                        {influencer.age ?? "—"}
+                      </p>
+                    </div>
+                    <div className="px-4 py-3.5">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-[#999]">
+                        {t("influencerDetail.memberSince")}
+                      </p>
+                      <p className="mt-1 truncate text-[13px] font-bold text-[#222]">
+                        {memberSince ?? "—"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {influencer.email && (
+                    <div className="border-t border-[#f0f0f0] px-5 py-4">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-[#999]">
+                        {t("influencerDetail.contact")}
+                      </p>
+                      <a
+                        href={`mailto:${influencer.email}`}
+                        className="mt-1 block truncate text-[13px] font-semibold text-[#9d003b] hover:underline"
+                      >
+                        {influencer.email}
+                      </a>
+                    </div>
+                  )}
+
+                  <div className="space-y-2.5 border-t border-[#f0f0f0] p-4">
+                    <motion.button
+                      type="button"
+                      whileHover={{ scale: 1.01, y: -1 }}
+                      whileTap={{ scale: 0.99 }}
+                      className="flex h-11 w-full items-center justify-center rounded-xl bg-[#9d003b] text-[14px] font-semibold text-white hover:bg-[#850030] transition-colors"
+                    >
+                      {t("influencerDetail.hireInfluencer")}
+                    </motion.button>
+                    {influencer.email ? (
+                      <motion.a
+                        href={`mailto:${influencer.email}`}
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.99 }}
+                        className="flex h-11 w-full items-center justify-center rounded-xl border border-[#9d003b]/20 bg-white/60 text-[14px] font-medium text-[#555] hover:border-[#9d003b] hover:text-[#9d003b] transition-colors"
+                      >
+                        {t("influencerDetail.sendMessage")}
+                      </motion.a>
+                    ) : (
+                      <motion.button
+                        type="button"
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.99 }}
+                        className="flex h-11 w-full items-center justify-center rounded-xl border border-[#9d003b]/20 bg-white/60 text-[14px] font-medium text-[#555] hover:border-[#9d003b] hover:text-[#9d003b] transition-colors"
+                      >
+                        {t("influencerDetail.sendMessage")}
+                      </motion.button>
+                    )}
+                  </div>
+                </motion.div>
+              </motion.div>
+            </aside>
+          </div>
+        </div>
       </div>
 
       <SiteFooter />

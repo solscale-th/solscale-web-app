@@ -22,6 +22,28 @@ export type ApiInfluencer = {
   otherPhotos?: string[] | null;
   averageRating?: number | null;
   reviewCount?: number | null;
+  createdAt?: string | null;
+};
+
+/** Public profile fields used by the influencer detail screen (no bank data). */
+export type InfluencerProfile = {
+  id: string;
+  name: string;
+  handle: string;
+  email?: string | null;
+  age?: number | null;
+  avatarUrl?: string | null;
+  platforms: string[];
+  contentCategories: string[];
+  languages: string[];
+  otherPhotos: string[];
+  averageRating: number;
+  reviewCount: number;
+  createdAt?: string | null;
+  /** Optional bio when available from mock data */
+  about?: string | null;
+  /** Mock-only fallback when avatarUrl is absent */
+  avatarFallbackClass?: string;
 };
 
 export type InfluencerListItem = {
@@ -86,6 +108,30 @@ export function mapInfluencer(influencer: ApiInfluencer): InfluencerListItem {
     reviews: influencer.reviewCount ?? 0,
     avatarUrl: influencer.avatarUrl ?? undefined,
     avatarBg: AVATAR_BACKGROUNDS[influencer.id % AVATAR_BACKGROUNDS.length],
+  };
+}
+
+export function toInfluencerProfile(influencer: ApiInfluencer): InfluencerProfile {
+  const name =
+    influencer.stageName?.trim() ||
+    `${influencer.firstName} ${influencer.lastName}`.trim();
+
+  return {
+    id: String(influencer.id),
+    name,
+    handle: toHandle(influencer),
+    email: influencer.email,
+    age: influencer.age,
+    avatarUrl: influencer.avatarUrl,
+    platforms: influencer.platforms ?? [],
+    contentCategories: influencer.contentCategories ?? [],
+    languages: influencer.languages ?? [],
+    otherPhotos: influencer.otherPhotos ?? [],
+    averageRating: Number(influencer.averageRating ?? 0),
+    reviewCount: influencer.reviewCount ?? 0,
+    createdAt: influencer.createdAt,
+    avatarFallbackClass:
+      AVATAR_BACKGROUNDS[influencer.id % AVATAR_BACKGROUNDS.length],
   };
 }
 
@@ -163,26 +209,44 @@ export function filterInfluencersByCategories(
   );
 }
 
+const INFLUENCER_PUBLIC_FIELDS = /* GraphQL */ `
+  id
+  email
+  firstName
+  lastName
+  stageName
+  age
+  avatarUrl
+  platforms
+  contentCategories
+  languages
+  otherPhotos
+  averageRating
+  reviewCount
+  createdAt
+`;
+
 const INFLUENCER_DETAIL_QUERY = /* GraphQL */ `
   query InfluencersDetail {
     influencers {
       data {
-        id
-        email
-        firstName
-        lastName
-        stageName
-        age
-        avatarUrl
-        platforms
-        contentCategories
-        languages
+        ${INFLUENCER_PUBLIC_FIELDS}
         bankName
         bankAccountName
         bankAccountNumber
-        otherPhotos
-        averageRating
-        reviewCount
+      }
+      status {
+        error
+      }
+    }
+  }
+`;
+
+const INFLUENCER_BY_ID_QUERY = /* GraphQL */ `
+  query Influencer($id: Int!) {
+    influencer(id: $id) {
+      data {
+        ${INFLUENCER_PUBLIC_FIELDS}
       }
       status {
         error
@@ -197,6 +261,28 @@ type InfluencersDetailResult = {
     status?: { error?: string | null };
   };
 };
+
+type InfluencerByIdResult = {
+  influencer: {
+    data: ApiInfluencer | null;
+    status?: { error?: string | null };
+  };
+};
+
+export async function fetchInfluencerById(
+  id: number,
+  signal?: AbortSignal
+): Promise<ApiInfluencer | null> {
+  const result = await graphqlRequest<InfluencerByIdResult>(
+    INFLUENCER_BY_ID_QUERY,
+    { id },
+    signal
+  );
+
+  const { data, status } = result.influencer;
+  if (status?.error) throw new Error(status.error);
+  return data;
+}
 
 export async function fetchInfluencerByEmail(
   email: string,
