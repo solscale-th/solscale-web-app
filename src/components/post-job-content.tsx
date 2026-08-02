@@ -67,9 +67,9 @@ export default function PostJobContent() {
 
   if (user && user.role !== "entrepreneur") {
     return (
-      <div className="min-h-screen bg-[#faf7f2]">
+      <div className="flex min-h-screen flex-col bg-[#faf7f2]">
         <MainHeader />
-        <main className="mx-auto max-w-2xl px-4 py-16 text-center">
+        <main className="mx-auto flex-1 max-w-2xl px-4 py-16 text-center">
           <p className="text-[15px] text-[#555]">{t("postJob.notEntrepreneur")}</p>
         </main>
         <SiteFooter />
@@ -108,9 +108,9 @@ export default function PostJobContent() {
   }
 
   return (
-    <div className="min-h-screen bg-[#faf7f2]">
+    <div className="flex min-h-screen flex-col bg-[#faf7f2]">
       <MainHeader />
-      <main className="mx-auto max-w-2xl px-4 py-10 sm:py-14">
+      <main className="mx-auto flex-1 w-full max-w-2xl px-4 py-10 sm:py-14">
         <h1 className="text-[22px] font-bold text-[#111]">{t("postJob.title")}</h1>
         <p className="mt-1 text-[14px] text-[#777]">{t("postJob.subtitle")}</p>
 

@@ -121,7 +121,7 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
   return (
     <div
       ref={pageRef}
-      className="relative min-h-screen bg-[#f5f5f3]"
+      className="relative flex min-h-screen flex-col bg-[#f5f5f3]"
     >
       {/* v3 page wash: 40% faint brand red (#9d003b) / 60% #D6EE3A */}
       <div
@@ -131,6 +131,7 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
 
       <MainHeader />
 
+      <div className="relative flex-1">
       <div className="relative mx-auto max-w-7xl px-4 sm:px-8 pt-5 pb-2">
         <div className="flex items-center justify-between">
           <Link
@@ -652,6 +653,7 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
             </motion.div>
           </aside>
         </div>
+      </div>
       </div>
 
       <SiteFooter />

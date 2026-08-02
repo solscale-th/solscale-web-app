@@ -168,9 +168,10 @@ export default function HomePageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="flex min-h-screen flex-col bg-white">
       <MainHeader />
 
+      <div className="flex-1">
       {/* Hero */}
       <section className="relative bg-[#5e0029] pb-20 pt-20 text-white sm:pb-28 sm:pt-28">
         {/* Decorative layer – overflow-hidden scoped here so the dropdown isn't clipped */}
@@ -573,6 +574,7 @@ export default function HomePageContent() {
           </div>
         </div>
       </section>
+      </div>
 
       <SiteFooter />
     </div>

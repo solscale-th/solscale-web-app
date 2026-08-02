@@ -47,9 +47,10 @@ export default function InfluencerDetailContent({
   const whyHireIcons = ["✓", "🔒", "💬", "📊"];
 
   return (
-    <div className="min-h-screen bg-[#f5f5f3]">
+    <div className="flex min-h-screen flex-col bg-[#f5f5f3]">
       <MainHeader />
 
+      <div className="flex-1">
       {/* Hero */}
       <section className={`relative h-[280px] sm:h-[380px] ${influencer.avatarBg}`}>
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.15)_0%,rgba(0,0,0,0.65)_100%)]" />
@@ -324,6 +325,7 @@ export default function InfluencerDetailContent({
             </div>
           </section>
         )}
+      </div>
       </div>
 
       <SiteFooter />
