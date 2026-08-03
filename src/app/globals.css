@@ -57,10 +57,10 @@ html[lang="th"] .tracking-widest {
     transform: translate(0, 0) rotate(0deg) scale(1);
   }
   33% {
-    transform: translate(28px, -22px) rotate(6deg) scale(1.06);
+    transform: translate(48px, -40px) rotate(10deg) scale(1.1);
   }
   66% {
-    transform: translate(-18px, 20px) rotate(-4deg) scale(0.96);
+    transform: translate(-36px, 34px) rotate(-8deg) scale(0.92);
   }
   100% {
     transform: translate(0, 0) rotate(0deg) scale(1);
@@ -72,10 +72,10 @@ html[lang="th"] .tracking-widest {
     transform: translate(0, 0) rotate(0deg) scale(1);
   }
   30% {
-    transform: translate(-26px, 24px) rotate(-8deg) scale(1.08);
+    transform: translate(-44px, 42px) rotate(-12deg) scale(1.12);
   }
   70% {
-    transform: translate(22px, -16px) rotate(5deg) scale(0.94);
+    transform: translate(38px, -30px) rotate(9deg) scale(0.9);
   }
   100% {
     transform: translate(0, 0) rotate(0deg) scale(1);
@@ -84,52 +84,57 @@ html[lang="th"] .tracking-widest {
 
 @keyframes heroFloatC {
   0% {
-    transform: translate(0, 0) rotate(12deg) scale(1);
+    transform: translate(0, 0) rotate(18deg) scale(1);
   }
   40% {
-    transform: translate(20px, 28px) rotate(24deg) scale(1.1);
+    transform: translate(36px, 48px) rotate(32deg) scale(1.14);
   }
   75% {
-    transform: translate(-24px, -14px) rotate(2deg) scale(0.9);
+    transform: translate(-42px, -28px) rotate(6deg) scale(0.88);
   }
   100% {
-    transform: translate(0, 0) rotate(12deg) scale(1);
+    transform: translate(0, 0) rotate(18deg) scale(1);
   }
 }
 
 @keyframes heroFloatD {
   0% {
-    transform: translate(0, 0) rotate(-12deg) scale(1);
+    transform: translate(0, 0) rotate(-18deg) scale(1);
   }
   35% {
-    transform: translate(-22px, -26px) rotate(-24deg) scale(0.92);
+    transform: translate(-40px, -44px) rotate(-34deg) scale(0.88);
   }
   70% {
-    transform: translate(26px, 18px) rotate(-2deg) scale(1.09);
+    transform: translate(44px, 32px) rotate(-4deg) scale(1.12);
   }
   100% {
-    transform: translate(0, 0) rotate(-12deg) scale(1);
+    transform: translate(0, 0) rotate(-18deg) scale(1);
   }
 }
 
 .hero-shape {
   will-change: transform;
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .hero-shape-a {
   animation: heroFloatA 14s ease-in-out infinite;
+  background: rgba(215, 255, 47, 0.05);
 }
 
 .hero-shape-b {
   animation: heroFloatB 17s ease-in-out infinite;
+  background: rgba(37, 94, 54, 0.18);
 }
 
 .hero-shape-c {
   animation: heroFloatC 20s ease-in-out infinite;
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .hero-shape-d {
   animation: heroFloatD 16s ease-in-out infinite;
+  background: rgba(140, 0, 52, 0.22);
 }
 
 @media (prefers-reduced-motion: reduce) {

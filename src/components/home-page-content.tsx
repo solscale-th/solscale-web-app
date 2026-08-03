@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import MainHeader from "@/components/main-header";
 import SiteFooter from "@/components/site-footer";
 import { useAuth } from "@/hooks/use-auth";
@@ -63,19 +64,60 @@ function FilterDropdown({
   children: React.ReactNode;
 }) {
   const open = openFilter === id;
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(
+    null
+  );
+
+  useLayoutEffect(() => {
+    if (!open || !buttonRef.current) {
+      setMenuPos(null);
+      return;
+    }
+
+    function updatePosition() {
+      const button = buttonRef.current;
+      if (!button) return;
+      const rect = button.getBoundingClientRect();
+      const menuWidth = 256;
+      const left = Math.min(
+        Math.max(8, rect.left),
+        window.innerWidth - menuWidth - 8
+      );
+      setMenuPos({ top: rect.bottom + 8, left });
+    }
+
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [open]);
+
   return (
     <div className="relative shrink-0">
       <button
+        ref={buttonRef}
         type="button"
+        aria-expanded={open}
+        aria-haspopup="listbox"
         onClick={() => setOpenFilter(open ? null : id)}
-        className={`flex h-9 items-center gap-1.5 rounded-xl px-3 text-sm font-medium transition-colors ${
+        className={`flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-[13px] font-medium transition-colors ${
           open || hasValue
-            ? "bg-[#fce8ee] text-[#9d003b]"
-            : "text-[#555] hover:bg-[#f5f5f5]"
+            ? "border-white/35 bg-white/25 text-white"
+            : "border-white/15 bg-white/10 text-white/85 hover:bg-white/18 hover:text-white"
         }`}
       >
-        {label}
-        <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+        <span className="max-w-[9rem] truncate sm:max-w-[11rem]">{label}</span>
+        <svg
+          width="10"
+          height="10"
+          viewBox="0 0 10 10"
+          fill="none"
+          className={`shrink-0 opacity-70 transition-transform ${open ? "rotate-180" : ""}`}
+        >
           <path
             d="M2 3.5L5 6.5L8 3.5"
             stroke="currentColor"
@@ -85,11 +127,19 @@ function FilterDropdown({
           />
         </svg>
       </button>
-      {open && (
-        <div className="absolute left-0 top-full z-20 mt-2 max-h-64 w-52 overflow-y-auto rounded-xl border border-[#eee] bg-white py-1 shadow-lg sm:left-auto sm:right-0">
-          {children}
-        </div>
-      )}
+      {open &&
+        menuPos &&
+        createPortal(
+          <div
+            data-filter-dropdown=""
+            role="listbox"
+            style={{ top: menuPos.top, left: menuPos.left }}
+            className="fixed z-[80] max-h-64 w-64 overflow-y-auto rounded-2xl border border-white/20 bg-[#2a1020]/95 py-1.5 shadow-[0_16px_40px_rgba(0,0,0,0.45)] backdrop-blur-xl"
+          >
+            {children}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }
@@ -106,13 +156,52 @@ function FilterOption({
   return (
     <button
       type="button"
+      role="option"
+      aria-selected={active}
       onClick={onClick}
-      className={`block w-full px-4 py-2.5 text-left text-[13px] hover:bg-[#fafafa] ${
-        active ? "font-semibold text-[#9d003b]" : "text-[#333]"
+      className={`flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left text-[13px] transition-colors hover:bg-white/10 ${
+        active ? "bg-white/12 font-semibold text-[#d7ff2f]" : "text-white/90"
       }`}
     >
-      {children}
+      <span className="min-w-0 flex-1 truncate">{children}</span>
+      {active && (
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="shrink-0">
+          <path
+            d="M2.5 7L5.5 10L11.5 4"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      )}
     </button>
+  );
+}
+
+function ActiveFilterChip({
+  label,
+  onRemove,
+  removeAria,
+}: {
+  label: string;
+  onRemove: () => void;
+  removeAria: string;
+}) {
+  return (
+    <span className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[12px] font-medium text-white/90">
+      <span className="truncate">{label}</span>
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label={removeAria}
+        className="grid h-4 w-4 shrink-0 place-items-center rounded-full text-white/60 transition-colors hover:bg-white/15 hover:text-white"
+      >
+        <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
+          <path d="M1.5 1.5L6.5 6.5M6.5 1.5L1.5 6.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+        </svg>
+      </button>
+    </span>
   );
 }
 
@@ -151,6 +240,13 @@ export default function HomePageContent() {
   const [error, setError] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
 
+  const [discoveredCategories, setDiscoveredCategories] = useState<
+    InfluencerCategoryKey[] | null
+  >(null);
+  const [discoveredPlatforms, setDiscoveredPlatforms] = useState<
+    Platform[] | null
+  >(null);
+
   const INFLUENCERS_PER_PAGE = 8;
   const [visibleCount, setVisibleCount] = useState(INFLUENCERS_PER_PAGE);
 
@@ -169,12 +265,16 @@ export default function HomePageContent() {
 
   useEffect(() => {
     function onPointerDown(event: MouseEvent) {
+      const target = event.target as Node | null;
+      if (!target) return;
+      if (filtersRef.current?.contains(target)) return;
       if (
-        filtersRef.current &&
-        !filtersRef.current.contains(event.target as Node)
+        target instanceof Element &&
+        target.closest("[data-filter-dropdown]")
       ) {
-        setOpenFilter(null);
+        return;
       }
+      setOpenFilter(null);
     }
     document.addEventListener("mousedown", onPointerDown);
     return () => document.removeEventListener("mousedown", onPointerDown);
@@ -240,6 +340,32 @@ export default function HomePageContent() {
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- params object rebuilt each render; deps listed explicitly
   }, [search, selectedCategories, selectedPlatform, reloadKey]);
+
+  useEffect(() => {
+    if (influencers.length === 0) return;
+
+    setDiscoveredCategories((prev) => {
+      const next = new Set(prev ?? []);
+      for (const influencer of influencers) {
+        for (const category of influencer.categories) {
+          next.add(category);
+        }
+      }
+      if (next.size === 0) return prev;
+      return INFLUENCER_CATEGORY_KEYS.filter((key) => next.has(key));
+    });
+
+    setDiscoveredPlatforms((prev) => {
+      const next = new Set(prev ?? []);
+      for (const influencer of influencers) {
+        for (const platform of influencer.platforms) {
+          next.add(platform);
+        }
+      }
+      if (next.size === 0) return prev;
+      return Array.from(next);
+    });
+  }, [influencers]);
 
   async function loadMoreInfluencers() {
     setLoadingMoreInfluencers(true);
@@ -312,9 +438,53 @@ export default function HomePageContent() {
   const visibleJobs = filteredJobs.slice(0, visibleCount);
   const hasMoreJobs = visibleCount < filteredJobs.length;
 
-  const availableCategories = INFLUENCER_CATEGORY_KEYS.filter(
-    (cat) => !selectedCategories.includes(cat)
-  );
+  const availableCategories = useMemo(() => {
+    const base = discoveredCategories ?? [...INFLUENCER_CATEGORY_KEYS];
+    return base.filter((cat) => !selectedCategories.includes(cat));
+  }, [discoveredCategories, selectedCategories]);
+
+  const platformOptions = useMemo(() => {
+    if (isInfluencer) {
+      const fromJobs = Array.from(
+        new Set(MOCK_JOBS.map((job) => job.platform))
+      );
+      return fromJobs.length > 0 ? fromJobs : FILTER_PLATFORMS;
+    }
+    return discoveredPlatforms && discoveredPlatforms.length > 0
+      ? discoveredPlatforms
+      : FILTER_PLATFORMS;
+  }, [discoveredPlatforms, isInfluencer]);
+
+  const countryOptions = useMemo(() => {
+    const locations = isInfluencer
+      ? MOCK_JOBS.map((job) => job.location)
+      : MOCK_INFLUENCERS.map((influencer) => influencer.location);
+
+    const available = FILTER_COUNTRIES.filter((country) =>
+      locations.some((location) => matchesCountry(location, country.id))
+    );
+    return available.length > 0 ? available : [...FILTER_COUNTRIES];
+  }, [isInfluencer]);
+
+  const followerRangeOptions = useMemo(() => {
+    if (!showFollowerRange) return [];
+    const available = FOLLOWER_RANGES.filter((range) =>
+      MOCK_INFLUENCERS.some((influencer) =>
+        matchesFollowerRange(influencer.followers, range.id)
+      )
+    );
+    return available.length > 0 ? available : [...FOLLOWER_RANGES];
+  }, [showFollowerRange]);
+
+  const priceRangeOptions = useMemo(() => {
+    if (!showPriceRange) return [];
+    const available = PRICE_RANGES.filter((range) =>
+      MOCK_JOBS.some((job) =>
+        matchesPriceRange(job.budgetMin, job.budgetMax, range.id)
+      )
+    );
+    return available.length > 0 ? available : [...PRICE_RANGES];
+  }, [showPriceRange]);
 
   const hasActiveFilters =
     selectedCategories.length > 0 ||
@@ -363,6 +533,16 @@ export default function HomePageContent() {
     resetJobPage();
   }
 
+  function clearAllFilters() {
+    setSelectedCategories([]);
+    setSelectedCountry(null);
+    setSelectedPlatform(null);
+    setSelectedFollowerRange(null);
+    setSelectedPriceRange(null);
+    setOpenFilter(null);
+    resetJobPage();
+  }
+
   const countryChipLabel = selectedCountry
     ? t(`filterCountries.${selectedCountry}`)
     : null;
@@ -373,310 +553,328 @@ export default function HomePageContent() {
     ? t(`filterPriceRanges.${activePriceRange}`)
     : null;
 
+  const hasSelectedFilters =
+    selectedCategories.length > 0 ||
+    !!selectedCountry ||
+    !!selectedPlatform ||
+    !!activeFollowerRange ||
+    !!activePriceRange;
+
   return (
     <div className="flex min-h-screen flex-col bg-white">
       <MainHeader />
 
       <div className="flex-1">
       {/* Hero */}
-      <section className="relative bg-[#5e0029] pb-20 pt-20 text-white sm:pb-28 sm:pt-28">
+      <section className="relative flex min-h-screen flex-col justify-center bg-[#5e0029] pb-20 pt-12 text-white sm:pb-28 sm:pt-16">
         {/* Decorative layer – overflow-hidden scoped here so the dropdown isn't clipped */}
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="pointer-events-none absolute inset-0 min-h-screen overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_80%_90%,rgba(37,94,54,0.7),transparent_45%),linear-gradient(120deg,#8c0034_0%,#5d0028_55%,#2a1020_100%)]" />
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.05),rgba(0,0,0,0.4))]" />
           <div
             className="absolute inset-0"
-            style={{ transform: `translate3d(${scrollY * -0.12}px, ${scrollY * 0.25}px, 0)` }}
+            style={{ transform: `translate3d(${scrollY * -0.22}px, ${scrollY * 0.42}px, 0)` }}
           >
-            <div className="hero-shape hero-shape-a absolute -left-16 top-8 h-56 w-56 rounded-full border border-white/10" />
+            <div className="hero-shape hero-shape-a absolute -left-28 -top-10 h-[22rem] w-[22rem] rounded-full border border-white/15 sm:h-[28rem] sm:w-[28rem]" />
           </div>
           <div
             className="absolute inset-0"
-            style={{ transform: `translate3d(${scrollY * 0.15}px, ${scrollY * -0.2}px, 0)` }}
+            style={{ transform: `translate3d(${scrollY * 0.28}px, ${scrollY * -0.35}px, 0)` }}
           >
-            <div className="hero-shape hero-shape-b absolute -right-16 top-12 h-56 w-56 rounded-full border border-white/10" />
+            <div className="hero-shape hero-shape-b absolute -right-32 -top-6 h-[20rem] w-[20rem] rounded-full border border-white/15 sm:h-[26rem] sm:w-[26rem]" />
           </div>
           <div
             className="absolute inset-0"
-            style={{ transform: `translate3d(${scrollY * 0.28}px, ${scrollY * 0.18}px, 0)` }}
+            style={{ transform: `translate3d(${scrollY * 0.45}px, ${scrollY * 0.3}px, 0)` }}
           >
-            <div className="hero-shape hero-shape-c absolute right-40 top-16 h-40 w-40 rotate-12 border border-white/8" />
+            <div className="hero-shape hero-shape-c absolute -right-8 top-8 h-64 w-64 rotate-[18deg] border border-white/12 sm:right-16 sm:h-80 sm:w-80" />
           </div>
           <div
             className="absolute inset-0"
-            style={{ transform: `translate3d(${scrollY * -0.22}px, ${scrollY * -0.3}px, 0)` }}
+            style={{ transform: `translate3d(${scrollY * -0.38}px, ${scrollY * -0.48}px, 0)` }}
           >
-            <div className="hero-shape hero-shape-d absolute left-1/4 top-20 h-44 w-44 -rotate-12 border border-white/8" />
+            <div className="hero-shape hero-shape-d absolute left-[8%] top-4 h-72 w-72 -rotate-[18deg] border border-white/12 sm:left-1/5 sm:h-96 sm:w-96" />
           </div>
         </div>
 
         <div className="relative z-10 mx-auto max-w-4xl px-4 sm:px-6 text-center">
-          <h1 className="text-2xl font-medium leading-[1.08] tracking-[-0.03em] sm:text-4l md:text-4xl">
-            {t("hero.titleBefore")}{" "}
-            <span className="text-[#d7ff2f]">{t("hero.titleHighlight")}</span>
-            <br className="hidden sm:block" />
-            <span className="mt-3 inline-block">{t("hero.titleAfter")}</span>
-          </h1>
+          <div className="mx-auto max-w-3xl">
+            <h1 className="text-[1.85rem] font-semibold leading-[1.08] tracking-[-0.04em] text-white sm:text-5xl md:text-[3.35rem]">
+              {t("hero.titleBefore")}{" "}
+              <span className="text-[#d7ff2f]">{t("hero.titleHighlight")}</span>
+            </h1>
+            <p className="mx-auto mt-4 max-w-xl text-[15px] leading-relaxed text-white/65 sm:mt-5 sm:text-base">
+              {t("hero.titleAfter")}
+            </p>
+          </div>
 
           {/* Search bar with filters */}
-          <div ref={filtersRef} className="mx-auto mt-6 sm:mt-8 max-w-2xl">
+          <div ref={filtersRef} className="mx-auto mt-7 sm:mt-9 max-w-2xl text-left">
             <form
               onSubmit={(e) => {
                 e.preventDefault();
                 setSearch(searchInput.trim());
               }}
-              className="flex items-center rounded-2xl bg-white p-2 shadow-[0_8px_24px_rgba(0,0,0,0.35)]"
+              className="rounded-[28px] border border-white/20 bg-white/10 p-3 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-2xl sm:rounded-[32px] sm:p-4"
             >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="ml-1 shrink-0 text-[#9a003b]">
-                <circle cx="7" cy="7" r="4.5" stroke="currentColor" strokeWidth="1.5" />
-                <path d="M10.5 10.5L13 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
-              <input
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                placeholder={t("hero.searchPlaceholder")}
-                aria-label={t("hero.searchAria")}
-                className="mx-2 h-11 flex-1 bg-transparent text-sm text-[#333] outline-none placeholder:text-[#aaa]"
-              />
-
-              <button
-                type="submit"
-                className="h-9 shrink-0 rounded-xl bg-[#9d003b] px-4 sm:px-5 text-sm font-semibold text-white transition-colors hover:bg-[#850030]"
-              >
-                {t("common.search")}
-              </button>
-            </form>
-
-            {/* Filter row */}
-            <div className="mt-3 flex flex-wrap items-center justify-center gap-1 rounded-2xl bg-white p-1.5 shadow-[0_8px_24px_rgba(0,0,0,0.2)] sm:gap-1.5 sm:p-2">
-              <FilterDropdown
-                id="category"
-                label={t("common.category")}
-                openFilter={openFilter}
-                setOpenFilter={setOpenFilter}
-                hasValue={selectedCategories.length > 0}
-              >
-                {availableCategories.length === 0 ? (
-                  <p className="px-4 py-3 text-[13px] text-[#888]">
-                    {t("hero.allCategoriesSelected")}
-                  </p>
-                ) : (
-                  availableCategories.map((category) => (
-                    <FilterOption
-                      key={category}
-                      active={false}
-                      onClick={() => addCategory(category)}
-                    >
-                      {categoryLabel(category)}
-                    </FilterOption>
-                  ))
+              <div className="flex items-center gap-2 px-1 sm:px-2">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  className="shrink-0 text-white/55"
+                  aria-hidden
+                >
+                  <circle cx="7" cy="7" r="4.5" stroke="currentColor" strokeWidth="1.5" />
+                  <path
+                    d="M10.5 10.5L13 13"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <input
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  placeholder={t("hero.searchPlaceholder")}
+                  aria-label={t("hero.searchAria")}
+                  className="h-12 min-w-0 flex-1 bg-transparent text-[16px] text-white outline-none placeholder:text-white/45"
+                />
+                {searchInput && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchInput("");
+                      setSearch("");
+                    }}
+                    aria-label={t("hero.clearSearch")}
+                    className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-white/50 transition-colors hover:bg-white/10 hover:text-white"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                      <path
+                        d="M2.5 2.5L9.5 9.5M9.5 2.5L2.5 9.5"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </button>
                 )}
-              </FilterDropdown>
+              </div>
 
-              <span className="hidden h-5 w-px shrink-0 bg-[#eee] sm:block" />
-
-              <FilterDropdown
-                id="country"
-                label={
-                  selectedCountry
-                    ? t(`filterCountries.${selectedCountry}`)
-                    : t("common.country")
-                }
-                openFilter={openFilter}
-                setOpenFilter={setOpenFilter}
-                hasValue={!!selectedCountry}
-              >
-                <FilterOption
-                  active={!selectedCountry}
-                  onClick={() => selectCountry(null)}
-                >
-                  {t("common.any")}
-                </FilterOption>
-                {FILTER_COUNTRIES.map((country) => (
-                  <FilterOption
-                    key={country.id}
-                    active={selectedCountry === country.id}
-                    onClick={() => selectCountry(country.id)}
-                  >
-                    {t(`filterCountries.${country.id}`)}
-                  </FilterOption>
-                ))}
-              </FilterDropdown>
-
-              <span className="hidden h-5 w-px shrink-0 bg-[#eee] sm:block" />
-
-              <FilterDropdown
-                id="platform"
-                label={selectedPlatform ?? t("common.platform")}
-                openFilter={openFilter}
-                setOpenFilter={setOpenFilter}
-                hasValue={!!selectedPlatform}
-              >
-                <FilterOption
-                  active={!selectedPlatform}
-                  onClick={() => selectPlatform(null)}
-                >
-                  {t("common.any")}
-                </FilterOption>
-                {FILTER_PLATFORMS.map((platform) => (
-                  <FilterOption
-                    key={platform}
-                    active={selectedPlatform === platform}
-                    onClick={() => selectPlatform(platform)}
-                  >
-                    {platform}
-                  </FilterOption>
-                ))}
-              </FilterDropdown>
-
-              {showFollowerRange && (
-                <>
-                  <span className="hidden h-5 w-px shrink-0 bg-[#eee] sm:block" />
+              <div className="mt-3 flex items-center gap-2">
+                <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                   <FilterDropdown
-                    id="followers"
+                    id="category"
                     label={
-                      followerChipLabel ?? t("common.followerRange")
+                      selectedCategories.length > 0
+                        ? `${t("common.category")} (${selectedCategories.length})`
+                        : t("common.category")
                     }
                     openFilter={openFilter}
                     setOpenFilter={setOpenFilter}
-                    hasValue={!!activeFollowerRange}
+                    hasValue={selectedCategories.length > 0}
                   >
-                    <FilterOption
-                      active={!activeFollowerRange}
-                      onClick={() => selectFollowerRange(null)}
-                    >
-                      {t("common.any")}
-                    </FilterOption>
-                    {FOLLOWER_RANGES.map((range) => (
-                      <FilterOption
-                        key={range.id}
-                        active={activeFollowerRange === range.id}
-                        onClick={() => selectFollowerRange(range.id)}
-                      >
-                        {t(`filterFollowerRanges.${range.id}`)}
-                      </FilterOption>
-                    ))}
+                    {availableCategories.length === 0 ? (
+                      <p className="px-4 py-3 text-[13px] text-white/50">
+                        {t("hero.allCategoriesSelected")}
+                      </p>
+                    ) : (
+                      availableCategories.map((category) => (
+                        <FilterOption
+                          key={category}
+                          active={false}
+                          onClick={() => addCategory(category)}
+                        >
+                          {categoryLabel(category)}
+                        </FilterOption>
+                      ))
+                    )}
                   </FilterDropdown>
-                </>
-              )}
 
-              {showPriceRange && (
-                <>
-                  <span className="hidden h-5 w-px shrink-0 bg-[#eee] sm:block" />
                   <FilterDropdown
-                    id="price"
-                    label={priceChipLabel ?? t("common.priceRange")}
+                    id="country"
+                    label={
+                      selectedCountry
+                        ? t(`filterCountries.${selectedCountry}`)
+                        : t("common.country")
+                    }
                     openFilter={openFilter}
                     setOpenFilter={setOpenFilter}
-                    hasValue={!!activePriceRange}
+                    hasValue={!!selectedCountry}
                   >
                     <FilterOption
-                      active={!activePriceRange}
-                      onClick={() => selectPriceRange(null)}
+                      active={!selectedCountry}
+                      onClick={() => selectCountry(null)}
                     >
                       {t("common.any")}
                     </FilterOption>
-                    {PRICE_RANGES.map((range) => (
+                    {countryOptions.map((country) => (
                       <FilterOption
-                        key={range.id}
-                        active={activePriceRange === range.id}
-                        onClick={() => selectPriceRange(range.id)}
+                        key={country.id}
+                        active={selectedCountry === country.id}
+                        onClick={() => selectCountry(country.id)}
                       >
-                        {t(`filterPriceRanges.${range.id}`)}
+                        {t(`filterCountries.${country.id}`)}
                       </FilterOption>
                     ))}
                   </FilterDropdown>
-                </>
-              )}
-            </div>
 
-            {/* Active filter chips */}
-            {(selectedCategories.length > 0 ||
-              selectedCountry ||
-              selectedPlatform ||
-              activeFollowerRange ||
-              activePriceRange) && (
-              <div className="mt-3 flex flex-wrap justify-center gap-2">
-                {selectedCategories.map((category) => (
-                  <span
-                    key={category}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/15 px-3 py-1 text-[12px] font-medium text-white backdrop-blur-sm"
+                  <FilterDropdown
+                    id="platform"
+                    label={selectedPlatform ?? t("common.platform")}
+                    openFilter={openFilter}
+                    setOpenFilter={setOpenFilter}
+                    hasValue={!!selectedPlatform}
                   >
-                    {categoryLabel(category)}
-                    <button
-                      type="button"
-                      onClick={() => removeCategory(category)}
-                      aria-label={t("hero.removeCategory", {
+                    <FilterOption
+                      active={!selectedPlatform}
+                      onClick={() => selectPlatform(null)}
+                    >
+                      {t("common.any")}
+                    </FilterOption>
+                    {platformOptions.map((platform) => (
+                      <FilterOption
+                        key={platform}
+                        active={selectedPlatform === platform}
+                        onClick={() => selectPlatform(platform)}
+                      >
+                        {platform}
+                      </FilterOption>
+                    ))}
+                  </FilterDropdown>
+
+                  {showFollowerRange && (
+                    <FilterDropdown
+                      id="followers"
+                      label={
+                        followerChipLabel ?? t("common.followerRange")
+                      }
+                      openFilter={openFilter}
+                      setOpenFilter={setOpenFilter}
+                      hasValue={!!activeFollowerRange}
+                    >
+                      <FilterOption
+                        active={!activeFollowerRange}
+                        onClick={() => selectFollowerRange(null)}
+                      >
+                        {t("common.any")}
+                      </FilterOption>
+                      {followerRangeOptions.map((range) => (
+                        <FilterOption
+                          key={range.id}
+                          active={activeFollowerRange === range.id}
+                          onClick={() => selectFollowerRange(range.id)}
+                        >
+                          {t(`filterFollowerRanges.${range.id}`)}
+                        </FilterOption>
+                      ))}
+                    </FilterDropdown>
+                  )}
+
+                  {showPriceRange && (
+                    <FilterDropdown
+                      id="price"
+                      label={priceChipLabel ?? t("common.priceRange")}
+                      openFilter={openFilter}
+                      setOpenFilter={setOpenFilter}
+                      hasValue={!!activePriceRange}
+                    >
+                      <FilterOption
+                        active={!activePriceRange}
+                        onClick={() => selectPriceRange(null)}
+                      >
+                        {t("common.any")}
+                      </FilterOption>
+                      {priceRangeOptions.map((range) => (
+                        <FilterOption
+                          key={range.id}
+                          active={activePriceRange === range.id}
+                          onClick={() => selectPriceRange(range.id)}
+                        >
+                          {t(`filterPriceRanges.${range.id}`)}
+                        </FilterOption>
+                      ))}
+                    </FilterDropdown>
+                  )}
+                </div>
+
+                <button
+                  type="submit"
+                  aria-label={t("common.search")}
+                  className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#d7ff2f] text-[#151515] shadow-[0_4px_16px_rgba(215,255,47,0.35)] transition-colors hover:bg-[#c8f020]"
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+                    <path
+                      d="M8 12.5V3.5M8 3.5L4 7.5M8 3.5L12 7.5"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              {hasSelectedFilters && (
+                <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-white/10 pt-3">
+                  {selectedCategories.map((category) => (
+                    <ActiveFilterChip
+                      key={category}
+                      label={categoryLabel(category)}
+                      onRemove={() => removeCategory(category)}
+                      removeAria={t("hero.removeCategory", {
                         category: categoryLabel(category),
                       })}
-                      className="grid h-4 w-4 place-items-center rounded-full bg-white/20 text-[10px] hover:bg-white/30"
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-                {selectedCountry && countryChipLabel && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/15 px-3 py-1 text-[12px] font-medium text-white backdrop-blur-sm">
-                    {countryChipLabel}
-                    <button
-                      type="button"
-                      onClick={() => selectCountry(null)}
-                      aria-label={t("hero.removeFilter", {
+                    />
+                  ))}
+                  {selectedCountry && countryChipLabel && (
+                    <ActiveFilterChip
+                      label={countryChipLabel}
+                      onRemove={() => selectCountry(null)}
+                      removeAria={t("hero.removeFilter", {
                         filter: countryChipLabel,
                       })}
-                      className="grid h-4 w-4 place-items-center rounded-full bg-white/20 text-[10px] hover:bg-white/30"
-                    >
-                      ×
-                    </button>
-                  </span>
-                )}
-                {selectedPlatform && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/15 px-3 py-1 text-[12px] font-medium text-white backdrop-blur-sm">
-                    {selectedPlatform}
-                    <button
-                      type="button"
-                      onClick={() => selectPlatform(null)}
-                      aria-label={t("hero.removeFilter", {
+                    />
+                  )}
+                  {selectedPlatform && (
+                    <ActiveFilterChip
+                      label={selectedPlatform}
+                      onRemove={() => selectPlatform(null)}
+                      removeAria={t("hero.removeFilter", {
                         filter: selectedPlatform,
                       })}
-                      className="grid h-4 w-4 place-items-center rounded-full bg-white/20 text-[10px] hover:bg-white/30"
-                    >
-                      ×
-                    </button>
-                  </span>
-                )}
-                {activeFollowerRange && followerChipLabel && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/15 px-3 py-1 text-[12px] font-medium text-white backdrop-blur-sm">
-                    {followerChipLabel}
-                    <button
-                      type="button"
-                      onClick={() => selectFollowerRange(null)}
-                      aria-label={t("hero.removeFilter", {
+                    />
+                  )}
+                  {activeFollowerRange && followerChipLabel && (
+                    <ActiveFilterChip
+                      label={followerChipLabel}
+                      onRemove={() => selectFollowerRange(null)}
+                      removeAria={t("hero.removeFilter", {
                         filter: followerChipLabel,
                       })}
-                      className="grid h-4 w-4 place-items-center rounded-full bg-white/20 text-[10px] hover:bg-white/30"
-                    >
-                      ×
-                    </button>
-                  </span>
-                )}
-                {activePriceRange && priceChipLabel && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/15 px-3 py-1 text-[12px] font-medium text-white backdrop-blur-sm">
-                    {priceChipLabel}
-                    <button
-                      type="button"
-                      onClick={() => selectPriceRange(null)}
-                      aria-label={t("hero.removeFilter", {
+                    />
+                  )}
+                  {activePriceRange && priceChipLabel && (
+                    <ActiveFilterChip
+                      label={priceChipLabel}
+                      onRemove={() => selectPriceRange(null)}
+                      removeAria={t("hero.removeFilter", {
                         filter: priceChipLabel,
                       })}
-                      className="grid h-4 w-4 place-items-center rounded-full bg-white/20 text-[10px] hover:bg-white/30"
-                    >
-                      ×
-                    </button>
-                  </span>
-                )}
-              </div>
-            )}
+                    />
+                  )}
+                  <button
+                    type="button"
+                    onClick={clearAllFilters}
+                    className="ml-auto text-[12px] font-medium text-white/70 transition-colors hover:text-white"
+                  >
+                    {t("common.clearAll")}
+                  </button>
+                </div>
+              )}
+            </form>
           </div>
 
           {/* CTA — entrepreneurs and guests only */}

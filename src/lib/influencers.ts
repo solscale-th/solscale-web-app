@@ -51,6 +51,7 @@ export type InfluencerListItem = {
   name: string;
   handle: string;
   platform?: Platform;
+  platforms: Platform[];
   categories: InfluencerCategoryKey[];
   languages: string[];
   rating: number;
@@ -92,16 +93,23 @@ function toPlatform(raw?: string[] | null): Platform | undefined {
   return first as Platform | undefined;
 }
 
+function toPlatforms(raw?: string[] | null): Platform[] {
+  if (!raw) return [];
+  return raw.filter((p): p is Platform => KNOWN_PLATFORMS.has(p));
+}
+
 export function mapInfluencer(influencer: ApiInfluencer): InfluencerListItem {
   const name =
     influencer.stageName?.trim() ||
     `${influencer.firstName} ${influencer.lastName}`.trim();
+  const platforms = toPlatforms(influencer.platforms);
 
   return {
     id: String(influencer.id),
     name,
     handle: toHandle(influencer),
-    platform: toPlatform(influencer.platforms),
+    platform: platforms[0] ?? toPlatform(influencer.platforms),
+    platforms,
     categories: toCategories(influencer.contentCategories),
     languages: influencer.languages ?? [],
     rating: Number(influencer.averageRating ?? 0),
