@@ -183,6 +183,7 @@ const th = {
     sortUpdatedDate: "วันที่อัปเดต",
   },
   hero: {
+    brand: "Solscale",
     titleBefore: "เชื่อมแบรนด์กับ",
     titleHighlight: "อินฟลูเอนเซอร์ที่ใช่",
     titleAfter: "รวดเร็ว น่าเชื่อถือ และคุ้มค่า สำหรับครีเอเตอร์และแบรนด์ยุคใหม่",

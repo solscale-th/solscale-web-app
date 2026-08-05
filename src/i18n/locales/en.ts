@@ -183,6 +183,7 @@ const en = {
     sortUpdatedDate: "Updated Date",
   },
   hero: {
+    brand: "Solscale",
     titleBefore: "Connect brands with the",
     titleHighlight: "right influencers",
     titleAfter: "Fast, trusted, and rewarding collaborations for modern creator commerce.",

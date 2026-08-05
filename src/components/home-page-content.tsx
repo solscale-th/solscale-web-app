@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import MainHeader from "@/components/main-header";
@@ -16,6 +17,7 @@ import {
 import {
   formatBudgetRange,
   MOCK_JOBS,
+  PLATFORM_COLORS,
   type Platform,
 } from "@/lib/mock-jobs";
 import {
@@ -205,14 +207,41 @@ function ActiveFilterChip({
   );
 }
 
+const SCROLL_EASE = [0.22, 1, 0.36, 1] as const;
+const SCROLL_VIEWPORT = { once: true, amount: 0.2, margin: "0px 0px -56px 0px" } as const;
+
 export default function HomePageContent() {
   const { t, dictionary } = useLanguage();
   const { user } = useAuth();
+  const prefersReducedMotion = useReducedMotion();
   const isInfluencer = user?.role === "influencer";
   const isEntrepreneur = user?.role === "entrepreneur";
   const showFollowerRange = !isInfluencer;
   const showPriceRange = !isEntrepreneur;
   const postJobHref = user?.role === "entrepreneur" ? "/jobs/new" : "/signup";
+
+  const sectionReveal = prefersReducedMotion
+    ? { initial: false as const }
+    : {
+        initial: { opacity: 0, y: 22 },
+        whileInView: { opacity: 1, y: 0 },
+        viewport: SCROLL_VIEWPORT,
+        transition: { duration: 0.5, ease: SCROLL_EASE },
+      };
+
+  const cardReveal = (index: number) =>
+    prefersReducedMotion
+      ? { initial: false as const }
+      : {
+          initial: { opacity: 0, y: 30 },
+          whileInView: { opacity: 1, y: 0 },
+          viewport: SCROLL_VIEWPORT,
+          transition: {
+            duration: 0.48,
+            delay: Math.min(index * 0.06, 0.36),
+            ease: SCROLL_EASE,
+          },
+        };
   const [selectedCategories, setSelectedCategories] = useState<
     InfluencerCategoryKey[]
   >([]);
@@ -566,61 +595,68 @@ export default function HomePageContent() {
 
       <div className="flex-1">
       {/* Hero */}
-      <section className="relative flex min-h-screen flex-col justify-center bg-[#5e0029] pb-20 pt-12 text-white sm:pb-28 sm:pt-16">
-        {/* Decorative layer – overflow-hidden scoped here so the dropdown isn't clipped */}
-        <div className="pointer-events-none absolute inset-0 min-h-screen overflow-hidden">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_80%_90%,rgba(37,94,54,0.7),transparent_45%),linear-gradient(120deg,#8c0034_0%,#5d0028_55%,#2a1020_100%)]" />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.05),rgba(0,0,0,0.4))]" />
+      <section className="relative flex min-h-[88dvh] flex-col justify-center overflow-hidden bg-[#520024] pb-20 pt-14 text-white sm:min-h-screen sm:pb-28 sm:pt-20">
+        {/* Decorative layer */}
+        <div className="pointer-events-none absolute inset-0">
+          <div className="hero-atmosphere absolute inset-[-8%] bg-[radial-gradient(ellipse_at_50%_40%,rgba(157,0,59,0.55)_0%,transparent_55%),radial-gradient(ellipse_at_80%_85%,rgba(37,94,54,0.38)_0%,transparent_45%),radial-gradient(ellipse_at_15%_20%,rgba(215,255,47,0.1)_0%,transparent_40%),linear-gradient(180deg,#7a002f_0%,#520024_48%,#2a1018_100%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_45%,transparent_0%,rgba(0,0,0,0.35)_100%)]" />
+
           <div
             className="absolute inset-0"
-            style={{ transform: `translate3d(${scrollY * -0.22}px, ${scrollY * 0.42}px, 0)` }}
+            style={{ transform: `translate3d(${scrollY * -0.1}px, ${scrollY * 0.12}px, 0)` }}
           >
-            <div className="hero-shape hero-shape-a absolute -left-28 -top-10 h-[22rem] w-[22rem] rounded-full border border-white/15 sm:h-[28rem] sm:w-[28rem]" />
+            <div className="hero-glow hero-glow-a absolute left-[8%] top-[30%] h-64 w-64 sm:h-80 sm:w-80" />
           </div>
           <div
             className="absolute inset-0"
-            style={{ transform: `translate3d(${scrollY * 0.28}px, ${scrollY * -0.35}px, 0)` }}
+            style={{ transform: `translate3d(${scrollY * 0.1}px, ${scrollY * -0.1}px, 0)` }}
           >
-            <div className="hero-shape hero-shape-b absolute -right-32 -top-6 h-[20rem] w-[20rem] rounded-full border border-white/15 sm:h-[26rem] sm:w-[26rem]" />
+            <div className="hero-glow hero-glow-b absolute right-[6%] top-[18%] h-72 w-72 sm:h-96 sm:w-96" />
           </div>
           <div
             className="absolute inset-0"
-            style={{ transform: `translate3d(${scrollY * 0.45}px, ${scrollY * 0.3}px, 0)` }}
+            style={{ transform: `translate3d(${scrollY * -0.08}px, ${scrollY * 0.1}px, 0)` }}
           >
-            <div className="hero-shape hero-shape-c absolute -right-8 top-8 h-64 w-64 rotate-[18deg] border border-white/12 sm:right-16 sm:h-80 sm:w-80" />
+            <div className="hero-shape hero-shape-a absolute -left-24 top-[22%] h-72 w-72 rounded-full border border-white/14 sm:h-96 sm:w-96" />
           </div>
           <div
             className="absolute inset-0"
-            style={{ transform: `translate3d(${scrollY * -0.38}px, ${scrollY * -0.48}px, 0)` }}
+            style={{ transform: `translate3d(${scrollY * 0.1}px, ${scrollY * -0.08}px, 0)` }}
           >
-            <div className="hero-shape hero-shape-d absolute left-[8%] top-4 h-72 w-72 -rotate-[18deg] border border-white/12 sm:left-1/5 sm:h-96 sm:w-96" />
+            <div className="hero-shape hero-shape-b absolute -right-28 top-[16%] h-80 w-80 rounded-full border border-white/14 sm:h-[26rem] sm:w-[26rem]" />
           </div>
+          <div
+            className="absolute inset-0"
+            style={{ transform: `translate3d(${scrollY * 0.12}px, ${scrollY * 0.08}px, 0)` }}
+          >
+            <div className="hero-shape hero-shape-c absolute left-[42%] bottom-[16%] h-40 w-40 rotate-12 border border-white/10 sm:h-52 sm:w-52" />
+          </div>
+
+          <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-white/10 to-transparent" />
         </div>
 
-        <div className="relative z-10 mx-auto max-w-4xl px-4 sm:px-6 text-center">
-          <div className="mx-auto max-w-3xl">
-            <h1 className="text-[1.85rem] font-semibold leading-[1.08] tracking-[-0.04em] text-white sm:text-5xl md:text-[3.35rem]">
-              {t("hero.titleBefore")}{" "}
-              <span className="text-[#d7ff2f]">{t("hero.titleHighlight")}</span>
-            </h1>
-            <p className="mx-auto mt-4 max-w-xl text-[15px] leading-relaxed text-white/65 sm:mt-5 sm:text-base">
-              {t("hero.titleAfter")}
-            </p>
-          </div>
+        <div className="relative z-10 mx-auto w-full max-w-3xl px-4 text-center sm:max-w-4xl sm:px-6">
+          <h1 className="hero-rise mx-auto max-w-3xl text-[1.85rem] font-semibold leading-[1.08] tracking-[-0.04em] text-white sm:text-[2.85rem] md:text-[3.35rem]">
+            {t("hero.titleBefore")}{" "}
+            <span className="text-[#d7ff2f]">{t("hero.titleHighlight")}</span>
+          </h1>
+          <p className="hero-rise hero-rise-delay-1 mx-auto mt-4 max-w-lg text-[14px] leading-relaxed text-white/65 sm:mt-5 sm:text-[15px]">
+            {t("hero.titleAfter")}
+          </p>
 
           {/* Search bar with filters */}
-          <div ref={filtersRef} className="mx-auto mt-7 sm:mt-9 max-w-2xl text-left">
+          <div ref={filtersRef} className="hero-rise hero-rise-delay-2 mx-auto mt-8 w-full max-w-2xl text-left sm:mt-9">
             <form
               onSubmit={(e) => {
                 e.preventDefault();
                 setSearch(searchInput.trim());
               }}
-              className="rounded-[28px] border border-white/20 bg-white/10 p-3 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-2xl sm:rounded-[32px] sm:p-4"
+              className="rounded-[24px] border border-white/25 bg-white/12 p-3 shadow-[0_20px_50px_rgba(0,0,0,0.3)] backdrop-blur-2xl sm:rounded-[28px] sm:p-3.5"
             >
-              <div className="flex items-center gap-2 px-1 sm:px-2">
+              <div className="flex items-center gap-2 rounded-2xl bg-black/20 px-3">
                 <svg
-                  width="18"
-                  height="18"
+                  width="16"
+                  height="16"
                   viewBox="0 0 16 16"
                   fill="none"
                   className="shrink-0 text-white/55"
@@ -639,7 +675,7 @@ export default function HomePageContent() {
                   onChange={(e) => setSearchInput(e.target.value)}
                   placeholder={t("hero.searchPlaceholder")}
                   aria-label={t("hero.searchAria")}
-                  className="h-12 min-w-0 flex-1 bg-transparent text-[16px] text-white outline-none placeholder:text-white/45"
+                  className="h-12 min-w-0 flex-1 bg-transparent text-[15px] text-white outline-none placeholder:text-white/40"
                 />
                 {searchInput && (
                   <button
@@ -649,9 +685,9 @@ export default function HomePageContent() {
                       setSearch("");
                     }}
                     aria-label={t("hero.clearSearch")}
-                    className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-white/50 transition-colors hover:bg-white/10 hover:text-white"
+                    className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-white/45 transition-colors hover:bg-white/10 hover:text-white"
                   >
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
                       <path
                         d="M2.5 2.5L9.5 9.5M9.5 2.5L2.5 9.5"
                         stroke="currentColor"
@@ -661,10 +697,24 @@ export default function HomePageContent() {
                     </svg>
                   </button>
                 )}
+                <button
+                  type="submit"
+                  aria-label={t("common.search")}
+                  className="hero-submit-pulse grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#d7ff2f] text-[#151515] transition-colors hover:bg-[#c8f020]"
+                >
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden>
+                    <circle cx="7" cy="7" r="4.5" stroke="currentColor" strokeWidth="1.6" />
+                    <path
+                      d="M10.5 10.5L13.5 13.5"
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </button>
               </div>
 
-              <div className="mt-3 flex items-center gap-2">
-                <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className="mt-2.5 flex items-center gap-1.5 overflow-x-auto px-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                   <FilterDropdown
                     id="category"
                     label={
@@ -798,27 +848,10 @@ export default function HomePageContent() {
                       ))}
                     </FilterDropdown>
                   )}
-                </div>
-
-                <button
-                  type="submit"
-                  aria-label={t("common.search")}
-                  className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#d7ff2f] text-[#151515] shadow-[0_4px_16px_rgba(215,255,47,0.35)] transition-colors hover:bg-[#c8f020]"
-                >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
-                    <path
-                      d="M8 12.5V3.5M8 3.5L4 7.5M8 3.5L12 7.5"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </button>
               </div>
 
               {hasSelectedFilters && (
-                <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-white/10 pt-3">
+                <div className="mt-2.5 flex flex-wrap items-center gap-2 border-t border-white/10 pt-2.5">
                   {selectedCategories.map((category) => (
                     <ActiveFilterChip
                       key={category}
@@ -879,14 +912,13 @@ export default function HomePageContent() {
 
           {/* CTA — entrepreneurs and guests only */}
           {!isInfluencer && (
-            <div className="mt-6 sm:mt-7">
+            <div className="hero-rise hero-rise-delay-3 mt-6 sm:mt-7">
               <Link
                 href={postJobHref}
-                className="inline-flex items-center gap-2 rounded-2xl bg-[#d7ff2f] px-6 sm:px-8 py-3.5 text-[14px] sm:text-[15px] font-extrabold text-[#151515] shadow-[0_6px_20px_rgba(215,255,47,0.4)] hover:bg-[#c8f020] transition-colors"
+                className="inline-flex items-center gap-2 rounded-full bg-[#d7ff2f] px-6 py-3 text-[13px] font-semibold text-[#151515] transition-colors hover:bg-[#c8f020] sm:text-[14px]"
               >
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                  <circle cx="9" cy="9" r="8" stroke="currentColor" strokeWidth="1.5" />
-                  <path d="M9 5.5V12.5M5.5 9H12.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden>
+                  <path d="M6 2.5V9.5M2.5 6H9.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
                 </svg>
                 {t("hero.postJobCta")}
               </Link>
@@ -897,179 +929,222 @@ export default function HomePageContent() {
 
       {/* Jobs section — shown to logged-in influencers */}
       {isInfluencer ? (
-        <section className="bg-white px-4 sm:px-8 pb-16 pt-10">
+        <section className="bg-[#faf8f6] px-4 pb-20 pt-12 sm:px-8 sm:pt-14">
           <div className="mx-auto max-w-7xl">
-            <div className="flex items-center justify-between gap-3 flex-wrap">
+            <motion.div
+              {...sectionReveal}
+              className="flex flex-wrap items-end justify-between gap-4 border-b border-[#ebe6e0] pb-5"
+            >
               <div>
-                <h2 className="text-[17px] font-bold text-[#111]">
+                <h2 className="text-[1.35rem] font-semibold tracking-[-0.03em] text-[#141414] sm:text-[1.5rem]">
                   {t("homeJobs.title")}
                 </h2>
-                <p className="text-[13px] text-[#888]">
+                <p className="mt-1 text-[13px] text-[#7a7570]">
                   {t("homeJobs.found", { count: filteredJobs.length })}
                 </p>
               </div>
               <div className="flex items-center gap-2 text-[13px] text-[#555]">
-                <span className="hidden sm:inline">{t("common.sortBy")}</span>
-                <button className="flex items-center gap-1 rounded-lg border border-[#eee] bg-white px-3 py-1.5 font-medium hover:border-[#ccc] transition-colors">
+                <span className="hidden sm:inline text-[#8a8580]">{t("common.sortBy")}</span>
+                <button className="flex items-center gap-1.5 rounded-full border border-[#e5e0da] bg-white px-3.5 py-1.5 font-medium text-[#333] transition-colors hover:border-[#cfc8c0]">
                   {t("homeJobs.sortNewest")}
                   <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                     <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </button>
               </div>
-            </div>
+            </motion.div>
 
-            {/* Job cards: 1 col → 2 col → 3 col → 4 col */}
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {visibleJobs.map((job) => (
-                <div
-                  key={job.id}
-                  className="flex flex-col overflow-hidden rounded-2xl border border-[#f0f0f0] bg-white shadow-[0_2px_10px_rgba(0,0,0,0.07)] hover:shadow-[0_4px_18px_rgba(0,0,0,0.12)] transition-shadow"
-                >
-                  <div className={`h-28 ${job.thumbnailBg}`} />
-
-                  <div className="flex flex-1 flex-col gap-2 p-3.5">
-                    <h3 className="line-clamp-2 text-[14px] font-bold leading-snug text-[#111]">
-                      {job.title}
-                    </h3>
-                    <p className="text-[12px] text-[#888]">{job.company}</p>
-                    <p className="text-[12px] font-semibold text-[#333]">
-                      {formatBudgetRange(job.budgetMin, job.budgetMax)}
-                    </p>
-
-                    <div className="mt-auto pt-1">
-                      <Link
-                        href={`/jobs/${job.id}`}
-                        className="block w-full rounded-xl bg-[#9d003b] px-3.5 py-2 text-center text-[12px] font-semibold text-white hover:bg-[#850030] transition-colors"
+            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 sm:gap-5">
+              {visibleJobs.map((job, index) => {
+                const platformStyle = PLATFORM_COLORS[job.platform];
+                return (
+                  <motion.div key={job.id} {...cardReveal(index)} className="h-full">
+                  <Link
+                    href={`/jobs/${job.id}`}
+                    className="group flex h-full flex-col overflow-hidden rounded-[1.25rem] border border-[#ebe6e0] bg-white shadow-[0_1px_2px_rgba(40,20,10,0.04)] transition-[transform,box-shadow,border-color] hover:-translate-y-0.5 hover:border-[#ddd6ce] hover:shadow-[0_14px_32px_rgba(40,20,10,0.1)]"
+                  >
+                    <div className={`relative h-32 overflow-hidden ${job.thumbnailBg}`}>
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/35 to-transparent opacity-80 transition-opacity group-hover:opacity-100" />
+                      <span
+                        className="absolute left-3 top-3 rounded-md px-2 py-0.5 text-[10px] font-semibold tracking-wide"
+                        style={{ backgroundColor: platformStyle.bg, color: platformStyle.text }}
                       >
-                        {t("homeJobs.viewJob")}
-                      </Link>
+                        {job.platform}
+                      </span>
+                      <span className="absolute bottom-3 left-3 text-[12px] font-semibold text-white">
+                        {formatBudgetRange(job.budgetMin, job.budgetMax)}
+                      </span>
                     </div>
-                  </div>
-                </div>
-              ))}
+
+                    <div className="flex flex-1 flex-col gap-2 p-4">
+                      <h3 className="line-clamp-2 text-[14px] font-semibold leading-snug text-[#141414]">
+                        {job.title}
+                      </h3>
+                      <p className="truncate text-[12px] text-[#7a7570]">{job.company}</p>
+                      <p className="truncate text-[11px] text-[#9a9590]">{job.location}</p>
+
+                      <span className="mt-auto inline-flex items-center gap-1 pt-3 text-[12px] font-semibold text-[#9d003b] transition-colors group-hover:text-[#850030]">
+                        {t("homeJobs.viewJob")}
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
+                          <path d="M2.5 6H9.5M9.5 6L6.5 3M9.5 6L6.5 9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </span>
+                    </div>
+                  </Link>
+                  </motion.div>
+                );
+              })}
             </div>
 
             {filteredJobs.length === 0 && (
-              <p className="mt-8 text-center text-[14px] text-[#888]">
+              <p className="mt-10 text-center text-[14px] text-[#7a7570]">
                 {hasActiveFilters ? t("homeJobs.empty") : t("homeJobs.none")}
               </p>
             )}
 
             {hasMoreJobs && (
-              <div className="mt-8 flex justify-center">
+              <motion.div {...sectionReveal} className="mt-10 flex justify-center">
                 <button
                   onClick={() =>
                     setVisibleCount((count) => count + INFLUENCERS_PER_PAGE)
                   }
-                  className="flex items-center gap-2 rounded-2xl border border-[#ddd] bg-white px-8 py-3 text-[14px] font-semibold text-[#555] hover:border-[#9d003b] hover:text-[#9d003b] transition-colors"
+                  className="flex items-center gap-2 rounded-full border border-[#e0dbd5] bg-white px-7 py-2.5 text-[13px] font-semibold text-[#444] transition-colors hover:border-[#9d003b] hover:text-[#9d003b]"
                 >
                   {t("homeJobs.loadMore")}
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                     <path d="M3 5L7 9L11 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </button>
-              </div>
+              </motion.div>
             )}
           </div>
         </section>
       ) : (
       /* Influencers section */
-      <section className="bg-white px-4 sm:px-8 pb-16 pt-10">
+      <section className="bg-[#faf8f6] px-4 pb-20 pt-12 sm:px-8 sm:pt-14">
         <div className="mx-auto max-w-7xl">
-          <div className="flex items-center justify-between gap-3 flex-wrap">
+          <motion.div
+            {...sectionReveal}
+            className="flex flex-wrap items-end justify-between gap-4 border-b border-[#ebe6e0] pb-5"
+          >
             <div>
-              <h2 className="text-[17px] font-bold text-[#111]">
+              <h2 className="text-[1.35rem] font-semibold tracking-[-0.03em] text-[#141414] sm:text-[1.5rem]">
                 {t("influencers.title")}
               </h2>
-              <p className="text-[13px] text-[#888]">
+              <p className="mt-1 text-[13px] text-[#7a7570]">
                 {t("influencers.found", { count: filteredInfluencers.length })}
               </p>
             </div>
             <div className="flex items-center gap-2 text-[13px] text-[#555]">
-              <span className="hidden sm:inline">{t("common.sortBy")}</span>
-              <button className="flex items-center gap-1 rounded-lg border border-[#eee] bg-white px-3 py-1.5 font-medium hover:border-[#ccc] transition-colors">
+              <span className="hidden sm:inline text-[#8a8580]">{t("common.sortBy")}</span>
+              <button className="flex items-center gap-1.5 rounded-full border border-[#e5e0da] bg-white px-3.5 py-1.5 font-medium text-[#333] transition-colors hover:border-[#cfc8c0]">
                 {t("influencers.sortPopular")}
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                   <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </button>
             </div>
-          </div>
+          </motion.div>
 
-          {/* Influencer cards: 1 col → 2 col → 3 col → 4 col */}
           {loading ? (
-            <p className="mt-8 text-center text-[14px] text-[#888]">
+            <p className="mt-10 text-center text-[14px] text-[#7a7570]">
               {t("influencers.loading")}
             </p>
           ) : error ? (
-            <div className="mt-8 flex flex-col items-center gap-3">
+            <div className="mt-10 flex flex-col items-center gap-3">
               <p className="text-center text-[14px] text-[#c0392b]">
                 {t("influencers.error")}
               </p>
               <button
                 onClick={retryLoad}
-                className="rounded-xl border border-[#ddd] bg-white px-5 py-2 text-[13px] font-semibold text-[#555] hover:border-[#9d003b] hover:text-[#9d003b] transition-colors"
+                className="rounded-full border border-[#e0dbd5] bg-white px-5 py-2 text-[13px] font-semibold text-[#555] transition-colors hover:border-[#9d003b] hover:text-[#9d003b]"
               >
                 {t("influencers.retry")}
               </button>
             </div>
           ) : (
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filteredInfluencers.map((influencer) => (
-                <div
-                  key={influencer.id}
-                  className="flex flex-col overflow-hidden rounded-2xl border border-[#f0f0f0] bg-white shadow-[0_2px_10px_rgba(0,0,0,0.07)] hover:shadow-[0_4px_18px_rgba(0,0,0,0.12)] transition-shadow"
+            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 sm:gap-5">
+              {filteredInfluencers.map((influencer, index) => (
+                <motion.div key={influencer.id} {...cardReveal(index)} className="h-full">
+                <Link
+                  href={`/influencers/${influencer.id}`}
+                  className="group flex h-full flex-col overflow-hidden rounded-[1.25rem] border border-[#ebe6e0] bg-white shadow-[0_1px_2px_rgba(40,20,10,0.04)] transition-[transform,box-shadow,border-color] hover:-translate-y-0.5 hover:border-[#ddd6ce] hover:shadow-[0_14px_32px_rgba(40,20,10,0.1)]"
                 >
                   <div
-                    className={`relative h-28 ${influencer.avatarBg} flex items-center justify-center bg-cover bg-center`}
+                    className={`relative h-28 ${influencer.avatarBg} bg-cover bg-center`}
                     style={
                       influencer.avatarUrl
                         ? { backgroundImage: `url(${influencer.avatarUrl})` }
                         : undefined
                     }
                   >
-                    {!influencer.avatarUrl && (
-                      <div className="grid h-16 w-16 place-items-center rounded-full bg-white/80 text-2xl font-bold text-[#9d003b]">
-                        {influencer.name.charAt(0)}
-                      </div>
-                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
                   </div>
 
-                  <div className="flex flex-1 flex-col gap-2 p-3.5">
-                    <div>
-                      <div className="flex items-center gap-1.5">
-                        <h3 className="truncate text-[14px] font-bold text-[#111]">
-                          {influencer.name}
-                        </h3>
+                  <div className="relative flex flex-1 flex-col gap-2.5 px-4 pb-4 pt-0">
+                    <div className="-mt-8 mb-1 flex items-end gap-3">
+                      <div
+                        className={`grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-full border-[3px] border-white bg-cover bg-center text-lg font-semibold text-[#9d003b] shadow-sm ${influencer.avatarBg}`}
+                        style={
+                          influencer.avatarUrl
+                            ? { backgroundImage: `url(${influencer.avatarUrl})` }
+                            : undefined
+                        }
+                      >
+                        {!influencer.avatarUrl && influencer.name.charAt(0)}
                       </div>
-                      <p className="text-[12px] text-[#888]">{influencer.handle}</p>
+                      {influencer.platform && (
+                        <span
+                          className="mb-1 rounded-md px-2 py-0.5 text-[10px] font-semibold"
+                          style={{
+                            backgroundColor: PLATFORM_COLORS[influencer.platform].bg,
+                            color: PLATFORM_COLORS[influencer.platform].text,
+                          }}
+                        >
+                          {influencer.platform}
+                        </span>
+                      )}
                     </div>
 
-                    <div className="flex items-center gap-1 text-[11px] text-[#888]">
+                    <div>
+                      <h3 className="truncate text-[14px] font-semibold text-[#141414]">
+                        {influencer.name}
+                      </h3>
+                      <p className="truncate text-[12px] text-[#7a7570]">{influencer.handle}</p>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 text-[12px] text-[#7a7570]">
                       <StarIcon />
                       <span className="font-semibold text-[#333]">
                         {influencer.rating.toFixed(1)}
                       </span>
-                      <span>({influencer.reviews})</span>
+                      <span>({influencer.reviews} {t("common.reviews")})</span>
                     </div>
 
-                    <div className="mt-auto pt-1">
-                      <Link
-                        href={`/influencers/${influencer.id}`}
-                        className="block w-full rounded-xl bg-[#9d003b] px-3.5 py-2 text-center text-[12px] font-semibold text-white hover:bg-[#850030] transition-colors"
-                      >
-                        {t("influencers.viewProfile")}
-                      </Link>
-                    </div>
+                    {influencer.categories.length > 0 && (
+                      <p className="truncate text-[11px] text-[#9a9590]">
+                        {influencer.categories
+                          .slice(0, 2)
+                          .map((key) => categoryLabel(key))
+                          .join(" · ")}
+                      </p>
+                    )}
+
+                    <span className="mt-auto inline-flex items-center gap-1 pt-2 text-[12px] font-semibold text-[#9d003b] transition-colors group-hover:text-[#850030]">
+                      {t("influencers.viewProfile")}
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
+                        <path d="M2.5 6H9.5M9.5 6L6.5 3M9.5 6L6.5 9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </span>
                   </div>
-                </div>
+                </Link>
+                </motion.div>
               ))}
             </div>
           )}
 
           {!loading && !error && filteredInfluencers.length === 0 && (
-            <p className="mt-8 text-center text-[14px] text-[#888]">
+            <p className="mt-10 text-center text-[14px] text-[#7a7570]">
               {hasActiveFilters
                 ? t("influencers.empty")
                 : t("influencers.none")}
@@ -1077,18 +1152,18 @@ export default function HomePageContent() {
           )}
 
           {!loading && !error && hasMoreInfluencers && filteredInfluencers.length > 0 && (
-            <div className="mt-8 flex justify-center">
+            <motion.div {...sectionReveal} className="mt-10 flex justify-center">
               <button
                 onClick={loadMoreInfluencers}
                 disabled={loadingMoreInfluencers}
-                className="flex items-center gap-2 rounded-2xl border border-[#ddd] bg-white px-8 py-3 text-[14px] font-semibold text-[#555] hover:border-[#9d003b] hover:text-[#9d003b] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 rounded-full border border-[#e0dbd5] bg-white px-7 py-2.5 text-[13px] font-semibold text-[#444] transition-colors hover:border-[#9d003b] hover:text-[#9d003b] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {loadingMoreInfluencers ? t("influencers.loading") : t("influencers.loadMore")}
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                   <path d="M3 5L7 9L11 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </button>
-            </div>
+            </motion.div>
           )}
         </div>
       </section>
@@ -1097,16 +1172,21 @@ export default function HomePageContent() {
       {/* How Solscale Works */}
       <section className="bg-[#f0ede5] px-4 sm:px-6 py-12 sm:py-16 text-[#141414]">
         <div className="mx-auto max-w-5xl">
-          <h2 className="text-center text-3xl sm:text-4xl font-extrabold tracking-[-0.02em]">
-            {t("howItWorks.title")}
-          </h2>
-          <p className="mt-2 text-center text-[15px] text-[#666]">
-            {t("howItWorks.subtitle")}
-          </p>
+          <motion.div {...sectionReveal}>
+            <h2 className="text-center text-3xl sm:text-4xl font-extrabold tracking-[-0.02em]">
+              {t("howItWorks.title")}
+            </h2>
+            <p className="mt-2 text-center text-[15px] text-[#666]">
+              {t("howItWorks.subtitle")}
+            </p>
+          </motion.div>
 
           {/* 1 col on mobile, 2 col on md+ */}
           <div className="mt-8 sm:mt-10 grid grid-cols-1 md:grid-cols-2 gap-6">
-            <article className="rounded-3xl bg-white px-6 sm:px-8 py-7 shadow-[0_4px_16px_rgba(0,0,0,0.1)]">
+            <motion.article
+              {...cardReveal(0)}
+              className="rounded-3xl bg-white px-6 sm:px-8 py-7 shadow-[0_4px_16px_rgba(0,0,0,0.1)]"
+            >
               <span className="inline-flex rounded-full bg-[#9d003b] px-3.5 py-1 text-[13px] font-semibold text-white">
                 {t("howItWorks.forInfluencers")}
               </span>
@@ -1123,9 +1203,12 @@ export default function HomePageContent() {
                   </li>
                 ))}
               </ol>
-            </article>
+            </motion.article>
 
-            <article className="rounded-3xl bg-white px-6 sm:px-8 py-7 shadow-[0_4px_16px_rgba(0,0,0,0.1)]">
+            <motion.article
+              {...cardReveal(1)}
+              className="rounded-3xl bg-white px-6 sm:px-8 py-7 shadow-[0_4px_16px_rgba(0,0,0,0.1)]"
+            >
               <span className="inline-flex rounded-full bg-[#0f7b34] px-3.5 py-1 text-[13px] font-semibold text-white">
                 {t("howItWorks.forEntrepreneurs")}
               </span>
@@ -1142,7 +1225,7 @@ export default function HomePageContent() {
                   </li>
                 ))}
               </ol>
-            </article>
+            </motion.article>
           </div>
         </div>
       </section>
