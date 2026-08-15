@@ -8,14 +8,14 @@ import { useLanguage } from "@/i18n/language-provider";
 import { useAuth } from "@/hooks/use-auth";
 import {
   MOCK_DIRECT_OFFERS,
-  MOCK_JOB_APPLICANTS,
   getDirectBadgeCount,
   formatSent,
   type DirectOffer,
-  type JobApplicant,
 } from "@/lib/mock-direct";
 import { MOCK_JOBS } from "@/lib/mock-jobs";
 import { getSeenDirectIds, markDirectSeen, SEEN_DIRECT_EVENT } from "@/lib/seen-direct";
+import { useFlowchart } from "@/hooks/use-flowchart";
+import { findJobById } from "@/lib/flowchart/jobs";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -41,7 +41,7 @@ function DirectOfferCard({
   seen: boolean;
 }) {
   const { t } = useLanguage();
-  const job = MOCK_JOBS.find((j) => j.id === offer.jobId);
+  const job = findJobById(offer.jobId) ?? MOCK_JOBS.find((j) => j.id === offer.jobId);
   if (!job) return null;
 
   const showDot = offer.hasUpdate && !seen;
@@ -73,70 +73,6 @@ function DirectOfferCard({
             className="block w-full rounded-xl bg-[#9d003b] px-3.5 py-2 text-center text-[12px] font-semibold text-white transition-colors hover:bg-[#850030]"
           >
             {t("direct.viewJob")}
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Entrepreneur card: applicant ─────────────────────────────────────────────
-
-function ApplicantCard({
-  applicant,
-  seen,
-}: {
-  applicant: JobApplicant;
-  seen: boolean;
-}) {
-  const { t } = useLanguage();
-  const job = MOCK_JOBS.find((j) => j.id === applicant.jobId);
-  if (!job) return null;
-
-  const showDot = applicant.hasUpdate && !seen;
-
-  const initials = applicant.influencerName
-    .split(" ")
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-
-  return (
-    <div className="relative flex flex-col rounded-2xl border border-[#f0f0f0] bg-white shadow-[0_2px_10px_rgba(0,0,0,0.07)] transition-shadow hover:shadow-[0_4px_18px_rgba(0,0,0,0.12)]">
-      {showDot && <UpdateDot />}
-
-      {/* Avatar banner */}
-      <div className={`relative flex h-28 items-center justify-center overflow-hidden rounded-t-2xl ${applicant.influencerAvatarBg}`}>
-        <div className="grid h-16 w-16 place-items-center rounded-full bg-white/80 text-2xl font-black text-[#9d003b]">
-          {initials}
-        </div>
-        {/* Open / private job badge */}
-        <span className={`absolute left-2.5 top-2.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${applicant.isOpenJob ? "bg-white/80 text-[#333]" : "bg-[#111]/70 text-white"}`}>
-          {applicant.isOpenJob ? t("direct.badgeOpen") : t("direct.badgePrivate")}
-        </span>
-      </div>
-
-      {/* Content */}
-      <div className="flex flex-1 flex-col gap-2 p-3.5">
-        <div>
-          <h3 className="text-[14px] font-bold text-[#111]">{applicant.influencerName}</h3>
-          <p className="text-[12px] text-[#888]">{applicant.influencerHandle}</p>
-        </div>
-        <p className="line-clamp-1 text-[11px] text-[#999]">
-          {t("direct.appliedTo")}: {job.title}
-        </p>
-        <p className="text-[11px] text-[#999]">
-          {t("direct.appliedLabel")}: {formatSent(applicant.appliedDaysAgo)}
-        </p>
-
-        <div className="mt-auto pt-1">
-          <Link
-            href={`/influencers/${applicant.influencerId}`}
-            onClick={() => { if (applicant.hasUpdate) markDirectSeen(applicant.id); }}
-            className="block w-full rounded-xl bg-[#9d003b] px-3.5 py-2 text-center text-[12px] font-semibold text-white transition-colors hover:bg-[#850030]"
-          >
-            {t("direct.viewProfile")}
           </Link>
         </div>
       </div>
@@ -196,6 +132,7 @@ function SortDropdown({
 export default function DirectListContent() {
   const { t } = useLanguage();
   const { user } = useAuth();
+  const { state } = useFlowchart();
   const [sortKey, setSortKey] = useState<SortKey>("dateAdded");
   const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
 
@@ -227,10 +164,28 @@ export default function DirectListContent() {
     return 0;
   };
 
-  /* ── Influencer: only private invites ── */
-  const rawOffers = isInfluencer
+  /* ── Influencer: private invites (seed + live) ── */
+  const liveOffers = isInfluencer
+    ? state.invites
+        .filter((inv) => inv.influencerId === user.id)
+        .map((inv) => ({
+          id: inv.id,
+          jobId: inv.jobId,
+          fromCompany: inv.fromCompany,
+          sentDaysAgo: 0,
+          updatedDaysAgo: 0,
+          isPrivate: inv.isPrivate,
+          status: inv.status,
+          hasUpdate: inv.status === "pending",
+        }))
+    : [];
+  const seedOffers = isInfluencer
     ? (MOCK_DIRECT_OFFERS[user.id] ?? MOCK_DIRECT_OFFERS["1"] ?? []).filter((o) => o.isPrivate)
     : [];
+  const rawOffers = [
+    ...liveOffers,
+    ...seedOffers.filter((o) => !liveOffers.some((live) => live.id === o.id || live.jobId === o.jobId)),
+  ];
   const sortedOffers = [...rawOffers].sort((a, b) => {
     if (sortKey === "dateAdded") {
       const n = notifFirst(a.hasUpdate, a.id, b.hasUpdate, b.id);
@@ -239,29 +194,29 @@ export default function DirectListContent() {
     }
     if (sortKey === "updatedDate") return a.updatedDaysAgo - b.updatedDaysAgo;
     if (sortKey === "name") {
-      const jobA = MOCK_JOBS.find((j) => j.id === a.jobId);
-      const jobB = MOCK_JOBS.find((j) => j.id === b.jobId);
+      const jobA = findJobById(a.jobId) ?? MOCK_JOBS.find((j) => j.id === a.jobId);
+      const jobB = findJobById(b.jobId) ?? MOCK_JOBS.find((j) => j.id === b.jobId);
       return (jobA?.title ?? "").localeCompare(jobB?.title ?? "");
     }
     return 0;
   });
 
-  /* ── Entrepreneur: only applicants from private jobs ── */
-  const rawApplicants = isInfluencer
+  /* ── Entrepreneur: invites they sent ── */
+  const sentOffers = isInfluencer
     ? []
-    : (MOCK_JOB_APPLICANTS[user.id] ?? MOCK_JOB_APPLICANTS["2"] ?? []).filter((a) => !a.isOpenJob);
-  const sortedApplicants = [...rawApplicants].sort((a, b) => {
-    if (sortKey === "dateAdded") {
-      const n = notifFirst(a.hasUpdate, a.id, b.hasUpdate, b.id);
-      if (n !== 0) return n;
-      return a.appliedDaysAgo - b.appliedDaysAgo;
-    }
-    if (sortKey === "updatedDate") return a.updatedDaysAgo - b.updatedDaysAgo;
-    if (sortKey === "name")        return a.influencerName.localeCompare(b.influencerName);
-    return 0;
-  });
-
-  const isEmpty = isInfluencer ? sortedOffers.length === 0 : sortedApplicants.length === 0;
+    : state.invites
+        .filter((inv) => inv.entrepreneurId === user.id)
+        .map((inv) => ({
+          id: inv.id,
+          jobId: inv.jobId,
+          fromCompany: inv.influencerName,
+          sentDaysAgo: 0,
+          updatedDaysAgo: 0,
+          isPrivate: inv.isPrivate,
+          status: inv.status,
+          hasUpdate: inv.status === "pending",
+        }));
+  const isEmpty = isInfluencer ? sortedOffers.length === 0 : sentOffers.length === 0;
 
   // Suppress unused-import warning (getDirectBadgeCount is used in the header)
   void getDirectBadgeCount;
@@ -296,8 +251,8 @@ export default function DirectListContent() {
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {sortedApplicants.map((applicant) => (
-                <ApplicantCard key={applicant.id} applicant={applicant} seen={seenIds.has(applicant.id)} />
+              {sentOffers.map((offer) => (
+                <DirectOfferCard key={offer.id} offer={offer} seen={seenIds.has(offer.id)} />
               ))}
             </div>
           )}

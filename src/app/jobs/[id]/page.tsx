@@ -1,6 +1,4 @@
-import { notFound } from "next/navigation";
-import JobDetailContent from "@/components/job-detail-content";
-import { getJobById } from "@/lib/mock-jobs";
+import JobDetailGate from "@/components/job-detail-gate";
 
 export default async function JobDetailPage({
   params,
@@ -8,8 +6,5 @@ export default async function JobDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const job = getJobById(id);
-  if (!job) notFound();
-
-  return <JobDetailContent job={job} />;
+  return <JobDetailGate jobId={id} />;
 }

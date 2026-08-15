@@ -1,5 +1,11 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Kanit } from "next/font/google";
+import {
+  Geist,
+  Geist_Mono,
+  Instrument_Serif,
+  Kanit,
+  Noto_Serif_Thai,
+} from "next/font/google";
 import Providers from "@/components/providers";
 import "./globals.css";
 
@@ -11,6 +17,21 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+const instrumentSerif = Instrument_Serif({
+  variable: "--font-display",
+  subsets: ["latin"],
+  weight: "400",
+  style: ["normal", "italic"],
+  display: "swap",
+});
+
+const notoSerifThai = Noto_Serif_Thai({
+  variable: "--font-display-thai",
+  subsets: ["thai", "latin"],
+  weight: ["400", "500", "600"],
+  display: "swap",
 });
 
 const kanit = Kanit({
@@ -34,7 +55,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} ${kanit.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} ${notoSerifThai.variable} ${kanit.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <Providers>{children}</Providers>

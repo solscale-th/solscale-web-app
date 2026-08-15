@@ -9,13 +9,13 @@ import { useAuth } from "@/hooks/use-auth";
 import { getSeenIds, markSeen, SEEN_CHANGE_EVENT } from "@/lib/seen-applications";
 import {
   MOCK_INFLUENCER_APPLICATIONS,
-  MOCK_ENTREPRENEUR_POSTINGS,
   formatApplied,
   type ApplicationStatus,
-  type JobPostingStatus,
   type InfluencerApplication,
-  type EntrepreneurPosting,
 } from "@/lib/mock-applications";
+import { MOCK_JOB_APPLICANTS } from "@/lib/mock-direct";
+import { useFlowchart } from "@/hooks/use-flowchart";
+import { findJobById } from "@/lib/flowchart/jobs";
 import {
   MOCK_JOBS,
   formatBudgetRange,
@@ -32,12 +32,6 @@ const APPLICATION_STATUS_STYLES: Record<ApplicationStatus, string> = {
   pending:  "bg-amber-100 text-amber-700",
   accepted: "bg-green-100 text-green-700",
   rejected: "bg-red-100   text-red-600",
-};
-
-const POSTING_STATUS_STYLES: Record<JobPostingStatus, string> = {
-  active: "bg-green-100 text-green-700",
-  closed: "bg-gray-100  text-gray-500",
-  draft:  "bg-blue-100  text-blue-600",
 };
 
 function StatusPill({ label, className }: { label: string; className: string }) {
@@ -114,52 +108,52 @@ function InfluencerApplicationCard({
 
 // ─── Entrepreneur card ────────────────────────────────────────────────────────
 
-function EntrepreneurPostingCard({
-  posting,
-  job,
-  statusLabel,
+function EntrepreneurApplicantCard({
+  applicantId,
+  jobId,
+  name,
+  handle,
+  status,
   seen,
 }: {
-  posting: EntrepreneurPosting;
-  job: Job;
-  statusLabel: string;
+  applicantId: string;
+  jobId: string;
+  name: string;
+  handle: string;
+  status: ApplicationStatus;
   seen: boolean;
 }) {
   const { t } = useLanguage();
-  const showDot = posting.hasUpdate && !seen;
+  const job = findJobById(jobId) ?? MOCK_JOBS.find((item) => item.id === jobId);
+  if (!job) return null;
+
+  const statusLabel =
+    status === "pending"  ? t("applications.statusPending")  :
+    status === "accepted" ? t("applications.statusAccepted") :
+                            t("applications.statusRejected");
 
   return (
-    <div className="relative flex flex-col rounded-2xl border border-[#f0f0f0] bg-white shadow-[0_2px_10px_rgba(0,0,0,0.07)] transition-shadow hover:shadow-[0_4px_18px_rgba(0,0,0,0.12)]">
-      {showDot && <UpdateDot />}
-
-      {/* Top banner */}
+    <div className="relative flex flex-col rounded-2xl border border-[#f0f0f0] bg-white shadow-[0_2px_10px_rgba(0,0,0,0.07)]">
+      {!seen && status === "pending" && <UpdateDot />}
       <div className={`relative h-28 overflow-hidden rounded-t-2xl ${job.thumbnailBg}`}>
         <span className="absolute right-2.5 top-2.5">
-          <StatusPill label={statusLabel} className={POSTING_STATUS_STYLES[posting.status]} />
+          <StatusPill label={statusLabel} className={APPLICATION_STATUS_STYLES[status]} />
         </span>
       </div>
-
-      {/* Content */}
       <div className="flex flex-1 flex-col gap-2 p-3.5">
-        <h3 className="line-clamp-2 text-[14px] font-bold leading-snug text-[#111]">{job.title}</h3>
-        <p className="text-[12px] text-[#888]">📍 {job.location} · {job.duration}</p>
-
-        <p className="text-[11px] text-[#999]">
-          {t("applications.postedLabel")}: {formatApplied(posting.postedDaysAgo)}
-          &nbsp;·&nbsp;
-          <strong className="text-[#555]">{posting.applicants}</strong> {t("applications.applicantsLabel")}
-        </p>
+        <h3 className="text-[14px] font-bold text-[#111]">{name}</h3>
+        <p className="text-[12px] text-[#888]">{handle}</p>
+        <p className="line-clamp-1 text-[11px] text-[#999]">{job.title}</p>
         <p className="text-[12px] font-semibold text-[#333]">
           {formatBudgetRange(job.budgetMin, job.budgetMax)}
         </p>
-
         <div className="mt-auto pt-1">
           <Link
-            href={`/jobs/${job.id}`}
-            onClick={() => { if (posting.hasUpdate) markSeen(posting.id); }}
-            className="block w-full rounded-xl bg-[#9d003b] px-3.5 py-2 text-center text-[12px] font-semibold text-white transition-colors hover:bg-[#850030]"
+            href={`/applications/${applicantId}`}
+            onClick={() => markSeen(applicantId)}
+            className="block w-full rounded-xl bg-[#9d003b] px-3.5 py-2 text-center text-[12px] font-semibold text-white hover:bg-[#850030]"
           >
-            {t("applications.viewJob")}
+            {t("applications.review")}
           </Link>
         </div>
       </div>
@@ -220,6 +214,7 @@ function SortDropdown({
 export default function ApplicationListContent() {
   const { t } = useLanguage();
   const { user } = useAuth();
+  const { state } = useFlowchart();
   const [sortKey, setSortKey] = useState<SortKey>("dateAdded");
   const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
 
@@ -254,7 +249,25 @@ export default function ApplicationListContent() {
   };
 
   /* ── Sorted influencer list ── */
-  const rawApps = isInfluencer ? (MOCK_INFLUENCER_APPLICATIONS[user.id] ?? MOCK_INFLUENCER_APPLICATIONS["1"] ?? []) : [];
+  const liveApps: InfluencerApplication[] = isInfluencer
+    ? state.applications
+        .filter((app) => app.influencerId === user.id)
+        .map((app) => ({
+          id: app.id,
+          jobId: app.jobId,
+          appliedDaysAgo: 0,
+          updatedDaysAgo: 0,
+          status: app.status,
+          hasUpdate: app.status !== "pending",
+        }))
+    : [];
+  const seedApps = isInfluencer
+    ? (MOCK_INFLUENCER_APPLICATIONS[user.id] ?? MOCK_INFLUENCER_APPLICATIONS["1"] ?? [])
+    : [];
+  const rawApps = [
+    ...liveApps,
+    ...seedApps.filter((app) => !liveApps.some((live) => live.id === app.id || live.jobId === app.jobId)),
+  ];
   const sortedApps = [...rawApps].sort((a, b) => {
     // Notification items always come first on the default sort
     if (sortKey === "dateAdded") {
@@ -269,22 +282,30 @@ export default function ApplicationListContent() {
     return 0;
   });
 
-  /* ── Sorted entrepreneur list ── */
-  const rawPostings = isInfluencer ? [] : (MOCK_ENTREPRENEUR_POSTINGS[user.id] ?? MOCK_ENTREPRENEUR_POSTINGS["2"] ?? []);
-  const sortedPostings = [...rawPostings].sort((a, b) => {
-    if (sortKey === "dateAdded") {
-      const n = notifFirst(a.hasUpdate, a.id, b.hasUpdate, b.id);
-      if (n !== 0) return n;
-      return a.postedDaysAgo - b.postedDaysAgo;
-    }
-    const jobA = MOCK_JOBS.find((j) => j.id === a.jobId);
-    const jobB = MOCK_JOBS.find((j) => j.id === b.jobId);
-    if (sortKey === "name")        return (jobA?.title ?? "").localeCompare(jobB?.title ?? "");
-    if (sortKey === "updatedDate") return a.updatedDaysAgo - b.updatedDaysAgo;
-    return 0;
-  });
-
-  const isEmpty = isInfluencer ? sortedApps.length === 0 : sortedPostings.length === 0;
+  /* ── Sorted entrepreneur list: incoming applications ── */
+  const liveIncoming = isInfluencer
+    ? []
+    : state.applications.map((app) => ({
+        id: app.id,
+        jobId: app.jobId,
+        name: app.influencerName,
+        handle: app.influencerHandle,
+        status: app.status,
+      }));
+  const seedIncoming = isInfluencer
+    ? []
+    : (MOCK_JOB_APPLICANTS[user.id] ?? MOCK_JOB_APPLICANTS["2"] ?? []).map((app) => ({
+        id: app.id,
+        jobId: app.jobId,
+        name: app.influencerName,
+        handle: app.influencerHandle,
+        status: app.status as ApplicationStatus,
+      }));
+  const incoming = [
+    ...liveIncoming,
+    ...seedIncoming.filter((app) => !liveIncoming.some((live) => live.id === app.id)),
+  ];
+  const isEmpty = isInfluencer ? sortedApps.length === 0 : incoming.length === 0;
 
   return (
     <div className="flex min-h-screen flex-col bg-white">
@@ -313,7 +334,7 @@ export default function ApplicationListContent() {
           ) : isInfluencer ? (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {sortedApps.map((app) => {
-                const job = MOCK_JOBS.find((j) => j.id === app.jobId);
+                const job = findJobById(app.jobId) ?? MOCK_JOBS.find((j) => j.id === app.jobId);
                 if (!job) return null;
                 const statusLabel =
                   app.status === "pending"  ? t("applications.statusPending")  :
@@ -326,17 +347,17 @@ export default function ApplicationListContent() {
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {sortedPostings.map((posting) => {
-                const job = MOCK_JOBS.find((j) => j.id === posting.jobId);
-                if (!job) return null;
-                const statusLabel =
-                  posting.status === "active" ? t("applications.statusActive") :
-                  posting.status === "closed" ? t("applications.statusClosed") :
-                                                t("applications.statusDraft");
-                return (
-                  <EntrepreneurPostingCard key={posting.id} posting={posting} job={job} statusLabel={statusLabel} seen={seenIds.has(posting.id)} />
-                );
-              })}
+              {incoming.map((app) => (
+                <EntrepreneurApplicantCard
+                  key={app.id}
+                  applicantId={app.id}
+                  jobId={app.jobId}
+                  name={app.name}
+                  handle={app.handle}
+                  status={app.status}
+                  seen={seenIds.has(app.id)}
+                />
+              ))}
             </div>
           )}
 

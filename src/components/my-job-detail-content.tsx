@@ -16,6 +16,8 @@ import {
 } from "@/lib/mock-my-jobs";
 import { MOCK_JOBS, formatBudgetRange } from "@/lib/mock-jobs";
 import { markMyJobSeen } from "@/lib/seen-my-jobs";
+import { useFlowchart } from "@/hooks/use-flowchart";
+import { findJobById } from "@/lib/flowchart/jobs";
 
 // ─── Local mutable state (simulates API) ─────────────────────────────────────
 // In a real app this would come from a server. Here we keep a runtime copy.
@@ -311,10 +313,10 @@ export default function MyJobDetailContent({ engagementId }: { engagementId: str
   const { t } = useLanguage();
   const { user } = useAuth();
   const router = useRouter();
+  const { state, dispatch } = useFlowchart();
 
-  // Local mutable copy of the engagement. Lazy-initialized from the runtime
-  // store on mount (the route remounts per engagementId, see `key` in
-  // src/app/my-jobs/[id]/page.tsx) so this doesn't need an effect + setState.
+  const live = state.engagements.find((item) => item.id === engagementId);
+
   const [engagement, setEngagement] = useState<JobEngagement | null>(() => {
     const eng = getOrInit(engagementId);
     return eng ? { ...eng, messages: [...eng.messages] } : null;
@@ -324,13 +326,40 @@ export default function MyJobDetailContent({ engagementId }: { engagementId: str
     markMyJobSeen(engagementId);
   }, [engagementId]);
 
-  if (!user || !engagement) return null;
+  const display: JobEngagement | null = live
+    ? {
+        id: live.id,
+        jobId: live.jobId,
+        influencerId: live.influencerId,
+        influencerName: live.influencerName,
+        influencerHandle: live.influencerHandle,
+        influencerAvatarBg: live.influencerAvatarBg,
+        acceptedDaysAgo: 0,
+        workStatus: live.workStatus,
+        submissionNote: live.submissionNote,
+        reviewNote: live.reviewNote,
+        messages: engagement?.messages ?? [],
+        hasUpdate: false,
+      }
+    : engagement;
+
+  if (!user || !display) return null;
 
   const isInfluencer = user.role === "influencer";
-  const job = MOCK_JOBS.find((j) => j.id === engagement.jobId);
+  const job = findJobById(display.jobId) ?? MOCK_JOBS.find((j) => j.id === display.jobId);
   if (!job) return null;
 
   function handleWorkUpdate(next: Partial<JobEngagement>) {
+    if (live) {
+      if (next.workStatus === "submitted" && next.submissionNote) {
+        dispatch({ type: "SUBMIT_WORK", engagementId, note: next.submissionNote });
+      } else if (next.workStatus === "revision_requested" && next.reviewNote) {
+        dispatch({ type: "REQUEST_REVISION", engagementId, note: next.reviewNote });
+      } else if (next.workStatus === "approved") {
+        dispatch({ type: "APPROVE_WORK", engagementId });
+      }
+      return;
+    }
     setEngagement((prev) => {
       if (!prev) return prev;
       const updated = { ...prev, ...next };
@@ -347,14 +376,15 @@ export default function MyJobDetailContent({ engagementId }: { engagementId: str
       sentDaysAgo: 0,
     };
     setEngagement((prev) => {
-      if (!prev) return prev;
-      const updated = { ...prev, messages: [...prev.messages, newMsg] };
+      const base = prev ?? display;
+      if (!base) return prev;
+      const updated: JobEngagement = { ...base, messages: [...base.messages, newMsg] };
       engagementRuntime.set(engagementId, updated);
       return updated;
     });
   }
 
-  const initials = engagement.influencerName
+  const initials = display.influencerName
     .split(" ")
     .map((w) => w[0])
     .slice(0, 2)
@@ -389,7 +419,7 @@ export default function MyJobDetailContent({ engagementId }: { engagementId: str
                   <h1 className="text-[16px] font-bold text-[#111]">{job.title}</h1>
                   <p className="mt-0.5 text-[13px] text-[#888]">{job.company}</p>
                 </div>
-                <StatusChip workStatus={engagement.workStatus} />
+                <StatusChip workStatus={display.workStatus} />
               </div>
 
               <div className="mt-3 flex flex-wrap gap-3 text-[12px] text-[#777]">
@@ -397,21 +427,21 @@ export default function MyJobDetailContent({ engagementId }: { engagementId: str
                 <span>·</span>
                 <span>{job.platform}</span>
                 <span>·</span>
-                <span>{t("myJob.acceptedLabel")} {engagement.acceptedDaysAgo === 0 ? "today" : `${engagement.acceptedDaysAgo}d ago`}</span>
+                <span>{t("myJob.acceptedLabel")} {display.acceptedDaysAgo === 0 ? "today" : `${display.acceptedDaysAgo}d ago`}</span>
               </div>
 
               {/* Influencer info (entrepreneur sees who is working on it) */}
               {!isInfluencer && (
                 <div className="mt-4 flex items-center gap-3 rounded-xl bg-[#fafafa] px-3.5 py-2.5">
-                  <div className={`grid h-9 w-9 shrink-0 place-items-center rounded-full text-sm font-black text-[#9d003b] ${engagement.influencerAvatarBg}`}>
+                  <div className={`grid h-9 w-9 shrink-0 place-items-center rounded-full text-sm font-black text-[#9d003b] ${display.influencerAvatarBg}`}>
                     {initials}
                   </div>
                   <div>
-                    <p className="text-[13px] font-semibold text-[#111]">{engagement.influencerName}</p>
-                    <p className="text-[12px] text-[#888]">{engagement.influencerHandle}</p>
+                    <p className="text-[13px] font-semibold text-[#111]">{display.influencerName}</p>
+                    <p className="text-[12px] text-[#888]">{display.influencerHandle}</p>
                   </div>
                   <Link
-                    href={`/influencers/${engagement.influencerId}`}
+                    href={`/influencers/${display.influencerId}`}
                     className="ml-auto rounded-lg border border-[#eee] px-3 py-1 text-[12px] font-medium text-[#555] transition-colors hover:border-[#ccc]"
                   >
                     {t("myJob.detailInfluencer")}
@@ -429,16 +459,59 @@ export default function MyJobDetailContent({ engagementId }: { engagementId: str
             </div>
           </div>
 
-          {/* Work submission section */}
-          <WorkSection
-            engagement={engagement}
-            isInfluencer={isInfluencer}
-            onUpdate={handleWorkUpdate}
-          />
+          {live?.paymentStatus === "unfunded" && (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
+              <p className="text-[14px] font-semibold text-amber-800">
+                {t("myJob.awaitingDeposit")}
+              </p>
+              {!isInfluencer && (
+                <Link
+                  href={`/wallet/deposit?engagementId=${live.id}`}
+                  className="mt-3 inline-flex h-11 items-center rounded-xl bg-[#9d003b] px-5 text-[13px] font-semibold text-white"
+                >
+                  {t("myJob.fundJob")}
+                </Link>
+              )}
+            </div>
+          )}
 
-          {/* Chat section */}
+          {live?.paymentStatus !== "unfunded" && (
+            <WorkSection
+              engagement={display}
+              isInfluencer={isInfluencer}
+              onUpdate={handleWorkUpdate}
+            />
+          )}
+
+          {!isInfluencer && live?.workStatus === "approved" && live.paymentStatus === "escrowed" && (
+            <Link
+              href={`/my-jobs/${live.id}/pay`}
+              className="flex h-11 items-center justify-center rounded-xl bg-[#d7ff2f] text-[14px] font-semibold text-[#2a1018]"
+            >
+              {t("myJob.releasePay")}
+            </Link>
+          )}
+
+          {!isInfluencer && live?.paymentStatus === "escrowed" && live.workStatus === "submitted" && (
+            <Link
+              href={`/my-jobs/${live.id}/dispute`}
+              className="flex h-11 items-center justify-center rounded-xl border border-[#dcd6cf] bg-white text-[14px] font-medium text-[#555]"
+            >
+              {t("myJob.raiseDispute")}
+            </Link>
+          )}
+
+          {live?.paymentStatus === "released" && (
+            <Link
+              href={`/my-jobs/${live.id}/rate`}
+              className="flex h-11 items-center justify-center rounded-xl bg-[#9d003b] text-[14px] font-semibold text-white"
+            >
+              {t("myJob.leaveRating")}
+            </Link>
+          )}
+
           <ChatSection
-            messages={engagement.messages}
+            messages={display.messages}
             isInfluencer={isInfluencer}
             onSend={handleSendMessage}
           />

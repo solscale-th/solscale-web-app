@@ -6,8 +6,10 @@ import MainHeader from "@/components/main-header";
 import SiteFooter from "@/components/site-footer";
 import { useAuth } from "@/hooks/use-auth";
 import { useLanguage } from "@/i18n/language-provider";
-import { createJob } from "@/lib/jobs";
 import { PLATFORM_COLORS, type Platform } from "@/lib/mock-jobs";
+import { useFlowchart } from "@/hooks/use-flowchart";
+import { buildPostedJob } from "@/lib/flowchart/builders";
+import type { JobVisibility } from "@/lib/flowchart/types";
 
 const PLATFORMS = Object.keys(PLATFORM_COLORS) as Platform[];
 
@@ -49,6 +51,7 @@ export default function PostJobContent() {
   const router = useRouter();
   const { t } = useLanguage();
   const { user } = useAuth();
+  const { dispatch } = useFlowchart();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -61,6 +64,7 @@ export default function PostJobContent() {
   const [duration, setDuration] = useState("");
   const [budgetMin, setBudgetMin] = useState("");
   const [budgetMax, setBudgetMax] = useState("");
+  const [visibility, setVisibility] = useState<JobVisibility>("public");
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -86,21 +90,28 @@ export default function PostJobContent() {
     setLoading(true);
 
     try {
-      await createJob({
+      // UI-ONLY: persist locally so the chart can be walked without Job API.
+      // API connecting: restore createJob() and drop local dispatch when the
+      // marketplace Job mutation is live. RISK: this listing never reaches
+      // other users or devices.
+      const posted = buildPostedJob({
+        entrepreneurId: user!.id,
+        companyName: user!.name,
         title: title.trim(),
         description: description.trim(),
-        brief: brief.trim() || undefined,
+        brief: brief.trim(),
         platform,
         deliverables: splitLines(deliverables),
         requirements: splitLines(requirements),
         tags: splitTags(tags),
-        location: location.trim() || undefined,
-        duration: duration.trim() || undefined,
-        budgetMin: budgetMin.trim() ? Number(budgetMin) : undefined,
-        budgetMax: budgetMax.trim() ? Number(budgetMax) : undefined,
+        location: location.trim(),
+        duration: duration.trim(),
+        budgetMin: budgetMin.trim() ? Number(budgetMin) : 0,
+        budgetMax: budgetMax.trim() ? Number(budgetMax) : 0,
+        visibility,
       });
-
-      router.push("/my-jobs");
+      dispatch({ type: "PUBLISH_JOB", job: posted });
+      router.push(visibility === "private" ? "/direct" : "/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to post job");
       setLoading(false);
@@ -228,6 +239,34 @@ export default function PostJobContent() {
               />
             </Field>
           </div>
+
+          <fieldset>
+            <legend className="mb-1.5 block text-[14px] font-medium text-[#333]">
+              {t("postJob.visibilityLabel")}
+            </legend>
+            <div className="space-y-2">
+              {(["public", "private"] as const).map((value) => (
+                <label
+                  key={value}
+                  className="flex cursor-pointer items-start gap-3 rounded-xl border border-[#eee] bg-white px-3.5 py-3 text-[13px]"
+                >
+                  <input
+                    type="radio"
+                    name="visibility"
+                    value={value}
+                    checked={visibility === value}
+                    onChange={() => setVisibility(value)}
+                    className="mt-0.5"
+                  />
+                  <span>
+                    {value === "public"
+                      ? t("postJob.visibilityPublic")
+                      : t("postJob.visibilityPrivate")}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
 
           {error && <p className="text-[13px] text-red-600">{error}</p>}
 

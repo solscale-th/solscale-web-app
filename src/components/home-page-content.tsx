@@ -1,9 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { motion, useReducedMotion } from "motion/react";
+import {
+  motion,
+  useMotionValue,
+  useReducedMotion,
+  useSpring,
+  useTransform,
+} from "motion/react";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { HeroScene } from "@/components/hero-scene";
 import MainHeader from "@/components/main-header";
 import SiteFooter from "@/components/site-footer";
 import { useAuth } from "@/hooks/use-auth";
@@ -20,6 +27,8 @@ import {
   PLATFORM_COLORS,
   type Platform,
 } from "@/lib/mock-jobs";
+import { useFlowchart } from "@/hooks/use-flowchart";
+import { postedJobToJob } from "@/lib/flowchart/jobs";
 import {
   FILTER_COUNTRIES,
   FILTER_PLATFORMS,
@@ -108,8 +117,8 @@ function FilterDropdown({
         onClick={() => setOpenFilter(open ? null : id)}
         className={`flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-[13px] font-medium transition-colors ${
           open || hasValue
-            ? "border-white/35 bg-white/25 text-white"
-            : "border-white/15 bg-white/10 text-white/85 hover:bg-white/18 hover:text-white"
+            ? "border-[#9d003b]/25 bg-[#9d003b]/8 text-[#9d003b]"
+            : "border-[#d8d2e0] bg-white/80 text-[#4a4450] hover:border-[#c4bdcc] hover:text-[#1a1218]"
         }`}
       >
         <span className="max-w-[9rem] truncate sm:max-w-[11rem]">{label}</span>
@@ -136,7 +145,7 @@ function FilterDropdown({
             data-filter-dropdown=""
             role="listbox"
             style={{ top: menuPos.top, left: menuPos.left }}
-            className="fixed z-[80] max-h-64 w-64 overflow-y-auto rounded-2xl border border-white/20 bg-[#2a1020]/95 py-1.5 shadow-[0_16px_40px_rgba(0,0,0,0.45)] backdrop-blur-xl"
+            className="fixed z-[80] max-h-64 w-64 overflow-y-auto rounded-2xl border border-[#e5e0ea] bg-white/95 py-1.5 shadow-[0_16px_40px_rgba(60,40,90,0.12)] backdrop-blur-xl"
           >
             {children}
           </div>,
@@ -161,8 +170,8 @@ function FilterOption({
       role="option"
       aria-selected={active}
       onClick={onClick}
-      className={`flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left text-[13px] transition-colors hover:bg-white/10 ${
-        active ? "bg-white/12 font-semibold text-[#d7ff2f]" : "text-white/90"
+      className={`flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left text-[13px] transition-colors hover:bg-[#f5f2f8] ${
+        active ? "bg-[#9d003b]/8 font-semibold text-[#9d003b]" : "text-[#3a3530]"
       }`}
     >
       <span className="min-w-0 flex-1 truncate">{children}</span>
@@ -191,13 +200,13 @@ function ActiveFilterChip({
   removeAria: string;
 }) {
   return (
-    <span className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[12px] font-medium text-white/90">
+    <span className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-[#e0dae8] bg-[#f7f4fa] px-2.5 py-1 text-[12px] font-medium text-[#4a4450]">
       <span className="truncate">{label}</span>
       <button
         type="button"
         onClick={onRemove}
         aria-label={removeAria}
-        className="grid h-4 w-4 shrink-0 place-items-center rounded-full text-white/60 transition-colors hover:bg-white/15 hover:text-white"
+        className="grid h-4 w-4 shrink-0 place-items-center rounded-full text-[#8a8490] transition-colors hover:bg-black/5 hover:text-[#1a1218]"
       >
         <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
           <path d="M1.5 1.5L6.5 6.5M6.5 1.5L1.5 6.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
@@ -209,11 +218,21 @@ function ActiveFilterChip({
 
 const SCROLL_EASE = [0.22, 1, 0.36, 1] as const;
 const SCROLL_VIEWPORT = { once: true, amount: 0.2, margin: "0px 0px -56px 0px" } as const;
+const HERO_TILT_SPRING = { stiffness: 120, damping: 26, mass: 0.6 } as const;
 
 export default function HomePageContent() {
   const { t, dictionary } = useLanguage();
   const { user } = useAuth();
   const prefersReducedMotion = useReducedMotion();
+  const bgRotateX = useMotionValue(0);
+  const bgRotateY = useMotionValue(0);
+  const bgPointerX = useMotionValue(0);
+  const scrollYMv = useMotionValue(0);
+  const bgTiltX = useSpring(bgRotateX, HERO_TILT_SPRING);
+  const bgTiltY = useSpring(bgRotateY, HERO_TILT_SPRING);
+  const bgTiltXlate = useSpring(bgPointerX, HERO_TILT_SPRING);
+  const bgParallaxY = useTransform(scrollYMv, (value) => value * 0.08);
+  const { state: flowchart } = useFlowchart();
   const isInfluencer = user?.role === "influencer";
   const isEntrepreneur = user?.role === "entrepreneur";
   const showFollowerRange = !isInfluencer;
@@ -309,14 +328,14 @@ export default function HomePageContent() {
     return () => document.removeEventListener("mousedown", onPointerDown);
   }, []);
 
-  // Scroll offset used to drift the hero background shapes in different directions
-  const [scrollY, setScrollY] = useState(0);
   useEffect(() => {
+    const update = () => scrollYMv.set(window.scrollY);
+    update();
     let raf = 0;
     const onScroll = () => {
       if (raf) return;
       raf = requestAnimationFrame(() => {
-        setScrollY(window.scrollY);
+        update();
         raf = 0;
       });
     };
@@ -325,7 +344,7 @@ export default function HomePageContent() {
       window.removeEventListener("scroll", onScroll);
       if (raf) cancelAnimationFrame(raf);
     };
-  }, []);
+  }, [scrollYMv]);
 
   const influencerFetchParams = {
     search: search || undefined,
@@ -424,8 +443,15 @@ export default function HomePageContent() {
   const categoryLabel = (key: InfluencerCategoryKey) =>
     t(`categories.${key}`);
 
+  const jobCatalog = useMemo(() => {
+    const posted = flowchart.postedJobs
+      .filter((job) => job.visibility === "public")
+      .map(postedJobToJob);
+    return [...posted, ...MOCK_JOBS];
+  }, [flowchart.postedJobs]);
+
   const filteredJobs = useMemo(() => {
-    return MOCK_JOBS.filter((job) => {
+    return jobCatalog.filter((job) => {
       if (!matchesCountry(job.location, selectedCountry)) return false;
       if (!matchesPlatform(job.platform, undefined, selectedPlatform))
         return false;
@@ -442,7 +468,7 @@ export default function HomePageContent() {
       }
       return true;
     });
-  }, [search, selectedCountry, selectedPlatform, activePriceRange]);
+  }, [jobCatalog, search, selectedCountry, selectedPlatform, activePriceRange]);
 
   const filteredInfluencers = useMemo(() => {
     if (!selectedCountry && !activeFollowerRange) {
@@ -475,25 +501,25 @@ export default function HomePageContent() {
   const platformOptions = useMemo(() => {
     if (isInfluencer) {
       const fromJobs = Array.from(
-        new Set(MOCK_JOBS.map((job) => job.platform))
+        new Set(jobCatalog.map((job) => job.platform))
       );
       return fromJobs.length > 0 ? fromJobs : FILTER_PLATFORMS;
     }
     return discoveredPlatforms && discoveredPlatforms.length > 0
       ? discoveredPlatforms
       : FILTER_PLATFORMS;
-  }, [discoveredPlatforms, isInfluencer]);
+  }, [discoveredPlatforms, isInfluencer, jobCatalog]);
 
   const countryOptions = useMemo(() => {
     const locations = isInfluencer
-      ? MOCK_JOBS.map((job) => job.location)
+      ? jobCatalog.map((job) => job.location)
       : MOCK_INFLUENCERS.map((influencer) => influencer.location);
 
     const available = FILTER_COUNTRIES.filter((country) =>
       locations.some((location) => matchesCountry(location, country.id))
     );
     return available.length > 0 ? available : [...FILTER_COUNTRIES];
-  }, [isInfluencer]);
+  }, [isInfluencer, jobCatalog]);
 
   const followerRangeOptions = useMemo(() => {
     if (!showFollowerRange) return [];
@@ -508,12 +534,12 @@ export default function HomePageContent() {
   const priceRangeOptions = useMemo(() => {
     if (!showPriceRange) return [];
     const available = PRICE_RANGES.filter((range) =>
-      MOCK_JOBS.some((job) =>
+      jobCatalog.some((job) =>
         matchesPriceRange(job.budgetMin, job.budgetMax, range.id)
       )
     );
     return available.length > 0 ? available : [...PRICE_RANGES];
-  }, [showPriceRange]);
+  }, [showPriceRange, jobCatalog]);
 
   const hasActiveFilters =
     selectedCategories.length > 0 ||
@@ -589,58 +615,57 @@ export default function HomePageContent() {
     !!activeFollowerRange ||
     !!activePriceRange;
 
+  function handleHeroPointerMove(event: React.PointerEvent<HTMLElement>) {
+    if (prefersReducedMotion || event.pointerType !== "mouse") return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const px = (event.clientX - rect.left) / rect.width - 0.5;
+    const py = (event.clientY - rect.top) / rect.height - 0.5;
+    bgRotateX.set(py * -9);
+    bgRotateY.set(px * 12);
+    bgPointerX.set(px * -24);
+  }
+
+  function handleHeroPointerLeave() {
+    bgRotateX.set(0);
+    bgRotateY.set(0);
+    bgPointerX.set(0);
+  }
+
   return (
     <div className="flex min-h-screen flex-col bg-white">
       <MainHeader />
 
       <div className="flex-1">
       {/* Hero */}
-      <section className="relative flex min-h-[88dvh] flex-col justify-center overflow-hidden bg-[#520024] pb-20 pt-14 text-white sm:min-h-screen sm:pb-28 sm:pt-20">
-        {/* Decorative layer */}
-        <div className="pointer-events-none absolute inset-0">
-          <div className="hero-atmosphere absolute inset-[-8%] bg-[radial-gradient(ellipse_at_50%_40%,rgba(157,0,59,0.55)_0%,transparent_55%),radial-gradient(ellipse_at_80%_85%,rgba(37,94,54,0.38)_0%,transparent_45%),radial-gradient(ellipse_at_15%_20%,rgba(215,255,47,0.1)_0%,transparent_40%),linear-gradient(180deg,#7a002f_0%,#520024_48%,#2a1018_100%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_45%,transparent_0%,rgba(0,0,0,0.35)_100%)]" />
+      <section
+        className="relative flex min-h-[88dvh] flex-col justify-center overflow-hidden bg-[#faf8f6] pb-20 pt-14 text-[#1a1218] sm:min-h-screen sm:pb-28 sm:pt-20"
+        onPointerMove={handleHeroPointerMove}
+        onPointerLeave={handleHeroPointerLeave}
+      >
+        <HeroScene
+          rotateX={bgTiltX}
+          rotateY={bgTiltY}
+          x={bgTiltXlate}
+          y={bgParallaxY}
+          reduced={!!prefersReducedMotion}
+        />
 
-          <div
-            className="absolute inset-0"
-            style={{ transform: `translate3d(${scrollY * -0.1}px, ${scrollY * 0.12}px, 0)` }}
+        <div className="relative z-10 mx-auto w-full max-w-5xl px-4 text-center sm:px-6">
+          <motion.div
+            className="hero-title-block mx-auto"
+            initial={prefersReducedMotion ? false : { opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.65, ease: SCROLL_EASE }}
           >
-            <div className="hero-glow hero-glow-a absolute left-[8%] top-[30%] h-64 w-64 sm:h-80 sm:w-80" />
-          </div>
-          <div
-            className="absolute inset-0"
-            style={{ transform: `translate3d(${scrollY * 0.1}px, ${scrollY * -0.1}px, 0)` }}
-          >
-            <div className="hero-glow hero-glow-b absolute right-[6%] top-[18%] h-72 w-72 sm:h-96 sm:w-96" />
-          </div>
-          <div
-            className="absolute inset-0"
-            style={{ transform: `translate3d(${scrollY * -0.08}px, ${scrollY * 0.1}px, 0)` }}
-          >
-            <div className="hero-shape hero-shape-a absolute -left-24 top-[22%] h-72 w-72 rounded-full border border-white/14 sm:h-96 sm:w-96" />
-          </div>
-          <div
-            className="absolute inset-0"
-            style={{ transform: `translate3d(${scrollY * 0.1}px, ${scrollY * -0.08}px, 0)` }}
-          >
-            <div className="hero-shape hero-shape-b absolute -right-28 top-[16%] h-80 w-80 rounded-full border border-white/14 sm:h-[26rem] sm:w-[26rem]" />
-          </div>
-          <div
-            className="absolute inset-0"
-            style={{ transform: `translate3d(${scrollY * 0.12}px, ${scrollY * 0.08}px, 0)` }}
-          >
-            <div className="hero-shape hero-shape-c absolute left-[42%] bottom-[16%] h-40 w-40 rotate-12 border border-white/10 sm:h-52 sm:w-52" />
-          </div>
-
-          <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-white/10 to-transparent" />
-        </div>
-
-        <div className="relative z-10 mx-auto w-full max-w-3xl px-4 text-center sm:max-w-4xl sm:px-6">
-          <h1 className="hero-rise mx-auto max-w-3xl text-[1.85rem] font-semibold leading-[1.08] tracking-[-0.04em] text-white sm:text-[2.85rem] md:text-[3.35rem]">
-            {t("hero.titleBefore")}{" "}
-            <span className="text-[#d7ff2f]">{t("hero.titleHighlight")}</span>
-          </h1>
-          <p className="hero-rise hero-rise-delay-1 mx-auto mt-4 max-w-lg text-[14px] leading-relaxed text-white/65 sm:mt-5 sm:text-[15px]">
+            <p className="hero-kicker">{t("hero.brand")}</p>
+            <h1 className="hero-title">
+              <span className="hero-title-line">
+                {t("hero.titleBefore")}{" "}
+                <span className="hero-title-highlight">{t("hero.titleHighlight")}</span>
+              </span>
+            </h1>
+          </motion.div>
+          <p className="hero-rise hero-rise-delay-1 mx-auto mt-5 max-w-md text-[14px] leading-relaxed text-pretty text-[#6a646c] sm:mt-6 sm:text-[15px]">
             {t("hero.titleAfter")}
           </p>
 
@@ -651,15 +676,15 @@ export default function HomePageContent() {
                 e.preventDefault();
                 setSearch(searchInput.trim());
               }}
-              className="rounded-[24px] border border-white/25 bg-white/12 p-3 shadow-[0_20px_50px_rgba(0,0,0,0.3)] backdrop-blur-2xl sm:rounded-[28px] sm:p-3.5"
+              className="rounded-[24px] border border-[#d8d2e0]/80 bg-white/70 p-3 shadow-[0_20px_50px_rgba(60,40,90,0.08)] backdrop-blur-2xl sm:rounded-[28px] sm:p-3.5"
             >
-              <div className="flex items-center gap-2 rounded-2xl bg-black/20 px-3">
+              <div className="flex items-center gap-2 rounded-2xl bg-[#f4f1f7] px-3">
                 <svg
                   width="16"
                   height="16"
                   viewBox="0 0 16 16"
                   fill="none"
-                  className="shrink-0 text-white/55"
+                  className="shrink-0 text-[#8a8490]"
                   aria-hidden
                 >
                   <circle cx="7" cy="7" r="4.5" stroke="currentColor" strokeWidth="1.5" />
@@ -675,7 +700,7 @@ export default function HomePageContent() {
                   onChange={(e) => setSearchInput(e.target.value)}
                   placeholder={t("hero.searchPlaceholder")}
                   aria-label={t("hero.searchAria")}
-                  className="h-12 min-w-0 flex-1 bg-transparent text-[15px] text-white outline-none placeholder:text-white/40"
+                  className="h-12 min-w-0 flex-1 bg-transparent text-[15px] text-[#1a1218] outline-none placeholder:text-[#9a94a0]"
                 />
                 {searchInput && (
                   <button
@@ -685,7 +710,7 @@ export default function HomePageContent() {
                       setSearch("");
                     }}
                     aria-label={t("hero.clearSearch")}
-                    className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-white/45 transition-colors hover:bg-white/10 hover:text-white"
+                    className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[#8a8490] transition-colors hover:bg-black/5 hover:text-[#1a1218]"
                   >
                     <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
                       <path
@@ -700,7 +725,7 @@ export default function HomePageContent() {
                 <button
                   type="submit"
                   aria-label={t("common.search")}
-                  className="hero-submit-pulse grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#d7ff2f] text-[#151515] transition-colors hover:bg-[#c8f020]"
+                  className="hero-submit-pulse grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#9d003b] text-white transition-colors hover:bg-[#850030]"
                 >
                   <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden>
                     <circle cx="7" cy="7" r="4.5" stroke="currentColor" strokeWidth="1.6" />
@@ -727,7 +752,7 @@ export default function HomePageContent() {
                     hasValue={selectedCategories.length > 0}
                   >
                     {availableCategories.length === 0 ? (
-                      <p className="px-4 py-3 text-[13px] text-white/50">
+                      <p className="px-4 py-3 text-[13px] text-[#9a94a0]">
                         {t("hero.allCategoriesSelected")}
                       </p>
                     ) : (
@@ -851,7 +876,7 @@ export default function HomePageContent() {
               </div>
 
               {hasSelectedFilters && (
-                <div className="mt-2.5 flex flex-wrap items-center gap-2 border-t border-white/10 pt-2.5">
+                <div className="mt-2.5 flex flex-wrap items-center gap-2 border-t border-[#e8e3ee] pt-2.5">
                   {selectedCategories.map((category) => (
                     <ActiveFilterChip
                       key={category}
@@ -901,7 +926,7 @@ export default function HomePageContent() {
                   <button
                     type="button"
                     onClick={clearAllFilters}
-                    className="ml-auto text-[12px] font-medium text-white/70 transition-colors hover:text-white"
+                    className="ml-auto text-[12px] font-medium text-[#7a7480] transition-colors hover:text-[#9d003b]"
                   >
                     {t("common.clearAll")}
                   </button>

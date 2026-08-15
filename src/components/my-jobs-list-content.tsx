@@ -14,6 +14,26 @@ import {
 } from "@/lib/mock-my-jobs";
 import { MOCK_JOBS } from "@/lib/mock-jobs";
 import { getSeenMyJobIds, markMyJobSeen, SEEN_MY_JOBS_EVENT } from "@/lib/seen-my-jobs";
+import { useFlowchart } from "@/hooks/use-flowchart";
+import { findJobById } from "@/lib/flowchart/jobs";
+import type { FlowEngagement } from "@/lib/flowchart/types";
+
+function flowToEngagement(eng: FlowEngagement): JobEngagement {
+  return {
+    id: eng.id,
+    jobId: eng.jobId,
+    influencerId: eng.influencerId,
+    influencerName: eng.influencerName,
+    influencerHandle: eng.influencerHandle,
+    influencerAvatarBg: eng.influencerAvatarBg,
+    acceptedDaysAgo: 0,
+    workStatus: eng.workStatus,
+    submissionNote: eng.submissionNote,
+    reviewNote: eng.reviewNote,
+    messages: [],
+    hasUpdate: eng.paymentStatus === "unfunded" || eng.workStatus === "submitted",
+  };
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -49,7 +69,7 @@ function EngagementCard({
 }) {
   const { t } = useLanguage();
   const router = useRouter();
-  const job = MOCK_JOBS.find((j) => j.id === engagement.jobId);
+  const job = findJobById(engagement.jobId) ?? MOCK_JOBS.find((j) => j.id === engagement.jobId);
   if (!job) return null;
 
   const showDot = engagement.hasUpdate && !seen;
@@ -64,7 +84,7 @@ function EngagementCard({
 
   function handleViewJob() {
     if (engagement.hasUpdate) markMyJobSeen(engagement.id);
-    router.push(`/jobs/${engagement.jobId}`);
+    router.push(`/my-jobs/${engagement.id}`);
   }
 
   return (
@@ -183,6 +203,7 @@ function SortDropdown({
 export default function MyJobsListContent() {
   const { t } = useLanguage();
   const { user } = useAuth();
+  const { state } = useFlowchart();
   const [sortKey, setSortKey] = useState<SortKey>("dateAdded");
   const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
 
@@ -213,9 +234,18 @@ export default function MyJobsListContent() {
     return 0;
   };
 
-  const rawList = isInfluencer
+  const liveList = state.engagements
+    .filter((eng) =>
+      isInfluencer ? eng.influencerId === user.id : eng.entrepreneurId === user.id
+    )
+    .map(flowToEngagement);
+  const seedList = isInfluencer
     ? (MOCK_MY_JOBS_INFLUENCER[user.id] ?? MOCK_MY_JOBS_INFLUENCER["1"] ?? [])
     : (MOCK_MY_JOBS_ENTREPRENEUR[user.id] ?? MOCK_MY_JOBS_ENTREPRENEUR["2"] ?? []);
+  const rawList = [
+    ...liveList,
+    ...seedList.filter((item) => !liveList.some((live) => live.id === item.id)),
+  ];
 
   const sortedList = [...rawList].sort((a, b) => {
     if (sortKey === "dateAdded") {

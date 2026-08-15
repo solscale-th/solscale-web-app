@@ -55,11 +55,11 @@ function SubmissionCard({ submission, seen }: { submission: Submission; seen: bo
 
         <div className="mt-auto pt-1">
           <Link
-            href={`/jobs/${job.id}`}
+            href={`/my-jobs`}
             onClick={() => { if (submission.hasUpdate) markSubmissionSeen(submission.id); }}
             className="block w-full rounded-xl bg-[#9d003b] px-3.5 py-2 text-center text-[12px] font-semibold text-white transition-colors hover:bg-[#850030]"
           >
-            {t("submission.viewJob")}
+            {t("myJob.viewDetails")}
           </Link>
         </div>
       </div>
@@ -107,7 +107,7 @@ function ReceivedSubmissionCard({ item, seen }: { item: ReceivedSubmission; seen
 
         <div className="mt-auto pt-1">
           <Link
-            href={`/influencers/${item.influencerId}`}
+            href={`/my-jobs`}
             onClick={() => { if (item.hasUpdate) markSubmissionSeen(item.id); }}
             className="block w-full rounded-xl bg-[#9d003b] px-3.5 py-2 text-center text-[12px] font-semibold text-white transition-colors hover:bg-[#850030]"
           >

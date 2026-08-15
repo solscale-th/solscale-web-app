@@ -393,6 +393,9 @@ export default function InfluencerDetailContent({ influencer }: Props) {
                       type="button"
                       whileHover={{ scale: 1.01, y: -1 }}
                       whileTap={{ scale: 0.99 }}
+                      onClick={() => {
+                        window.location.href = `/invites/new?influencerId=${encodeURIComponent(influencer.id)}&name=${encodeURIComponent(influencer.name)}`;
+                      }}
                       className="flex h-11 w-full items-center justify-center rounded-xl bg-[#9d003b] text-[14px] font-semibold text-white hover:bg-[#850030] transition-colors"
                     >
                       {t("influencerDetail.hireInfluencer")}

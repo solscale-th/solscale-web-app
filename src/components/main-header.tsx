@@ -90,6 +90,7 @@ export default function MainHeader() {
     { label: t("nav.direct"),      href: "/direct",       badge: directBadge      },
     { label: t("nav.myJob"),       href: "/my-jobs",      badge: myJobBadge       },
     { label: t("nav.submission"),  href: "/submission",   badge: submissionBadge  },
+    { label: t("nav.wallet"),      href: "/wallet",       badge: 0 },
   ];
 
   function handleLogout() {
@@ -186,15 +187,15 @@ export default function MainHeader() {
                     </Link>
 
                     <Link
-                      href="#"
+                      href="/wallet"
                       onClick={() => setUserMenuOpen(false)}
                       className="flex items-center gap-3 px-4 py-2.5 text-[13px] text-[#333] transition-colors hover:bg-[#fafafa]"
                     >
                       <svg width="15" height="15" viewBox="0 0 15 15" fill="none" className="text-[#888]">
-                        <circle cx="7.5" cy="7.5" r="2" stroke="currentColor" strokeWidth="1.4" />
-                        <path d="M7.5 1v1.5M7.5 12.5V14M14 7.5h-1.5M2.5 7.5H1M11.95 3.05l-1.06 1.06M4.11 10.89l-1.06 1.06M11.95 11.95l-1.06-1.06M4.11 4.11 3.05 3.05" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                        <rect x="2" y="4" width="11" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
+                        <path d="M2 7h11" stroke="currentColor" strokeWidth="1.4" />
                       </svg>
-                      {t("common.settings")}
+                      {t("common.wallet")}
                     </Link>
                   </div>
 
@@ -300,15 +301,15 @@ export default function MainHeader() {
                 </Link>
 
                 <Link
-                  href="#"
+                  href="/wallet"
                   onClick={() => setMobileMenuOpen(false)}
                   className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-white/10"
                 >
                   <svg width="15" height="15" viewBox="0 0 15 15" fill="none" className="opacity-70">
-                    <circle cx="7.5" cy="7.5" r="2" stroke="currentColor" strokeWidth="1.4" />
-                    <path d="M7.5 1v1.5M7.5 12.5V14M14 7.5h-1.5M2.5 7.5H1M11.95 3.05l-1.06 1.06M4.11 10.89l-1.06 1.06M11.95 11.95l-1.06-1.06M4.11 4.11 3.05 3.05" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                    <rect x="2" y="4" width="11" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
+                    <path d="M2 7h11" stroke="currentColor" strokeWidth="1.4" />
                   </svg>
-                  {t("common.settings")}
+                  {t("common.wallet")}
                 </Link>
 
                 <button
