@@ -27,8 +27,9 @@ import {
   PLATFORM_COLORS,
   type Platform,
 } from "@/lib/mock-jobs";
-import { useFlowchart } from "@/hooks/use-flowchart";
+import { loadFlowchartState } from "@/lib/flowchart/store";
 import { postedJobToJob } from "@/lib/flowchart/jobs";
+import type { FlowPostedJob } from "@/lib/flowchart/types";
 import {
   FILTER_COUNTRIES,
   FILTER_PLATFORMS,
@@ -232,7 +233,6 @@ export default function HomePageContent() {
   const bgTiltY = useSpring(bgRotateY, HERO_TILT_SPRING);
   const bgTiltXlate = useSpring(bgPointerX, HERO_TILT_SPRING);
   const bgParallaxY = useTransform(scrollYMv, (value) => value * 0.08);
-  const { state: flowchart } = useFlowchart();
   const isInfluencer = user?.role === "influencer";
   const isEntrepreneur = user?.role === "entrepreneur";
   const showFollowerRange = !isInfluencer;
@@ -297,6 +297,11 @@ export default function HomePageContent() {
 
   const INFLUENCERS_PER_PAGE = 8;
   const [visibleCount, setVisibleCount] = useState(INFLUENCERS_PER_PAGE);
+  const [postedJobs, setPostedJobs] = useState<FlowPostedJob[]>([]);
+
+  useEffect(() => {
+    setPostedJobs(loadFlowchartState().postedJobs);
+  }, []);
 
   // Role-gated filters stay in state but are ignored when not applicable
   const activeFollowerRange = showFollowerRange ? selectedFollowerRange : null;
@@ -444,11 +449,11 @@ export default function HomePageContent() {
     t(`categories.${key}`);
 
   const jobCatalog = useMemo(() => {
-    const posted = flowchart.postedJobs
+    const posted = postedJobs
       .filter((job) => job.visibility === "public")
       .map(postedJobToJob);
     return [...posted, ...MOCK_JOBS];
-  }, [flowchart.postedJobs]);
+  }, [postedJobs]);
 
   const filteredJobs = useMemo(() => {
     return jobCatalog.filter((job) => {

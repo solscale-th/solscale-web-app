@@ -7,21 +7,19 @@
  */
 
 import { createEmptyFlowchartState, reduceFlowchart } from "./reducer";
-import type { FlowAction, FlowchartState } from "./types";
+import { EMPTY_FLOWCHART_STATE, type FlowAction, type FlowchartState } from "./types";
 
 export const FLOWCHART_STORAGE_KEY = "solscale_flowchart_v1";
 export const FLOWCHART_CHANGE_EVENT = "solscale-flowchart-change";
 
-export function loadFlowchartState(): FlowchartState {
-  if (typeof window === "undefined") return createEmptyFlowchartState();
+let cachedRaw: string | null | undefined;
+let cachedState: FlowchartState = EMPTY_FLOWCHART_STATE;
+
+function parseRaw(raw: string): FlowchartState | null {
   try {
-    const raw = localStorage.getItem(FLOWCHART_STORAGE_KEY);
-    if (!raw) return createEmptyFlowchartState();
     const parsed = JSON.parse(raw) as Partial<FlowchartState>;
-    if (parsed.version !== 1) return createEmptyFlowchartState();
+    if (parsed.version !== 1) return null;
     return {
-      ...createEmptyFlowchartState(),
-      ...parsed,
       version: 1,
       wallets: parsed.wallets ?? {},
       postedJobs: parsed.postedJobs ?? [],
@@ -32,13 +30,56 @@ export function loadFlowchartState(): FlowchartState {
       disputes: parsed.disputes ?? [],
     };
   } catch {
-    return createEmptyFlowchartState();
+    return null;
   }
+}
+
+/**
+ * Returns a cached snapshot. Callers must not assume a fresh object each time.
+ */
+export function loadFlowchartState(): FlowchartState {
+  if (typeof window === "undefined") return EMPTY_FLOWCHART_STATE;
+
+  try {
+    const raw = localStorage.getItem(FLOWCHART_STORAGE_KEY);
+    if (raw === cachedRaw) return cachedState;
+
+    cachedRaw = raw;
+    if (!raw) {
+      cachedState = EMPTY_FLOWCHART_STATE;
+      return cachedState;
+    }
+
+    cachedState = parseRaw(raw) ?? EMPTY_FLOWCHART_STATE;
+    return cachedState;
+  } catch {
+    return cachedState;
+  }
+}
+
+export function getServerFlowchartState(): FlowchartState {
+  return EMPTY_FLOWCHART_STATE;
+}
+
+/** Test helper — clears the in-memory snapshot cache. */
+export function resetFlowchartSnapshotCache(): void {
+  cachedRaw = undefined;
+  cachedState = EMPTY_FLOWCHART_STATE;
 }
 
 export function saveFlowchartState(state: FlowchartState): void {
   if (typeof window === "undefined") return;
-  localStorage.setItem(FLOWCHART_STORAGE_KEY, JSON.stringify(state));
+  const serialized = JSON.stringify(state);
+  if (serialized === cachedRaw) {
+    return;
+  }
+  try {
+    localStorage.setItem(FLOWCHART_STORAGE_KEY, serialized);
+  } catch {
+    return;
+  }
+  cachedRaw = serialized;
+  cachedState = state;
   window.dispatchEvent(new Event(FLOWCHART_CHANGE_EVENT));
 }
 
