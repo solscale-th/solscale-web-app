@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useFlowchart } from "@/hooks/use-flowchart";
 import { useLanguage } from "@/i18n/language-provider";
 import { buildRating } from "@/lib/flowchart/builders";
+import { jobDetailHrefFromEngagement } from "@/lib/job-detail-href";
 import { FlowchartError } from "@/lib/flowchart/types";
 
 export default function RatingContent({ engagementId }: { engagementId: string }) {
@@ -19,6 +20,9 @@ export default function RatingContent({ engagementId }: { engagementId: string }
   const [error, setError] = useState("");
 
   const engagement = state.engagements.find((item) => item.id === engagementId);
+  const jobHref =
+    jobDetailHrefFromEngagement(engagementId, state.engagements) ??
+    `/jobs`;
 
   if (!user) return null;
 
@@ -40,7 +44,7 @@ export default function RatingContent({ engagementId }: { engagementId: string }
           comment: comment.trim(),
         }),
       });
-      router.push("/my-jobs");
+      router.push(jobHref);
     } catch (err) {
       setError(err instanceof FlowchartError ? err.code : t("flow.error"));
     }
@@ -50,7 +54,7 @@ export default function RatingContent({ engagementId }: { engagementId: string }
     <FlowPage
       title={t("flow.rateTitle")}
       subtitle={t("flow.rateSubtitle")}
-      backHref={`/my-jobs/${engagementId}`}
+      backHref={jobHref}
     >
       <FlowCard>
         <form onSubmit={handleSubmit} className="space-y-4">

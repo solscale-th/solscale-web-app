@@ -7,15 +7,20 @@ import { useAuth } from "@/hooks/use-auth";
 import { useFlowchart } from "@/hooks/use-flowchart";
 import { useLanguage } from "@/i18n/language-provider";
 import { buildDispute } from "@/lib/flowchart/builders";
+import { jobDetailHrefFromEngagement } from "@/lib/job-detail-href";
 import { FlowchartError } from "@/lib/flowchart/types";
 
 export default function DisputeContent({ engagementId }: { engagementId: string }) {
   const { t } = useLanguage();
   const { user } = useAuth();
-  const { dispatch } = useFlowchart();
+  const { state, dispatch } = useFlowchart();
   const router = useRouter();
   const [reason, setReason] = useState("");
   const [error, setError] = useState("");
+
+  const jobHref =
+    jobDetailHrefFromEngagement(engagementId, state.engagements) ??
+    `/jobs`;
 
   if (!user) return null;
 
@@ -32,7 +37,7 @@ export default function DisputeContent({ engagementId }: { engagementId: string 
           reason: reason.trim(),
         }),
       });
-      router.push(`/my-jobs/${engagementId}`);
+      router.push(jobHref);
     } catch (err) {
       setError(err instanceof FlowchartError ? err.code : t("flow.error"));
     }
@@ -42,7 +47,7 @@ export default function DisputeContent({ engagementId }: { engagementId: string 
     <FlowPage
       title={t("flow.disputeTitle")}
       subtitle={t("flow.disputeSubtitle")}
-      backHref={`/my-jobs/${engagementId}`}
+      backHref={jobHref}
     >
       <FlowCard>
         <form onSubmit={handleSubmit} className="space-y-4">

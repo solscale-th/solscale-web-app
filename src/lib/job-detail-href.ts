@@ -1,0 +1,93 @@
+import type { FlowEngagement } from "@/lib/flowchart/types";
+import {
+  MOCK_MY_JOBS_ENTREPRENEUR,
+  MOCK_MY_JOBS_INFLUENCER,
+  type JobEngagement,
+} from "@/lib/mock-my-jobs";
+
+/** Hash targets on the job detail page. */
+export type JobDetailSection = "submit-work" | "ask" | "workspace";
+
+const SECTION_HASH: Record<JobDetailSection, string> = {
+  "submit-work": "job-submit-work",
+  ask: "job-ask",
+  workspace: "job-workspace",
+};
+
+export function jobDetailHref(
+  jobId: string,
+  engagementId?: string,
+  section?: JobDetailSection
+) {
+  const base = `/jobs/${jobId}`;
+  const query = engagementId
+    ? `?engagement=${encodeURIComponent(engagementId)}`
+    : "";
+  const hash = section ? `#${SECTION_HASH[section]}` : "";
+  return `${base}${query}${hash}`;
+}
+
+export function resolveJobDetailHref(
+  jobId: string,
+  liveEngagements: FlowEngagement[],
+  options: {
+    userId: string;
+    role: "influencer" | "entrepreneur";
+    influencerId?: string;
+    section?: JobDetailSection;
+  }
+): string {
+  const live = liveEngagements.find((eng) => {
+    if (eng.jobId !== jobId) return false;
+    if (options.role === "influencer") {
+      return eng.influencerId === options.userId;
+    }
+    if (options.influencerId) {
+      return (
+        eng.entrepreneurId === options.userId &&
+        eng.influencerId === options.influencerId
+      );
+    }
+    return eng.entrepreneurId === options.userId;
+  });
+  if (live) {
+    return jobDetailHref(jobId, live.id, options.section ?? "submit-work");
+  }
+
+  const seedList =
+    options.role === "influencer"
+      ? (MOCK_MY_JOBS_INFLUENCER[options.userId] ??
+        MOCK_MY_JOBS_INFLUENCER["1"] ??
+        [])
+      : (MOCK_MY_JOBS_ENTREPRENEUR[options.userId] ??
+        MOCK_MY_JOBS_ENTREPRENEUR["2"] ??
+        []);
+
+  const seed = seedList.find((eng: JobEngagement) => {
+    if (eng.jobId !== jobId) return false;
+    if (options.influencerId) return eng.influencerId === options.influencerId;
+    return true;
+  });
+  if (seed) {
+    return jobDetailHref(jobId, seed.id, options.section ?? "submit-work");
+  }
+
+  return jobDetailHref(jobId, undefined, options.section);
+}
+
+export function jobDetailHrefFromEngagement(
+  engagementId: string,
+  liveEngagements: FlowEngagement[],
+  section: JobDetailSection = "workspace"
+): string | null {
+  const live = liveEngagements.find((item) => item.id === engagementId);
+  if (live) return jobDetailHref(live.jobId, live.id, section);
+
+  const seed = [
+    ...Object.values(MOCK_MY_JOBS_INFLUENCER).flat(),
+    ...Object.values(MOCK_MY_JOBS_ENTREPRENEUR).flat(),
+  ].find((item) => item.id === engagementId);
+  if (seed) return jobDetailHref(seed.jobId, seed.id, section);
+
+  return null;
+}

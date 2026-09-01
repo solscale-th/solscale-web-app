@@ -8,6 +8,7 @@ import { useFlowchart } from "@/hooks/use-flowchart";
 import { useLanguage } from "@/i18n/language-provider";
 import { FlowchartError } from "@/lib/flowchart/types";
 import { getWalletBalance } from "@/lib/flowchart/reducer";
+import { jobDetailHref } from "@/lib/job-detail-href";
 
 function formatThb(amount: number) {
   return amount.toLocaleString("en-TH");
@@ -65,7 +66,7 @@ export default function DepositContent() {
         entrepreneurId: user!.id,
       });
       setMessage(t("flow.fundSuccess"));
-      router.push(`/my-jobs/${engagement.id}`);
+      router.push(jobDetailHref(engagement.jobId, engagement.id, "workspace"));
     } catch (err) {
       setError(
         err instanceof FlowchartError && err.code === "INSUFFICIENT_FUNDS"

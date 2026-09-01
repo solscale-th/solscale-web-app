@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useFlowchart } from "@/hooks/use-flowchart";
 import { useLanguage } from "@/i18n/language-provider";
 import { getWalletBalance } from "@/lib/flowchart/reducer";
+import { jobDetailHref } from "@/lib/job-detail-href";
 
 function formatThb(amount: number) {
   return amount.toLocaleString("en-TH");
@@ -75,7 +76,7 @@ export default function WalletContent() {
                 <Link
                   href={
                     isInfluencer
-                      ? `/my-jobs/${eng.id}`
+                      ? jobDetailHref(eng.jobId, eng.id, "workspace")
                       : `/wallet/deposit?engagementId=${eng.id}`
                   }
                   className="flex items-center justify-between rounded-xl bg-[#faf8f6] px-3.5 py-3 text-[13px] hover:bg-[#f3eee8]"

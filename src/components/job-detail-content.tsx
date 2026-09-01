@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, MotionConfig } from "motion/react";
 import MainHeader from "@/components/main-header";
 import SiteFooter from "@/components/site-footer";
@@ -22,6 +22,10 @@ import { MOCK_INFLUENCER_APPLICATIONS } from "@/lib/mock-applications";
 import { useFlowchart } from "@/hooks/use-flowchart";
 import { buildApplication, buildEngagement, buildInvite } from "@/lib/flowchart/builders";
 import { escrowAmountForJob } from "@/lib/flowchart/jobs";
+import JobWorkspaceSection from "@/components/job-workspace-section";
+import { jobDetailHref } from "@/lib/job-detail-href";
+import { markMyJobSeen } from "@/lib/seen-my-jobs";
+import type { FlowEngagement } from "@/lib/flowchart/types";
 
 const LIME = "#d7ff2f";
 
@@ -110,6 +114,8 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
   const { user } = useAuth();
   const { state, dispatch } = useFlowchart();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const engagementIdParam = searchParams.get("engagement");
 
   const [coverMessage, setCoverMessage] = useState("");
   const [portfolioUrl, setPortfolioUrl] = useState("");
@@ -133,17 +139,57 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
   const offerStatus: DirectOfferStatus | null =
     liveInvite?.status ?? seedOffer?.status ?? null;
 
-  const engagementForJob = user
-    ? state.engagements.find(
-        (item) =>
-          item.jobId === job.id &&
-          (item.influencerId === user.id || item.entrepreneurId === user.id)
-      )
-    : undefined;
+  const userEngagements = useMemo((): FlowEngagement[] => {
+    if (!user) return [];
+    return state.engagements.filter(
+      (item) =>
+        item.jobId === job.id &&
+        (item.influencerId === user.id || item.entrepreneurId === user.id)
+    );
+  }, [user, job.id, state.engagements]);
 
-  const isPendingOffer = offerStatus === "pending";
+  const engagementForJob = useMemo((): FlowEngagement | undefined => {
+    if (userEngagements.length === 0) return undefined;
+    if (engagementIdParam) {
+      return (
+        userEngagements.find((item) => item.id === engagementIdParam) ??
+        userEngagements[0]
+      );
+    }
+    return userEngagements[0];
+  }, [userEngagements, engagementIdParam]);
+
+  useEffect(() => {
+    if (engagementForJob) markMyJobSeen(engagementForJob.id);
+  }, [engagementForJob?.id]);
+
+  useEffect(() => {
+    const hash = window.location.hash.slice(1);
+    if (!hash) return;
+
+    function scrollToHash() {
+      const el = document.getElementById(hash);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+
+    // Workspace mounts after engagement resolves; retry once on the next frame.
+    scrollToHash();
+    const t1 = window.setTimeout(scrollToHash, 100);
+    const t2 = window.setTimeout(scrollToHash, 350);
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+    };
+  }, [engagementForJob?.id, engagementIdParam]);
+
+  const isInfluencer = user?.role === "influencer";
+  const hasEngagement = Boolean(engagementForJob && user);
+
+  const isPendingOffer = offerStatus === "pending" && !hasEngagement;
   const isDeclinedOffer = offerStatus === "declined";
-  const isAcceptedOffer = offerStatus === "accepted";
+  const isAcceptedOffer = offerStatus === "accepted" || hasEngagement;
 
   const hasApplied = useMemo(() => {
     if (user?.role !== "influencer") return false;
@@ -156,9 +202,10 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
     return apps.some((app) => app.jobId === job.id);
   }, [user, job.id, state.applications]);
 
-  /** Chart: apply only on the marketplace path — not after accepting an invite. */
+  /** Chart: apply only on the marketplace path — not after match or invite. */
   const showApplicationSection =
     user?.role === "influencer" &&
+    !hasEngagement &&
     !isPendingOffer &&
     !isDeclinedOffer &&
     !isAcceptedOffer;
@@ -223,7 +270,30 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
       sourceId: inviteId,
     });
     dispatch({ type: "ACCEPT_INVITE", inviteId, engagement: eng });
-    router.push(`/my-jobs/${eng.id}`);
+    router.push(jobDetailHref(job.id, eng.id, "workspace"));
+  }
+
+  function handleWorkUpdate(next: {
+    workStatus?: FlowEngagement["workStatus"];
+    submissionNote?: string;
+    reviewNote?: string;
+  }) {
+    if (!engagementForJob) return;
+    if (next.workStatus === "submitted" && next.submissionNote) {
+      dispatch({
+        type: "SUBMIT_WORK",
+        engagementId: engagementForJob.id,
+        note: next.submissionNote,
+      });
+    } else if (next.workStatus === "revision_requested" && next.reviewNote) {
+      dispatch({
+        type: "REQUEST_REVISION",
+        engagementId: engagementForJob.id,
+        note: next.reviewNote,
+      });
+    } else if (next.workStatus === "approved") {
+      dispatch({ type: "APPROVE_WORK", engagementId: engagementForJob.id });
+    }
   }
 
   function handleDeclineOffer() {
@@ -303,12 +373,12 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
                     {t("jobDetail.promoted")}
                   </span>
                 )}
-                {offerStatus === "accepted" && (
+                {offerStatus === "accepted" || hasEngagement ? (
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-[#0f7b34] px-3 py-1.5 text-[12px] font-semibold leading-none text-white">
                     <CheckIcon />
                     {t("jobDetail.offerAcceptedBadge")}
                   </span>
-                )}
+                ) : null}
               </div>
 
               <h1 className="mt-5 max-w-3xl text-[1.85rem] font-semibold leading-[1.1] tracking-[-0.04em] text-white sm:text-[2.35rem] lg:text-[2.75rem]">
@@ -447,6 +517,7 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
                 {/* Forms — Ask first; Apply stacks below when available */}
                 <div className="mt-10 grid grid-cols-1 gap-5">
                   <motion.section
+                    id="job-ask"
                     initial={{ opacity: 0, y: 16 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, margin: "-60px" }}
@@ -542,7 +613,7 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
 
                   {showApplicationSection && (
                     <motion.section
-                      id="work-submission-form"
+                      id="job-submit-work"
                       initial={{ opacity: 0, y: 16 }}
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true, margin: "-60px" }}
@@ -657,6 +728,15 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
                     </motion.section>
                   )}
                 </div>
+
+                {hasEngagement && engagementForJob && user && (
+                  <JobWorkspaceSection
+                    engagement={engagementForJob}
+                    jobId={job.id}
+                    isInfluencer={isInfluencer}
+                    onWorkUpdate={handleWorkUpdate}
+                  />
+                )}
               </div>
 
               {/* ── Sticky action panel ── */}
@@ -743,22 +823,26 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
                           {t("jobDetail.declineOffer")}
                         </button>
                       </>
-                    ) : isAcceptedOffer ? (
+                    ) : hasEngagement && engagementForJob ? (
                       <div className="rounded-xl bg-[#faf8f6] px-3.5 py-4">
                         <p className="text-[13px] font-semibold text-[#3a3530]">
-                          {t("jobDetail.offerAcceptedTitle")}
+                          {engagementForJob.paymentStatus === "unfunded"
+                            ? t("myJob.awaitingDeposit")
+                            : t("flow.jobActive")}
                         </p>
                         <p className="mt-1 text-[12px] leading-relaxed text-[#7a7570]">
-                          {t("jobDetail.offerAcceptedBody")}
+                          {engagementForJob.paymentStatus === "unfunded" && isInfluencer
+                            ? t("jobDetail.offerAcceptedBody")
+                            : engagementForJob.workStatus === "submitted" && !isInfluencer
+                              ? t("myJob.detailWorkSection")
+                              : t("jobDetail.viewActiveJob")}
                         </p>
-                        {engagementForJob && (
-                          <Link
-                            href={`/my-jobs/${engagementForJob.id}`}
-                            className={`mt-3 flex h-11 w-full items-center justify-center rounded-xl bg-[#d7ff2f] text-[14px] font-semibold text-[#2a1018] ${FOCUS_RING}`}
-                          >
-                            {t("jobDetail.viewActiveJob")}
-                          </Link>
-                        )}
+                        <a
+                          href="#job-workspace"
+                          className={`mt-3 flex h-11 w-full items-center justify-center rounded-xl bg-[#d7ff2f] text-[14px] font-semibold text-[#2a1018] ${FOCUS_RING}`}
+                        >
+                          {t("jobDetail.viewActiveJob")}
+                        </a>
                       </div>
                     ) : isDeclinedOffer ? (
                       <div className="rounded-xl bg-[#faf8f6] px-3.5 py-4 text-center">
@@ -771,9 +855,9 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
                       </div>
                     ) : (
                       <>
-                        {!hasApplied && (
+                        {!hasApplied && isInfluencer && (
                           <motion.a
-                            href="#work-submission-form"
+                            href="#job-submit-work"
                             whileHover={{ y: -1 }}
                             whileTap={{ scale: 0.99 }}
                             className={`flex h-11 w-full items-center justify-center rounded-xl bg-[#9d003b] text-[14px] font-semibold text-white transition-colors hover:bg-[#850030] ${FOCUS_RING}`}
@@ -812,7 +896,7 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
                   </p>
                 </div>
                 <a
-                  href="#work-submission-form"
+                  href="#job-submit-work"
                   className={`flex h-11 shrink-0 items-center justify-center rounded-xl bg-[#9d003b] px-6 text-[14px] font-semibold text-white transition-colors hover:bg-[#850030] ${FOCUS_RING}`}
                 >
                   {t("jobDetail.applyNow")}

@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useFlowchart } from "@/hooks/use-flowchart";
 import { useLanguage } from "@/i18n/language-provider";
 import { findJobById } from "@/lib/flowchart/jobs";
+import { jobDetailHref, jobDetailHrefFromEngagement } from "@/lib/job-detail-href";
 import { FlowchartError } from "@/lib/flowchart/types";
 import { useState } from "react";
 
@@ -18,6 +19,9 @@ export default function ReleasePaymentContent({ engagementId }: { engagementId: 
 
   const engagement = state.engagements.find((item) => item.id === engagementId);
   const job = engagement ? findJobById(engagement.jobId) : undefined;
+  const jobHref =
+    jobDetailHrefFromEngagement(engagementId, state.engagements) ??
+    `/jobs`;
 
   if (!user) return null;
 
@@ -37,7 +41,7 @@ export default function ReleasePaymentContent({ engagementId }: { engagementId: 
     <FlowPage
       title={t("flow.payTitle")}
       subtitle={t("flow.paySubtitle")}
-      backHref={`/my-jobs/${engagementId}`}
+      backHref={jobHref}
     >
       <FlowCard>
         <p className="text-[15px] font-semibold text-[#111]">{job?.title}</p>

@@ -16,6 +16,7 @@ import { MOCK_JOBS } from "@/lib/mock-jobs";
 import { getSeenMyJobIds, markMyJobSeen, SEEN_MY_JOBS_EVENT } from "@/lib/seen-my-jobs";
 import { useFlowchart } from "@/hooks/use-flowchart";
 import { findJobById } from "@/lib/flowchart/jobs";
+import { jobDetailHref, type JobDetailSection } from "@/lib/job-detail-href";
 import type { FlowEngagement } from "@/lib/flowchart/types";
 
 function flowToEngagement(eng: FlowEngagement): JobEngagement {
@@ -82,10 +83,12 @@ function EngagementCard({
     .join("")
     .toUpperCase();
 
-  function handleViewJob() {
+  function navigate(section?: JobDetailSection) {
     if (engagement.hasUpdate) markMyJobSeen(engagement.id);
-    router.push(`/my-jobs/${engagement.id}`);
+    router.push(jobDetailHref(engagement.jobId, engagement.id, section));
   }
+
+  const primaryLabel = isInfluencer ? t("myJob.submitWork") : t("myJob.reviewWork");
 
   return (
     <div className="relative flex flex-col rounded-2xl border border-[#f0f0f0] bg-white shadow-[0_2px_10px_rgba(0,0,0,0.07)] transition-shadow hover:shadow-[0_4px_18px_rgba(0,0,0,0.12)]">
@@ -124,22 +127,22 @@ function EngagementCard({
         <div className="mt-auto flex flex-col gap-1.5 pt-1">
           <button
             type="button"
-            onClick={handleViewJob}
+            onClick={() => navigate("submit-work")}
             className="block w-full rounded-xl bg-[#9d003b] px-3.5 py-2 text-center text-[12px] font-semibold text-white transition-colors hover:bg-[#850030]"
           >
-            {t("myJob.viewDetails")}
+            {primaryLabel}
           </button>
           <div className="grid grid-cols-2 gap-1.5">
             <button
               type="button"
-              onClick={handleViewJob}
+              onClick={() => navigate()}
               className="rounded-xl border border-[#9d003b] px-2 py-1.5 text-[11px] font-semibold text-[#9d003b] transition-colors hover:bg-[#9d003b]/5"
             >
-              {isInfluencer ? t("myJob.submitWork") : t("myJob.reviewWork")}
+              {t("myJob.viewDetails")}
             </button>
             <button
               type="button"
-              onClick={handleViewJob}
+              onClick={() => navigate("ask")}
               className="rounded-xl border border-[#ccc] px-2 py-1.5 text-[11px] font-medium text-[#555] transition-colors hover:bg-[#fafafa]"
             >
               {t("myJob.askQuestion")}

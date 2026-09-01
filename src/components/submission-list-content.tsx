@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import MainHeader from "@/components/main-header";
 import SiteFooter from "@/components/site-footer";
 import { useLanguage } from "@/i18n/language-provider";
 import { useAuth } from "@/hooks/use-auth";
+import { useFlowchart } from "@/hooks/use-flowchart";
 import {
   MOCK_SUBMISSIONS,
   MOCK_RECEIVED_SUBMISSIONS,
@@ -15,10 +16,18 @@ import {
 } from "@/lib/mock-submissions";
 import { MOCK_JOBS } from "@/lib/mock-jobs";
 import { getSeenSubmissionIds, markSubmissionSeen, SEEN_SUBMISSION_EVENT } from "@/lib/seen-submissions";
+import { resolveJobDetailHref } from "@/lib/job-detail-href";
+import type { FlowEngagement } from "@/lib/flowchart/types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type SortKey = "dateAdded" | "name" | "updatedDate";
+
+const SUBMITTED_STATUSES = new Set<FlowEngagement["workStatus"]>([
+  "submitted",
+  "revision_requested",
+  "approved",
+]);
 
 // ─── Update dot ───────────────────────────────────────────────────────────────
 
@@ -33,7 +42,15 @@ function UpdateDot() {
 
 // ─── Influencer card: submitted job ──────────────────────────────────────────
 
-function SubmissionCard({ submission, seen }: { submission: Submission; seen: boolean }) {
+function SubmissionCard({
+  submission,
+  seen,
+  detailHref,
+}: {
+  submission: Submission;
+  seen: boolean;
+  detailHref: string;
+}) {
   const { t } = useLanguage();
   const job = MOCK_JOBS.find((j) => j.id === submission.jobId);
   if (!job) return null;
@@ -42,10 +59,8 @@ function SubmissionCard({ submission, seen }: { submission: Submission; seen: bo
     <div className="relative flex flex-col rounded-2xl border border-[#f0f0f0] bg-white shadow-[0_2px_10px_rgba(0,0,0,0.07)] transition-shadow hover:shadow-[0_4px_18px_rgba(0,0,0,0.12)]">
       {submission.hasUpdate && !seen && <UpdateDot />}
 
-      {/* Banner */}
       <div className={`relative h-28 overflow-hidden rounded-t-2xl ${job.thumbnailBg}`} />
 
-      {/* Content */}
       <div className="flex flex-1 flex-col gap-2 p-3.5">
         <h3 className="line-clamp-2 text-[14px] font-bold leading-snug text-[#111]">{job.title}</h3>
         <p className="text-[12px] text-[#888]">{job.company}</p>
@@ -55,7 +70,7 @@ function SubmissionCard({ submission, seen }: { submission: Submission; seen: bo
 
         <div className="mt-auto pt-1">
           <Link
-            href={`/my-jobs`}
+            href={detailHref}
             onClick={() => { if (submission.hasUpdate) markSubmissionSeen(submission.id); }}
             className="block w-full rounded-xl bg-[#9d003b] px-3.5 py-2 text-center text-[12px] font-semibold text-white transition-colors hover:bg-[#850030]"
           >
@@ -69,7 +84,15 @@ function SubmissionCard({ submission, seen }: { submission: Submission; seen: bo
 
 // ─── Entrepreneur card: received submission ───────────────────────────────────
 
-function ReceivedSubmissionCard({ item, seen }: { item: ReceivedSubmission; seen: boolean }) {
+function ReceivedSubmissionCard({
+  item,
+  seen,
+  detailHref,
+}: {
+  item: ReceivedSubmission;
+  seen: boolean;
+  detailHref: string;
+}) {
   const { t } = useLanguage();
   const job = MOCK_JOBS.find((j) => j.id === item.jobId);
   if (!job) return null;
@@ -85,14 +108,12 @@ function ReceivedSubmissionCard({ item, seen }: { item: ReceivedSubmission; seen
     <div className="relative flex flex-col rounded-2xl border border-[#f0f0f0] bg-white shadow-[0_2px_10px_rgba(0,0,0,0.07)] transition-shadow hover:shadow-[0_4px_18px_rgba(0,0,0,0.12)]">
       {item.hasUpdate && !seen && <UpdateDot />}
 
-      {/* Avatar banner */}
       <div className={`relative flex h-28 items-center justify-center overflow-hidden rounded-t-2xl ${item.influencerAvatarBg}`}>
         <div className="grid h-16 w-16 place-items-center rounded-full bg-white/80 text-2xl font-black text-[#9d003b]">
           {initials}
         </div>
       </div>
 
-      {/* Content */}
       <div className="flex flex-1 flex-col gap-2 p-3.5">
         <div>
           <h3 className="text-[14px] font-bold text-[#111]">{item.influencerName}</h3>
@@ -107,7 +128,7 @@ function ReceivedSubmissionCard({ item, seen }: { item: ReceivedSubmission; seen
 
         <div className="mt-auto pt-1">
           <Link
-            href={`/my-jobs`}
+            href={detailHref}
             onClick={() => { if (item.hasUpdate) markSubmissionSeen(item.id); }}
             className="block w-full rounded-xl bg-[#9d003b] px-3.5 py-2 text-center text-[12px] font-semibold text-white transition-colors hover:bg-[#850030]"
           >
@@ -171,6 +192,7 @@ function SortDropdown({
 export default function SubmissionListContent() {
   const { t } = useLanguage();
   const { user } = useAuth();
+  const { state } = useFlowchart();
   const [sortKey, setSortKey] = useState<SortKey>("dateAdded");
   const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
 
@@ -180,6 +202,18 @@ export default function SubmissionListContent() {
     window.addEventListener(SEEN_SUBMISSION_EVENT, sync);
     return () => window.removeEventListener(SEEN_SUBMISSION_EVENT, sync);
   }, []);
+
+  const resolveHref = useMemo(() => {
+    if (!user) {
+      return () => "/";
+    }
+    return (jobId: string, influencerId?: string) =>
+      resolveJobDetailHref(jobId, state.engagements, {
+        userId: user.id,
+        role: user.role,
+        influencerId,
+      });
+  }, [user, state.engagements]);
 
   if (!user) return null;
 
@@ -201,8 +235,33 @@ export default function SubmissionListContent() {
     return 0;
   };
 
-  /* ── Influencer: sorted submissions ── */
-  const rawSubs = isInfluencer ? (MOCK_SUBMISSIONS[user.id] ?? MOCK_SUBMISSIONS["1"] ?? []) : [];
+  const liveSubs: Submission[] = isInfluencer
+    ? state.engagements
+        .filter(
+          (eng) =>
+            eng.influencerId === user.id &&
+            SUBMITTED_STATUSES.has(eng.workStatus)
+        )
+        .map((eng) => ({
+          id: eng.id,
+          jobId: eng.jobId,
+          submittedDaysAgo: 0,
+          updatedDaysAgo: 0,
+          hasUpdate: eng.workStatus === "submitted" || eng.workStatus === "revision_requested",
+        }))
+    : [];
+
+  const seedSubs = isInfluencer
+    ? (MOCK_SUBMISSIONS[user.id] ?? MOCK_SUBMISSIONS["1"] ?? [])
+    : [];
+
+  const rawSubs = [
+    ...liveSubs,
+    ...seedSubs.filter(
+      (sub) => !liveSubs.some((live) => live.id === sub.id || live.jobId === sub.jobId)
+    ),
+  ];
+
   const sortedSubs = [...rawSubs].sort((a, b) => {
     if (sortKey === "dateAdded") {
       const n = notifFirst(a.hasUpdate, a.id, b.hasUpdate, b.id);
@@ -218,8 +277,42 @@ export default function SubmissionListContent() {
     return 0;
   });
 
-  /* ── Entrepreneur: sorted received submissions ── */
-  const rawReceived = isInfluencer ? [] : (MOCK_RECEIVED_SUBMISSIONS[user.id] ?? MOCK_RECEIVED_SUBMISSIONS["2"] ?? []);
+  const liveReceived: ReceivedSubmission[] = isInfluencer
+    ? []
+    : state.engagements
+        .filter(
+          (eng) =>
+            eng.entrepreneurId === user.id &&
+            eng.workStatus === "submitted"
+        )
+        .map((eng) => ({
+          id: eng.id,
+          jobId: eng.jobId,
+          influencerId: eng.influencerId,
+          influencerName: eng.influencerName,
+          influencerHandle: eng.influencerHandle,
+          influencerAvatarBg: eng.influencerAvatarBg,
+          submittedDaysAgo: 0,
+          updatedDaysAgo: 0,
+          hasUpdate: true,
+        }));
+
+  const seedReceived = isInfluencer
+    ? []
+    : (MOCK_RECEIVED_SUBMISSIONS[user.id] ?? MOCK_RECEIVED_SUBMISSIONS["2"] ?? []);
+
+  const rawReceived = [
+    ...liveReceived,
+    ...seedReceived.filter(
+      (item) =>
+        !liveReceived.some(
+          (live) =>
+            live.id === item.id ||
+            (live.jobId === item.jobId && live.influencerId === item.influencerId)
+        )
+    ),
+  ];
+
   const sortedReceived = [...rawReceived].sort((a, b) => {
     if (sortKey === "dateAdded") {
       const n = notifFirst(a.hasUpdate, a.id, b.hasUpdate, b.id);
@@ -252,13 +345,23 @@ export default function SubmissionListContent() {
           ) : isInfluencer ? (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {sortedSubs.map((sub) => (
-                <SubmissionCard key={sub.id} submission={sub} seen={seenIds.has(sub.id)} />
+                <SubmissionCard
+                  key={sub.id}
+                  submission={sub}
+                  seen={seenIds.has(sub.id)}
+                  detailHref={resolveHref(sub.jobId)}
+                />
               ))}
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {sortedReceived.map((item) => (
-                <ReceivedSubmissionCard key={item.id} item={item} seen={seenIds.has(item.id)} />
+                <ReceivedSubmissionCard
+                  key={item.id}
+                  item={item}
+                  seen={seenIds.has(item.id)}
+                  detailHref={resolveHref(item.jobId, item.influencerId)}
+                />
               ))}
             </div>
           )}

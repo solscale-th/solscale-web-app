@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import JobDetailContent from "@/components/job-detail-content";
 import MainHeader from "@/components/main-header";
 import { findJobById } from "@/lib/flowchart/jobs";
@@ -24,5 +24,16 @@ export default function JobDetailGate({ jobId }: { jobId: string }) {
     );
   }
 
-  return <JobDetailContent job={job} />;
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen flex-col bg-[#faf8f6]">
+          <MainHeader />
+          <p className="px-4 py-16 text-center text-[14px] text-[#888]">Loading…</p>
+        </div>
+      }
+    >
+      <JobDetailContent job={job} />
+    </Suspense>
+  );
 }
