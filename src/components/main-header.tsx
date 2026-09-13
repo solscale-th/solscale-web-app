@@ -23,6 +23,30 @@ function UserAvatar({ name }: { name: string }) {
   );
 }
 
+function AuthLinks({ compact = false }: { compact?: boolean }) {
+  const { t } = useLanguage();
+  return (
+    <>
+      <Link
+        href="/login"
+        className={`flex h-9 items-center rounded-lg text-sm font-medium whitespace-nowrap transition-colors hover:bg-white/10 ${
+          compact ? "px-2.5" : "px-4"
+        }`}
+      >
+        {t("common.logIn")}
+      </Link>
+      <Link
+        href="/signup"
+        className={`flex h-9 items-center rounded-lg bg-[#d7ff2f] text-sm font-semibold whitespace-nowrap text-[#121212] transition-colors hover:bg-[#c8f020] ${
+          compact ? "px-3" : "px-5"
+        }`}
+      >
+        {t("common.signUp")}
+      </Link>
+    </>
+  );
+}
+
 export default function MainHeader() {
   const router = useRouter();
   const { t } = useLanguage();
@@ -106,33 +130,35 @@ export default function MainHeader() {
       <div className="mx-auto grid h-16 max-w-7xl grid-cols-[1fr_auto_1fr] items-center px-4 sm:px-8">
 
         {/* Logo – left column */}
-        <Link href="/" className="flex items-center gap-2 shrink-0">
+        <Link href="/" className="flex items-center gap-2 shrink-0 col-start-1">
           <div className="grid h-7 w-7 place-items-center rounded-lg bg-[#d7ff2f] text-xs font-black text-[#840031]">
             ⬢
           </div>
-          <span className="text-xl font-black tracking-tight">Solscale</span>
+          <span className="text-xl font-black tracking-tight max-[380px]:hidden">Solscale</span>
         </Link>
 
-        {/* Desktop nav – centre column (always truly centred) */}
-        <nav className="hidden md:flex items-center gap-2 text-sm font-medium">
-          {navItems.map((item) => (
-            <a
-              key={item.label}
-              href={item.href}
-              className="relative flex items-center gap-2 rounded-lg px-4 py-2 transition-colors hover:bg-white/10"
-            >
-              {item.label}
-              {item.badge > 0 && (
-                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#d7ff2f] px-1.5 text-[11px] font-black leading-none text-[#840031]">
-                  {item.badge > 99 ? "99+" : item.badge}
-                </span>
-              )}
-            </a>
-          ))}
-        </nav>
+        {/* Desktop nav – centre column (logged-in only) */}
+        {isLoggedIn && (
+          <nav className="hidden md:flex col-start-2 items-center gap-2 text-sm font-medium">
+            {navItems.map((item) => (
+              <a
+                key={item.label}
+                href={item.href}
+                className="relative flex items-center gap-2 rounded-lg px-4 py-2 transition-colors hover:bg-white/10"
+              >
+                {item.label}
+                {item.badge > 0 && (
+                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#d7ff2f] px-1.5 text-[11px] font-black leading-none text-[#840031]">
+                    {item.badge > 99 ? "99+" : item.badge}
+                  </span>
+                )}
+              </a>
+            ))}
+          </nav>
+        )}
 
         {/* Desktop right actions – right column */}
-        <div className="hidden md:flex items-center gap-2 justify-self-end">
+        <div className="hidden md:flex col-start-3 items-center gap-2 justify-self-end">
           <LanguageSwitcher variant="light" />
 
           {isLoggedIn && user ? (
@@ -216,47 +242,38 @@ export default function MainHeader() {
               )}
             </div>
           ) : (
-            <>
-              <Link
-                href="/login"
-                className="flex h-9 items-center rounded-lg px-4 text-sm font-medium transition-colors hover:bg-white/10"
-              >
-                {t("common.logIn")}
-              </Link>
-              <Link
-                href="/signup"
-                className="flex h-9 items-center rounded-lg bg-[#d7ff2f] px-5 text-sm font-semibold text-[#121212] transition-colors hover:bg-[#c8f020]"
-              >
-                {t("common.signUp")}
-              </Link>
-            </>
+            <AuthLinks />
           )}
         </div>
 
-        {/* Mobile right: lang switcher + hamburger (col-start-3 keeps it right-aligned) */}
-        <div className="flex md:hidden items-center gap-2 justify-self-end">
+        {/* Mobile right: lang + auth CTAs, or lang + hamburger when logged in */}
+        <div className="flex md:hidden col-start-3 items-center gap-1.5 justify-self-end">
           <LanguageSwitcher variant="light" />
-          <button
-            type="button"
-            aria-label="Toggle menu"
-            onClick={() => setMobileMenuOpen((v) => !v)}
-            className="grid h-9 w-9 place-items-center rounded-lg transition-colors hover:bg-white/10"
-          >
-            {mobileMenuOpen ? (
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <path d="M2 2L16 16M16 2L2 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-            ) : (
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <path d="M2 4h14M2 9h14M2 14h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-            )}
-          </button>
+          {isLoggedIn ? (
+            <button
+              type="button"
+              aria-label="Toggle menu"
+              onClick={() => setMobileMenuOpen((v) => !v)}
+              className="grid h-9 w-9 place-items-center rounded-lg transition-colors hover:bg-white/10"
+            >
+              {mobileMenuOpen ? (
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                  <path d="M2 2L16 16M16 2L2 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                  <path d="M2 4h14M2 9h14M2 14h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              )}
+            </button>
+          ) : (
+            <AuthLinks compact />
+          )}
         </div>
       </div>
 
-      {/* ── Mobile dropdown menu ── */}
-      {mobileMenuOpen && (
+      {/* ── Mobile dropdown menu (logged-in only) ── */}
+      {isLoggedIn && user && mobileMenuOpen && (
         <div className="md:hidden border-t border-white/10 bg-[#8f0035] px-4 pb-4 pt-2">
           <nav className="flex flex-col gap-1">
             {navItems.map((item) => (
@@ -277,70 +294,50 @@ export default function MainHeader() {
           </nav>
 
           <div className="mt-3 border-t border-white/10 pt-3">
-            {isLoggedIn && user ? (
-              <div className="flex flex-col gap-1">
-                {/* User info */}
-                <div className="flex items-center gap-3 rounded-xl bg-white/10 px-3 py-2.5 mb-1">
-                  <UserAvatar name={user.name} />
-                  <div className="min-w-0">
-                    <p className="truncate text-[13px] font-semibold">{user.name}</p>
-                    <p className="truncate text-[11px] text-white/60">{user.email}</p>
-                  </div>
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-3 rounded-xl bg-white/10 px-3 py-2.5 mb-1">
+                <UserAvatar name={user.name} />
+                <div className="min-w-0">
+                  <p className="truncate text-[13px] font-semibold">{user.name}</p>
+                  <p className="truncate text-[11px] text-white/60">{user.email}</p>
                 </div>
-
-                <Link
-                  href="/profile"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-white/10"
-                >
-                  <svg width="15" height="15" viewBox="0 0 15 15" fill="none" className="opacity-70">
-                    <circle cx="7.5" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.4" />
-                    <path d="M2 13c0-3.038 2.462-5.5 5.5-5.5S13 9.962 13 13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-                  </svg>
-                  {t("common.myProfile")}
-                </Link>
-
-                <Link
-                  href="/wallet"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-white/10"
-                >
-                  <svg width="15" height="15" viewBox="0 0 15 15" fill="none" className="opacity-70">
-                    <rect x="2" y="4" width="11" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
-                    <path d="M2 7h11" stroke="currentColor" strokeWidth="1.4" />
-                  </svg>
-                  {t("common.wallet")}
-                </Link>
-
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-[#ffaaaa] transition-colors hover:bg-white/10"
-                >
-                  <svg width="15" height="15" viewBox="0 0 15 15" fill="none" className="text-[#ffaaaa]">
-                    <path d="M5.5 13H3a1 1 0 01-1-1V3a1 1 0 011-1h2.5M10 10.5L13.5 7.5 10 4.5M5.5 7.5h8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  {t("common.logOut")}
-                </button>
               </div>
-            ) : (
-              <div className="flex flex-col gap-2">
-                <Link
-                  href="/login"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex h-10 w-full items-center justify-center rounded-lg border border-white/20 text-sm font-medium transition-colors hover:bg-white/10"
-                >
-                  {t("common.logIn")}
-                </Link>
-                <Link
-                  href="/signup"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex h-10 w-full items-center justify-center rounded-lg bg-[#d7ff2f] text-sm font-semibold text-[#121212] transition-colors hover:bg-[#c8f020]"
-                >
-                  {t("common.signUp")}
-                </Link>
-              </div>
-            )}
+
+              <Link
+                href="/profile"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-white/10"
+              >
+                <svg width="15" height="15" viewBox="0 0 15 15" fill="none" className="opacity-70">
+                  <circle cx="7.5" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.4" />
+                  <path d="M2 13c0-3.038 2.462-5.5 5.5-5.5S13 9.962 13 13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                </svg>
+                {t("common.myProfile")}
+              </Link>
+
+              <Link
+                href="/wallet"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-white/10"
+              >
+                <svg width="15" height="15" viewBox="0 0 15 15" fill="none" className="opacity-70">
+                  <rect x="2" y="4" width="11" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
+                  <path d="M2 7h11" stroke="currentColor" strokeWidth="1.4" />
+                </svg>
+                {t("common.wallet")}
+              </Link>
+
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-[#ffaaaa] transition-colors hover:bg-white/10"
+              >
+                <svg width="15" height="15" viewBox="0 0 15 15" fill="none" className="text-[#ffaaaa]">
+                  <path d="M5.5 13H3a1 1 0 01-1-1V3a1 1 0 011-1h2.5M10 10.5L13.5 7.5 10 4.5M5.5 7.5h8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                {t("common.logOut")}
+              </button>
+            </div>
           </div>
         </div>
       )}
