@@ -5,6 +5,7 @@ import {
   AUTH_CHANGE_EVENT,
   clearStoredUser,
   getStoredUser,
+  isLoggedIn,
 } from "@/lib/auth";
 import type { MockUser } from "@/lib/mock-users";
 
@@ -12,7 +13,9 @@ export function useAuth() {
   const [user, setUser] = useState<MockUser | null>(null);
 
   useEffect(() => {
-    const syncUser = () => setUser(getStoredUser());
+    const syncUser = () => {
+      setUser(isLoggedIn() ? getStoredUser() : null);
+    };
     syncUser();
 
     window.addEventListener(AUTH_CHANGE_EVENT, syncUser);

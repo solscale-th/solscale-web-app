@@ -1,8 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-import { buildLoginUrl, isLoggedIn } from "@/lib/auth";
+import { useEffect, useState } from "react";
+import {
+  AUTH_CHANGE_EVENT,
+  buildLoginUrl,
+  isLoggedIn,
+} from "@/lib/auth";
 
 type RequireAuthProps = {
   returnTo: string;
@@ -11,7 +15,20 @@ type RequireAuthProps = {
 
 export default function RequireAuth({ returnTo, children }: RequireAuthProps) {
   const router = useRouter();
-  const allowed = isLoggedIn();
+  const [allowed, setAllowed] = useState(() => isLoggedIn());
+
+  useEffect(() => {
+    const sync = () => setAllowed(isLoggedIn());
+    sync();
+
+    window.addEventListener(AUTH_CHANGE_EVENT, sync);
+    window.addEventListener("storage", sync);
+
+    return () => {
+      window.removeEventListener(AUTH_CHANGE_EVENT, sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
 
   useEffect(() => {
     if (!allowed) {

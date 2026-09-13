@@ -265,7 +265,6 @@ export default function ProfileContent() {
     if (!form || !user) return;
     const updated: MockUser = {
       id:          user.id,
-      password:    user.password,
       role:        user.role,
       name:        form.name,
       email:       form.email,
