@@ -16,6 +16,7 @@ import {
 import { MOCK_JOB_APPLICANTS } from "@/lib/mock-direct";
 import { useFlowchart } from "@/hooks/use-flowchart";
 import { findJobById } from "@/lib/flowchart/jobs";
+import { logJobList } from "@/lib/jobs";
 import {
   MOCK_JOBS,
   formatBudgetRange,
@@ -306,6 +307,21 @@ export default function ApplicationListContent() {
     ...seedIncoming.filter((app) => !liveIncoming.some((live) => live.id === app.id)),
   ];
   const isEmpty = isInfluencer ? sortedApps.length === 0 : incoming.length === 0;
+
+  logJobList("applications", {
+    role: user.role,
+    count: isInfluencer ? sortedApps.length : incoming.length,
+    jobs: (isInfluencer ? sortedApps : incoming).map((app) => {
+      const job = findJobById(app.jobId) ?? MOCK_JOBS.find((item) => item.id === app.jobId);
+      return {
+        id: app.id,
+        jobId: app.jobId,
+        title: job?.title ?? null,
+        company: job?.company ?? null,
+        status: app.status,
+      };
+    }),
+  });
 
   return (
     <div className="flex min-h-screen flex-col bg-white">

@@ -16,6 +16,7 @@ import { MOCK_JOBS } from "@/lib/mock-jobs";
 import { getSeenDirectIds, markDirectSeen, SEEN_DIRECT_EVENT } from "@/lib/seen-direct";
 import { useFlowchart } from "@/hooks/use-flowchart";
 import { findJobById } from "@/lib/flowchart/jobs";
+import { logJobList } from "@/lib/jobs";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -217,6 +218,21 @@ export default function DirectListContent() {
           hasUpdate: inv.status === "pending",
         }));
   const isEmpty = isInfluencer ? sortedOffers.length === 0 : sentOffers.length === 0;
+
+  logJobList("direct", {
+    role: user.role,
+    count: isInfluencer ? sortedOffers.length : sentOffers.length,
+    jobs: (isInfluencer ? sortedOffers : sentOffers).map((offer) => {
+      const job = findJobById(offer.jobId) ?? MOCK_JOBS.find((item) => item.id === offer.jobId);
+      return {
+        id: offer.id,
+        jobId: offer.jobId,
+        title: job?.title ?? null,
+        company: offer.fromCompany,
+        status: offer.status,
+      };
+    }),
+  });
 
   // Suppress unused-import warning (getDirectBadgeCount is used in the header)
   void getDirectBadgeCount;

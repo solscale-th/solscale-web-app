@@ -238,9 +238,14 @@ export default function MyJobsListContent() {
   };
 
   const liveList = state.engagements
-    .filter((eng) =>
-      isInfluencer ? eng.influencerId === user.id : eng.entrepreneurId === user.id
-    )
+    .filter((eng) => {
+      if (isInfluencer) {
+        return (
+          eng.influencerId === user.id && eng.paymentStatus !== "unfunded"
+        );
+      }
+      return eng.entrepreneurId === user.id;
+    })
     .map(flowToEngagement);
   const seedList = isInfluencer
     ? (MOCK_MY_JOBS_INFLUENCER[user.id] ?? MOCK_MY_JOBS_INFLUENCER["1"] ?? [])

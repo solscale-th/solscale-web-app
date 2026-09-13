@@ -19,4 +19,10 @@ export {
   createFlowId,
   FLOWCHART_STORAGE_KEY,
 } from "./store";
-export { findJobById, getAllJobs, escrowAmountForJob } from "./jobs";
+export {
+  findJobById,
+  getAllJobs,
+  getMarketplaceJobs,
+  hasEntrepreneurDepositForJob,
+  escrowAmountForJob,
+} from "./jobs";

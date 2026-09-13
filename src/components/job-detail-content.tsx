@@ -24,6 +24,7 @@ import { buildApplication, buildEngagement, buildInvite } from "@/lib/flowchart/
 import { escrowAmountForJob } from "@/lib/flowchart/jobs";
 import JobWorkspaceSection from "@/components/job-workspace-section";
 import { jobDetailHref } from "@/lib/job-detail-href";
+import { acceptInvite, declineInvite, parseApiId } from "@/lib/applications";
 import { markMyJobSeen } from "@/lib/seen-my-jobs";
 import type { FlowEngagement } from "@/lib/flowchart/types";
 
@@ -120,6 +121,7 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
   const [coverMessage, setCoverMessage] = useState("");
   const [portfolioUrl, setPortfolioUrl] = useState("");
   const [applyStatus, setApplyStatus] = useState<"idle" | "submitting" | "done">("idle");
+  const [acceptStatus, setAcceptStatus] = useState<"idle" | "submitting">("idle");
 
   const [question, setQuestion] = useState("");
   const [askStatus, setAskStatus] = useState<"idle" | "sending" | "done">("idle");
@@ -240,7 +242,50 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
     }
   }
 
-  function handleAcceptOffer() {
+  async function handleAcceptOffer() {
+    if (!user || acceptStatus === "submitting") return;
+    const invite =
+      liveInvite ??
+      buildInvite({
+        jobId: job.id,
+        entrepreneurId: job.companyId,
+        influencerId: user.id,
+        fromCompany: seedOffer?.fromCompany ?? job.company,
+        influencerName: user.name,
+        isPrivate: seedOffer?.isPrivate ?? true,
+      });
+    if (!liveInvite) {
+      dispatch({
+        type: "SEND_INVITE",
+        invite: { ...invite, id: seedOffer?.id ?? invite.id, status: "pending" },
+      });
+    }
+    const inviteId = liveInvite?.id ?? seedOffer?.id ?? invite.id;
+    const apiInviteId = parseApiId(inviteId);
+    setAcceptStatus("submitting");
+    if (apiInviteId) {
+      try {
+        await acceptInvite(apiInviteId);
+      } catch {
+        // Local flowchart still records the accept so the brand can deposit.
+      }
+    }
+    const eng = buildEngagement({
+      jobId: job.id,
+      influencerId: user.id,
+      entrepreneurId: liveInvite?.entrepreneurId ?? (seedOffer ? "2" : job.companyId),
+      influencerName: user.name,
+      influencerHandle: `@${user.name.replace(/\s+/g, "").toLowerCase()}`,
+      escrowAmount: escrowAmountForJob(job),
+      source: "invite",
+      sourceId: inviteId,
+    });
+    dispatch({ type: "ACCEPT_INVITE", inviteId, engagement: eng });
+    setAcceptStatus("idle");
+    router.push(jobDetailHref(job.id, eng.id, "workspace"));
+  }
+
+  async function handleDeclineOffer() {
     if (!user) return;
     const invite =
       liveInvite ??
@@ -259,18 +304,18 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
       });
     }
     const inviteId = liveInvite?.id ?? seedOffer?.id ?? invite.id;
-    const eng = buildEngagement({
-      jobId: job.id,
-      influencerId: user.id,
-      entrepreneurId: liveInvite?.entrepreneurId ?? (seedOffer ? "2" : job.companyId),
-      influencerName: user.name,
-      influencerHandle: `@${user.name.replace(/\s+/g, "").toLowerCase()}`,
-      escrowAmount: escrowAmountForJob(job),
-      source: "invite",
-      sourceId: inviteId,
+    const apiInviteId = parseApiId(inviteId);
+    if (apiInviteId) {
+      try {
+        await declineInvite(apiInviteId);
+      } catch {
+        // Fall through to local decline.
+      }
+    }
+    dispatch({
+      type: "DECLINE_INVITE",
+      inviteId,
     });
-    dispatch({ type: "ACCEPT_INVITE", inviteId, engagement: eng });
-    router.push(jobDetailHref(job.id, eng.id, "workspace"));
   }
 
   function handleWorkUpdate(next: {
@@ -294,30 +339,6 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
     } else if (next.workStatus === "approved") {
       dispatch({ type: "APPROVE_WORK", engagementId: engagementForJob.id });
     }
-  }
-
-  function handleDeclineOffer() {
-    if (!user) return;
-    const invite =
-      liveInvite ??
-      buildInvite({
-        jobId: job.id,
-        entrepreneurId: job.companyId,
-        influencerId: user.id,
-        fromCompany: seedOffer?.fromCompany ?? job.company,
-        influencerName: user.name,
-        isPrivate: seedOffer?.isPrivate ?? true,
-      });
-    if (!liveInvite) {
-      dispatch({
-        type: "SEND_INVITE",
-        invite: { ...invite, id: seedOffer?.id ?? invite.id, status: "pending" },
-      });
-    }
-    dispatch({
-      type: "DECLINE_INVITE",
-      inviteId: liveInvite?.id ?? seedOffer?.id ?? invite.id,
-    });
   }
 
   function handleAsk(e: React.FormEvent) {
@@ -808,10 +829,11 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
                         </div>
                         <motion.button
                           type="button"
-                          whileHover={{ y: -1 }}
-                          whileTap={{ scale: 0.99 }}
+                          whileHover={acceptStatus === "submitting" ? undefined : { y: -1 }}
+                          whileTap={acceptStatus === "submitting" ? undefined : { scale: 0.99 }}
                           onClick={handleAcceptOffer}
-                          className={`flex h-11 w-full items-center justify-center rounded-xl bg-[#d7ff2f] text-[14px] font-semibold text-[#2a1018] transition-colors hover:bg-[#c8f020] ${FOCUS_RING}`}
+                          disabled={acceptStatus === "submitting"}
+                          className={`flex h-11 w-full items-center justify-center rounded-xl bg-[#d7ff2f] text-[14px] font-semibold text-[#2a1018] transition-colors hover:bg-[#c8f020] disabled:opacity-60 ${FOCUS_RING}`}
                         >
                           {t("jobDetail.acceptOffer")}
                         </motion.button>

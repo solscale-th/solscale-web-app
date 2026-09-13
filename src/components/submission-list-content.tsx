@@ -15,6 +15,7 @@ import {
   type ReceivedSubmission,
 } from "@/lib/mock-submissions";
 import { MOCK_JOBS } from "@/lib/mock-jobs";
+import { logJobList } from "@/lib/jobs";
 import { getSeenSubmissionIds, markSubmissionSeen, SEEN_SUBMISSION_EVENT } from "@/lib/seen-submissions";
 import { resolveJobDetailHref } from "@/lib/job-detail-href";
 import type { FlowEngagement } from "@/lib/flowchart/types";
@@ -325,6 +326,20 @@ export default function SubmissionListContent() {
   });
 
   const isEmpty = isInfluencer ? sortedSubs.length === 0 : sortedReceived.length === 0;
+
+  logJobList("submission", {
+    role: user.role,
+    count: isInfluencer ? sortedSubs.length : sortedReceived.length,
+    jobs: (isInfluencer ? sortedSubs : sortedReceived).map((item) => {
+      const job = MOCK_JOBS.find((entry) => entry.id === item.jobId);
+      return {
+        id: item.id,
+        jobId: item.jobId,
+        title: job?.title ?? null,
+        company: job?.company ?? null,
+      };
+    }),
+  });
 
   return (
     <div className="flex min-h-screen flex-col bg-white">

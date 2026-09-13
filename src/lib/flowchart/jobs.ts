@@ -1,6 +1,7 @@
 import { MOCK_JOBS, type Job, type Platform } from "@/lib/mock-jobs";
+import { getWalletBalance } from "./reducer";
 import { loadFlowchartState } from "./store";
-import type { FlowPostedJob } from "./types";
+import type { FlowPostedJob, FlowchartState } from "./types";
 
 const POSTED_THUMB = "bg-[#9d003b]";
 
@@ -31,10 +32,30 @@ export function postedJobToJob(posted: FlowPostedJob): Job {
   };
 }
 
+/**
+ * A job is marketplace-visible only when the brand has enough wallet
+ * balance to cover it, or funds are already held in escrow for it.
+ */
+export function hasEntrepreneurDepositForJob(
+  state: FlowchartState,
+  job: FlowPostedJob
+): boolean {
+  const needed = Math.max(escrowAmountForJob(job), 1);
+  if (getWalletBalance(state, job.entrepreneurId) >= needed) return true;
+  return state.engagements.some(
+    (eng) => eng.jobId === job.id && eng.paymentStatus !== "unfunded"
+  );
+}
+
+export function getMarketplaceJobs(state: FlowchartState): Job[] {
+  return state.postedJobs
+    .filter((job) => job.visibility === "public")
+    .filter((job) => hasEntrepreneurDepositForJob(state, job))
+    .map(postedJobToJob);
+}
+
 export function getAllJobs(): Job[] {
-  const posted = loadFlowchartState().postedJobs.map(postedJobToJob);
-  const postedIds = new Set(posted.map((job) => job.id));
-  return [...posted, ...MOCK_JOBS.filter((job) => !postedIds.has(job.id))];
+  return getMarketplaceJobs(loadFlowchartState());
 }
 
 export function findJobById(id: string): Job | undefined {

@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useFlowchart } from "@/hooks/use-flowchart";
 import { useLanguage } from "@/i18n/language-provider";
 import { FlowchartError } from "@/lib/flowchart/types";
+import { depositFunds } from "@/lib/entrepreneurs";
 import { getWalletBalance } from "@/lib/flowchart/reducer";
 import { jobDetailHref } from "@/lib/job-detail-href";
 
@@ -37,11 +38,16 @@ export default function DepositContent() {
   const needed = engagement?.escrowAmount ?? 0;
   const shortfall = Math.max(0, needed - balance);
 
-  function handleDeposit(e: React.FormEvent) {
+  async function handleDeposit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setMessage("");
     const value = Number(amount);
+    try {
+      await depositFunds(value);
+    } catch {
+      // Demo wallet still credits when the ledger API is unavailable.
+    }
     try {
       dispatch({ type: "DEPOSIT", userId: user!.id, amount: value });
       setAmount("");

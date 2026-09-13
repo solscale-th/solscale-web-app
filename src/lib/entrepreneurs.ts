@@ -9,6 +9,7 @@ export type ApiEntrepreneur = {
   bankName?: string | null;
   bankAccountName?: string | null;
   bankAccountNumber?: string | null;
+  depositBalance?: number | null;
   createdAt?: string | null;
 };
 
@@ -45,6 +46,7 @@ const ENTREPRENEUR_PUBLIC_FIELDS = /* GraphQL */ `
   companyName
   brandDescription
   logoUrl
+  depositBalance
   createdAt
 `;
 
@@ -60,6 +62,7 @@ const ENTREPRENEUR_DETAIL_QUERY = /* GraphQL */ `
         bankName
         bankAccountName
         bankAccountNumber
+        depositBalance
         createdAt
       }
       status {
@@ -139,4 +142,34 @@ export async function fetchEntrepreneurByEmail(
   return (
     (data ?? []).find((ent) => ent.email?.toLowerCase() === normalized) ?? null
   );
+}
+
+const DEPOSIT_FUNDS = /* GraphQL */ `
+  mutation DepositFunds($input: DepositFundsInput!) {
+    depositFunds(input: $input) {
+      data {
+        id
+        depositBalance
+      }
+      status {
+        error
+      }
+    }
+  }
+`;
+
+type DepositFundsResponse = {
+  depositFunds: {
+    data: { id: number; depositBalance?: number | null } | null;
+    status?: { error?: string | null };
+  };
+};
+
+export async function depositFunds(amount: number): Promise<number> {
+  const res = await graphqlRequest<DepositFundsResponse>(DEPOSIT_FUNDS, {
+    input: { amount },
+  });
+  const { data, status } = res.depositFunds;
+  if (!data) throw new Error(status?.error ?? "Failed to deposit funds");
+  return data.depositBalance ?? 0;
 }

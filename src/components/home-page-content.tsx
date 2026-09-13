@@ -25,11 +25,10 @@ import {
   formatBudgetRange,
   MOCK_JOBS,
   PLATFORM_COLORS,
+  type Job,
   type Platform,
 } from "@/lib/mock-jobs";
-import { loadFlowchartState } from "@/lib/flowchart/store";
-import { postedJobToJob } from "@/lib/flowchart/jobs";
-import type { FlowPostedJob } from "@/lib/flowchart/types";
+import { fetchMarketplaceJobs, logJobList } from "@/lib/jobs";
 import {
   FILTER_COUNTRIES,
   FILTER_PLATFORMS,
@@ -297,11 +296,7 @@ export default function HomePageContent() {
 
   const INFLUENCERS_PER_PAGE = 8;
   const [visibleCount, setVisibleCount] = useState(INFLUENCERS_PER_PAGE);
-  const [postedJobs, setPostedJobs] = useState<FlowPostedJob[]>([]);
-
-  useEffect(() => {
-    setPostedJobs(loadFlowchartState().postedJobs);
-  }, []);
+  const [jobCatalog, setJobCatalog] = useState<Job[]>([]);
 
   // Role-gated filters stay in state but are ignored when not applicable
   const activeFollowerRange = showFollowerRange ? selectedFollowerRange : null;
@@ -395,6 +390,32 @@ export default function HomePageContent() {
   }, [search, selectedCategories, selectedPlatform, reloadKey]);
 
   useEffect(() => {
+    if (!isInfluencer) return;
+
+    const controller = new AbortController();
+    fetchMarketplaceJobs(controller.signal)
+      .then((jobs) => {
+        if (controller.signal.aborted) return;
+        const apiIds = new Set(jobs.map((job) => job.id));
+        setJobCatalog([
+          ...jobs,
+          ...MOCK_JOBS.filter((job) => !apiIds.has(job.id)),
+        ]);
+      })
+      .catch((err) => {
+        if (controller.signal.aborted) return;
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        logJobList("home:api", {
+          reason: "jobs request failed",
+          error: err instanceof Error ? err.message : String(err),
+        });
+        setJobCatalog(MOCK_JOBS);
+      });
+
+    return () => controller.abort();
+  }, [isInfluencer, reloadKey]);
+
+  useEffect(() => {
     if (influencers.length === 0) return;
 
     setDiscoveredCategories((prev) => {
@@ -448,13 +469,6 @@ export default function HomePageContent() {
   const categoryLabel = (key: InfluencerCategoryKey) =>
     t(`categories.${key}`);
 
-  const jobCatalog = useMemo(() => {
-    const posted = postedJobs
-      .filter((job) => job.visibility === "public")
-      .map(postedJobToJob);
-    return [...posted, ...MOCK_JOBS];
-  }, [postedJobs]);
-
   const filteredJobs = useMemo(() => {
     return jobCatalog.filter((job) => {
       if (!matchesCountry(job.location, selectedCountry)) return false;
@@ -474,6 +488,20 @@ export default function HomePageContent() {
       return true;
     });
   }, [jobCatalog, search, selectedCountry, selectedPlatform, activePriceRange]);
+
+  useEffect(() => {
+    if (!isInfluencer) return;
+    logJobList("home", {
+      catalogCount: jobCatalog.length,
+      filteredCount: filteredJobs.length,
+      jobs: filteredJobs.map((job) => ({
+        id: job.id,
+        title: job.title,
+        company: job.company,
+        companyId: job.companyId,
+      })),
+    });
+  }, [isInfluencer, jobCatalog, filteredJobs]);
 
   const filteredInfluencers = useMemo(() => {
     if (!selectedCountry && !activeFollowerRange) {
