@@ -14,13 +14,9 @@ import {
   PLATFORM_COLORS,
   type Job,
 } from "@/lib/mock-jobs";
-import {
-  MOCK_DIRECT_OFFERS,
-  type DirectOfferStatus,
-} from "@/lib/mock-direct";
-import { MOCK_INFLUENCER_APPLICATIONS } from "@/lib/mock-applications";
+import type { DirectOfferStatus } from "@/lib/mock-direct";
 import { useFlowchart } from "@/hooks/use-flowchart";
-import { buildApplication, buildEngagement, buildInvite } from "@/lib/flowchart/builders";
+import { buildApplication, buildEngagement } from "@/lib/flowchart/builders";
 import { escrowAmountForJob } from "@/lib/flowchart/jobs";
 import JobWorkspaceSection from "@/components/job-workspace-section";
 import { jobDetailHref } from "@/lib/job-detail-href";
@@ -118,19 +114,11 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
   const searchParams = useSearchParams();
   const engagementIdParam = searchParams.get("engagement");
 
-  const [coverMessage, setCoverMessage] = useState("");
-  const [portfolioUrl, setPortfolioUrl] = useState("");
   const [applyStatus, setApplyStatus] = useState<"idle" | "submitting" | "done">("idle");
   const [acceptStatus, setAcceptStatus] = useState<"idle" | "submitting">("idle");
 
   const [question, setQuestion] = useState("");
   const [askStatus, setAskStatus] = useState<"idle" | "sending" | "done">("idle");
-
-  const seedOffer = useMemo(() => {
-    if (user?.role !== "influencer") return null;
-    const offers = MOCK_DIRECT_OFFERS[user.id] ?? MOCK_DIRECT_OFFERS["1"] ?? [];
-    return offers.find((o) => o.jobId === job.id) ?? null;
-  }, [user, job.id]);
 
   const liveInvite = user
     ? state.invites.find(
@@ -138,8 +126,7 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
       )
     : undefined;
 
-  const offerStatus: DirectOfferStatus | null =
-    liveInvite?.status ?? seedOffer?.status ?? null;
+  const offerStatus: DirectOfferStatus | null = liveInvite?.status ?? null;
 
   const userEngagements = useMemo((): FlowEngagement[] => {
     if (!user) return [];
@@ -195,17 +182,13 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
 
   const hasApplied = useMemo(() => {
     if (user?.role !== "influencer") return false;
-    const live = state.applications.some(
+    return state.applications.some(
       (app) => app.jobId === job.id && app.influencerId === user.id
     );
-    if (live) return true;
-    const apps =
-      MOCK_INFLUENCER_APPLICATIONS[user.id] ?? MOCK_INFLUENCER_APPLICATIONS["1"] ?? [];
-    return apps.some((app) => app.jobId === job.id);
   }, [user, job.id, state.applications]);
 
   /** Chart: apply only on the marketplace path — not after match or invite. */
-  const showApplicationSection =
+  const canApply =
     user?.role === "influencer" &&
     !hasEngagement &&
     !isPendingOffer &&
@@ -214,12 +197,11 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
 
   const platformStyle = PLATFORM_COLORS[job.platform];
   const budget = formatBudgetRange(job.budgetMin, job.budgetMax);
-  const showMobileApplyBar =
-    showApplicationSection && !hasApplied && applyStatus !== "done";
+  const applyDone = hasApplied || applyStatus === "done";
+  const showMobileApplyBar = canApply && !applyDone;
 
-  function handleApply(e: React.FormEvent) {
-    e.preventDefault();
-    if (!user) return;
+  function handleApply() {
+    if (!user || applyStatus === "submitting" || hasApplied) return;
     setApplyStatus("submitting");
     try {
       // API connecting: mutation applyToJob(jobId, cover, portfolio).
@@ -231,9 +213,7 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
           entrepreneurId: job.companyId,
           influencerName: user.name,
           influencerHandle: `@${user.name.replace(/\s+/g, "").toLowerCase()}`,
-          coverMessage: [coverMessage.trim(), portfolioUrl.trim()]
-            .filter(Boolean)
-            .join("\n"),
+          coverMessage: "",
         }),
       });
       setApplyStatus("done");
@@ -243,24 +223,8 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
   }
 
   async function handleAcceptOffer() {
-    if (!user || acceptStatus === "submitting") return;
-    const invite =
-      liveInvite ??
-      buildInvite({
-        jobId: job.id,
-        entrepreneurId: job.companyId,
-        influencerId: user.id,
-        fromCompany: seedOffer?.fromCompany ?? job.company,
-        influencerName: user.name,
-        isPrivate: seedOffer?.isPrivate ?? true,
-      });
-    if (!liveInvite) {
-      dispatch({
-        type: "SEND_INVITE",
-        invite: { ...invite, id: seedOffer?.id ?? invite.id, status: "pending" },
-      });
-    }
-    const inviteId = liveInvite?.id ?? seedOffer?.id ?? invite.id;
+    if (!user || !liveInvite || acceptStatus === "submitting") return;
+    const inviteId = liveInvite.id;
     const apiInviteId = parseApiId(inviteId);
     setAcceptStatus("submitting");
     if (apiInviteId) {
@@ -273,7 +237,7 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
     const eng = buildEngagement({
       jobId: job.id,
       influencerId: user.id,
-      entrepreneurId: liveInvite?.entrepreneurId ?? (seedOffer ? "2" : job.companyId),
+      entrepreneurId: liveInvite.entrepreneurId,
       influencerName: user.name,
       influencerHandle: `@${user.name.replace(/\s+/g, "").toLowerCase()}`,
       escrowAmount: escrowAmountForJob(job),
@@ -286,24 +250,8 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
   }
 
   async function handleDeclineOffer() {
-    if (!user) return;
-    const invite =
-      liveInvite ??
-      buildInvite({
-        jobId: job.id,
-        entrepreneurId: job.companyId,
-        influencerId: user.id,
-        fromCompany: seedOffer?.fromCompany ?? job.company,
-        influencerName: user.name,
-        isPrivate: seedOffer?.isPrivate ?? true,
-      });
-    if (!liveInvite) {
-      dispatch({
-        type: "SEND_INVITE",
-        invite: { ...invite, id: seedOffer?.id ?? invite.id, status: "pending" },
-      });
-    }
-    const inviteId = liveInvite?.id ?? seedOffer?.id ?? invite.id;
+    if (!user || !liveInvite) return;
+    const inviteId = liveInvite.id;
     const apiInviteId = parseApiId(inviteId);
     if (apiInviteId) {
       try {
@@ -535,7 +483,7 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
                   </motion.section>
                 </div>
 
-                {/* Forms — Ask first; Apply stacks below when available */}
+                {/* Ask for more information */}
                 <div className="mt-10 grid grid-cols-1 gap-5">
                   <motion.section
                     id="job-ask"
@@ -631,123 +579,6 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
                       </form>
                     )}
                   </motion.section>
-
-                  {showApplicationSection && (
-                    <motion.section
-                      id="job-submit-work"
-                      initial={{ opacity: 0, y: 16 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true, margin: "-60px" }}
-                      transition={{ duration: 0.4, delay: 0.06 }}
-                      className={`overflow-hidden ${PANEL}`}
-                    >
-                      <div className="h-1 w-full bg-gradient-to-r from-[#9d003b] via-[#c8004c] to-[#d7ff2f]" />
-                      <div className="p-5 sm:p-6">
-                        <div className="flex items-start gap-3">
-                          <span className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#9d003b] text-white">
-                            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden>
-                              <path
-                                d="M3 4.5H15V14.5H3V4.5Z"
-                                stroke="currentColor"
-                                strokeWidth="1.4"
-                                strokeLinejoin="round"
-                              />
-                              <path d="M3 4.5L9 9.5L15 4.5" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
-                            </svg>
-                          </span>
-                          <div>
-                            <h3 className="text-[16px] font-semibold text-[#141414]">
-                              {dictionary.jobDetail.applySection.title}
-                            </h3>
-                            <p className="mt-0.5 text-[13px] text-[#8a8580]">
-                              {dictionary.jobDetail.applySection.subtitle}
-                            </p>
-                          </div>
-                        </div>
-
-                        {applyStatus === "done" ? (
-                          <motion.div
-                            initial={{ opacity: 0, scale: 0.97 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="mt-5 flex flex-col items-center gap-2 rounded-xl bg-[#ecfdf5] py-7 text-center"
-                          >
-                            <span className="grid h-10 w-10 place-items-center rounded-full bg-[#0f7b34] text-white">
-                              <CheckIcon />
-                            </span>
-                            <p className="text-[14px] font-semibold text-[#0f7b34]">
-                              {dictionary.jobDetail.applySection.successTitle}
-                            </p>
-                            <p className="max-w-xs text-[13px] text-[#5a5550]">
-                              {dictionary.jobDetail.applySection.successBody}
-                            </p>
-                          </motion.div>
-                        ) : (
-                          <form onSubmit={handleApply} className="mt-5 space-y-4">
-                            <div>
-                              <label
-                                htmlFor="job-cover-message"
-                                className="mb-1.5 block text-[13px] font-semibold text-[#3a3530]"
-                              >
-                                {dictionary.jobDetail.applySection.coverLabel}
-                                <span className="ml-1 text-[#9d003b]">*</span>
-                              </label>
-                              <textarea
-                                id="job-cover-message"
-                                required
-                                rows={5}
-                                value={coverMessage}
-                                onChange={(e) => setCoverMessage(e.target.value)}
-                                placeholder={dictionary.jobDetail.applySection.coverPlaceholder}
-                                className={`resize-none ${FIELD}`}
-                              />
-                            </div>
-                            <div>
-                              <label
-                                htmlFor="job-portfolio-url"
-                                className="mb-1.5 block text-[13px] font-semibold text-[#3a3530]"
-                              >
-                                {dictionary.jobDetail.applySection.portfolioLabel}
-                              </label>
-                              <input
-                                id="job-portfolio-url"
-                                type="url"
-                                value={portfolioUrl}
-                                onChange={(e) => setPortfolioUrl(e.target.value)}
-                                placeholder={dictionary.jobDetail.applySection.portfolioPlaceholder}
-                                className={FIELD}
-                              />
-                            </div>
-                            <motion.button
-                              type="submit"
-                              disabled={applyStatus === "submitting" || !coverMessage.trim()}
-                              whileHover={coverMessage.trim() && applyStatus !== "submitting" ? { y: -1 } : undefined}
-                              whileTap={coverMessage.trim() && applyStatus !== "submitting" ? { scale: 0.99 } : undefined}
-                              className={`flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#9d003b] text-[14px] font-semibold text-white transition-colors hover:bg-[#850030] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-[#9d003b] ${FOCUS_RING}`}
-                            >
-                              {applyStatus === "submitting" ? (
-                                <>
-                                  <svg className="animate-spin" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
-                                    <circle
-                                      cx="8"
-                                      cy="8"
-                                      r="6"
-                                      stroke="currentColor"
-                                      strokeWidth="2"
-                                      strokeDasharray="28"
-                                      strokeDashoffset="10"
-                                    />
-                                  </svg>
-                                  {dictionary.jobDetail.applySection.submitting}
-                                </>
-                              ) : (
-                                dictionary.jobDetail.applySection.submit
-                              )}
-                            </motion.button>
-                          </form>
-                        )}
-                      </div>
-                    </motion.section>
-                  )}
                 </div>
 
                 {hasEngagement && engagementForJob && user && (
@@ -877,16 +708,29 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
                       </div>
                     ) : (
                       <>
-                        {!hasApplied && isInfluencer && (
-                          <motion.a
-                            href="#job-submit-work"
-                            whileHover={{ y: -1 }}
-                            whileTap={{ scale: 0.99 }}
-                            className={`flex h-11 w-full items-center justify-center rounded-xl bg-[#9d003b] text-[14px] font-semibold text-white transition-colors hover:bg-[#850030] ${FOCUS_RING}`}
+                        {canApply && applyDone ? (
+                          <div className="rounded-xl bg-[#ecfdf5] px-3.5 py-4 text-center">
+                            <p className="text-[13px] font-semibold text-[#0f7b34]">
+                              {dictionary.jobDetail.applySection.successTitle}
+                            </p>
+                            <p className="mt-1 text-[12px] leading-relaxed text-[#5a5550]">
+                              {dictionary.jobDetail.applySection.successBody}
+                            </p>
+                          </div>
+                        ) : canApply ? (
+                          <motion.button
+                            type="button"
+                            onClick={handleApply}
+                            disabled={applyStatus === "submitting"}
+                            whileHover={applyStatus === "submitting" ? undefined : { y: -1 }}
+                            whileTap={applyStatus === "submitting" ? undefined : { scale: 0.99 }}
+                            className={`flex h-11 w-full items-center justify-center rounded-xl bg-[#9d003b] text-[14px] font-semibold text-white transition-colors hover:bg-[#850030] disabled:opacity-60 ${FOCUS_RING}`}
                           >
-                            {t("jobDetail.applyNow")}
-                          </motion.a>
-                        )}
+                            {applyStatus === "submitting"
+                              ? dictionary.jobDetail.applySection.submitting
+                              : t("jobDetail.applyNow")}
+                          </motion.button>
+                        ) : null}
                         {offerStatus !== "accepted" && (
                           <button
                             type="button"
@@ -917,12 +761,16 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
                     {budget}
                   </p>
                 </div>
-                <a
-                  href="#job-submit-work"
-                  className={`flex h-11 shrink-0 items-center justify-center rounded-xl bg-[#9d003b] px-6 text-[14px] font-semibold text-white transition-colors hover:bg-[#850030] ${FOCUS_RING}`}
+                <button
+                  type="button"
+                  onClick={handleApply}
+                  disabled={applyStatus === "submitting"}
+                  className={`flex h-11 shrink-0 items-center justify-center rounded-xl bg-[#9d003b] px-6 text-[14px] font-semibold text-white transition-colors hover:bg-[#850030] disabled:opacity-60 ${FOCUS_RING}`}
                 >
-                  {t("jobDetail.applyNow")}
-                </a>
+                  {applyStatus === "submitting"
+                    ? dictionary.jobDetail.applySection.submitting
+                    : t("jobDetail.applyNow")}
+                </button>
               </div>
             </div>
           </>

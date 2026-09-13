@@ -1,14 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import MainHeader from "@/components/main-header";
 import SiteFooter from "@/components/site-footer";
 import { useLanguage } from "@/i18n/language-provider";
 import { useAuth } from "@/hooks/use-auth";
 import {
-  MOCK_MY_JOBS_INFLUENCER,
-  MOCK_MY_JOBS_ENTREPRENEUR,
+  canSubmitWork,
   WORK_STATUS_LABELS,
   type JobEngagement,
 } from "@/lib/mock-my-jobs";
@@ -18,6 +17,7 @@ import { useFlowchart } from "@/hooks/use-flowchart";
 import { findJobById } from "@/lib/flowchart/jobs";
 import { jobDetailHref, type JobDetailSection } from "@/lib/job-detail-href";
 import type { FlowEngagement } from "@/lib/flowchart/types";
+import { SendUrlsDialog } from "@/components/submission-url-form";
 
 function flowToEngagement(eng: FlowEngagement): JobEngagement {
   return {
@@ -63,10 +63,12 @@ function EngagementCard({
   engagement,
   isInfluencer,
   seen,
+  onSendUrls,
 }: {
   engagement: JobEngagement;
   isInfluencer: boolean;
   seen: boolean;
+  onSendUrls?: () => void;
 }) {
   const { t } = useLanguage();
   const router = useRouter();
@@ -125,10 +127,23 @@ function EngagementCard({
 
         {/* Action buttons */}
         <div className="mt-auto flex flex-col gap-1.5 pt-1">
+          {isInfluencer && canSubmitWork(engagement.workStatus) && onSendUrls && (
+            <button
+              type="button"
+              onClick={onSendUrls}
+              className="block w-full rounded-xl bg-[#9d003b] px-3.5 py-2 text-center text-[12px] font-semibold text-white transition-colors hover:bg-[#850030]"
+            >
+              {t("myJob.sendUrls")}
+            </button>
+          )}
           <button
             type="button"
             onClick={() => navigate("submit-work")}
-            className="block w-full rounded-xl bg-[#9d003b] px-3.5 py-2 text-center text-[12px] font-semibold text-white transition-colors hover:bg-[#850030]"
+            className={`block w-full rounded-xl px-3.5 py-2 text-center text-[12px] font-semibold transition-colors ${
+              isInfluencer && canSubmitWork(engagement.workStatus)
+                ? "border border-[#9d003b] text-[#9d003b] hover:bg-[#9d003b]/5"
+                : "bg-[#9d003b] text-white hover:bg-[#850030]"
+            }`}
           >
             {primaryLabel}
           </button>
@@ -206,9 +221,16 @@ function SortDropdown({
 export default function MyJobsListContent() {
   const { t } = useLanguage();
   const { user } = useAuth();
-  const { state } = useFlowchart();
+  const { state, dispatch } = useFlowchart();
   const [sortKey, setSortKey] = useState<SortKey>("dateAdded");
   const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
+  const [sendUrlsEngagement, setSendUrlsEngagement] = useState<JobEngagement | null>(null);
+  const [sendUrlsError, setSendUrlsError] = useState("");
+
+  const closeSendUrls = useCallback(() => {
+    setSendUrlsEngagement(null);
+    setSendUrlsError("");
+  }, []);
 
   useEffect(() => {
     const sync = () => setSeenIds(new Set(getSeenMyJobIds()));
@@ -247,15 +269,7 @@ export default function MyJobsListContent() {
       return eng.entrepreneurId === user.id;
     })
     .map(flowToEngagement);
-  const seedList = isInfluencer
-    ? (MOCK_MY_JOBS_INFLUENCER[user.id] ?? MOCK_MY_JOBS_INFLUENCER["1"] ?? [])
-    : (MOCK_MY_JOBS_ENTREPRENEUR[user.id] ?? MOCK_MY_JOBS_ENTREPRENEUR["2"] ?? []);
-  const rawList = [
-    ...liveList,
-    ...seedList.filter((item) => !liveList.some((live) => live.id === item.id)),
-  ];
-
-  const sortedList = [...rawList].sort((a, b) => {
+  const sortedList = [...liveList].sort((a, b) => {
     if (sortKey === "dateAdded") {
       const n = notifFirst(a.hasUpdate, a.id, b.hasUpdate, b.id);
       if (n !== 0) return n;
@@ -268,12 +282,31 @@ export default function MyJobsListContent() {
       return aLatest - bLatest;
     }
     if (sortKey === "name") {
-      const jobA = MOCK_JOBS.find((j) => j.id === a.jobId);
-      const jobB = MOCK_JOBS.find((j) => j.id === b.jobId);
+      const jobA = findJobById(a.jobId) ?? MOCK_JOBS.find((j) => j.id === a.jobId);
+      const jobB = findJobById(b.jobId) ?? MOCK_JOBS.find((j) => j.id === b.jobId);
       return (jobA?.title ?? "").localeCompare(jobB?.title ?? "");
     }
     return 0;
   });
+
+  const sendUrlsJob = sendUrlsEngagement
+    ? findJobById(sendUrlsEngagement.jobId) ?? MOCK_JOBS.find((j) => j.id === sendUrlsEngagement.jobId)
+    : undefined;
+
+  function handleSendUrls(note: string) {
+    if (!sendUrlsEngagement) return;
+    try {
+      dispatch({
+        type: "SUBMIT_WORK",
+        engagementId: sendUrlsEngagement.id,
+        note,
+      });
+      markMyJobSeen(sendUrlsEngagement.id);
+      closeSendUrls();
+    } catch {
+      setSendUrlsError(t("myJob.sendUrlsError"));
+    }
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-white">
@@ -305,12 +338,34 @@ export default function MyJobsListContent() {
                   engagement={engagement}
                   isInfluencer={isInfluencer}
                   seen={seenIds.has(engagement.id)}
+                  onSendUrls={
+                    isInfluencer && canSubmitWork(engagement.workStatus)
+                      ? () => {
+                          setSendUrlsError("");
+                          setSendUrlsEngagement(engagement);
+                        }
+                      : undefined
+                  }
                 />
               ))}
             </div>
           )}
         </div>
       </section>
+
+      <SendUrlsDialog
+        key={sendUrlsEngagement?.id ?? "closed"}
+        open={sendUrlsEngagement !== null}
+        title={sendUrlsJob?.title}
+        submitLabel={
+          sendUrlsEngagement?.workStatus === "revision_requested"
+            ? t("myJob.detailReSubmitBtn")
+            : t("myJob.sendUrls")
+        }
+        error={sendUrlsError}
+        onClose={closeSendUrls}
+        onSubmit={handleSendUrls}
+      />
 
       <SiteFooter />
     </div>

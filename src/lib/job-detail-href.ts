@@ -1,9 +1,4 @@
 import type { FlowEngagement } from "@/lib/flowchart/types";
-import {
-  MOCK_MY_JOBS_ENTREPRENEUR,
-  MOCK_MY_JOBS_INFLUENCER,
-  type JobEngagement,
-} from "@/lib/mock-my-jobs";
 
 /** Hash targets on the job detail page. */
 export type JobDetailSection = "submit-work" | "ask" | "workspace";
@@ -54,24 +49,6 @@ export function resolveJobDetailHref(
     return jobDetailHref(jobId, live.id, options.section ?? "submit-work");
   }
 
-  const seedList =
-    options.role === "influencer"
-      ? (MOCK_MY_JOBS_INFLUENCER[options.userId] ??
-        MOCK_MY_JOBS_INFLUENCER["1"] ??
-        [])
-      : (MOCK_MY_JOBS_ENTREPRENEUR[options.userId] ??
-        MOCK_MY_JOBS_ENTREPRENEUR["2"] ??
-        []);
-
-  const seed = seedList.find((eng: JobEngagement) => {
-    if (eng.jobId !== jobId) return false;
-    if (options.influencerId) return eng.influencerId === options.influencerId;
-    return true;
-  });
-  if (seed) {
-    return jobDetailHref(jobId, seed.id, options.section ?? "submit-work");
-  }
-
   return jobDetailHref(jobId, undefined, options.section);
 }
 
@@ -82,12 +59,6 @@ export function jobDetailHrefFromEngagement(
 ): string | null {
   const live = liveEngagements.find((item) => item.id === engagementId);
   if (live) return jobDetailHref(live.jobId, live.id, section);
-
-  const seed = [
-    ...Object.values(MOCK_MY_JOBS_INFLUENCER).flat(),
-    ...Object.values(MOCK_MY_JOBS_ENTREPRENEUR).flat(),
-  ].find((item) => item.id === engagementId);
-  if (seed) return jobDetailHref(seed.jobId, seed.id, section);
 
   return null;
 }

@@ -7,7 +7,6 @@ import { useAuth } from "@/hooks/use-auth";
 import { useFlowchart } from "@/hooks/use-flowchart";
 import { useLanguage } from "@/i18n/language-provider";
 import { buildInvite } from "@/lib/flowchart/builders";
-import { MOCK_JOBS } from "@/lib/mock-jobs";
 
 export default function SendInviteContent() {
   const { t } = useLanguage();
@@ -27,12 +26,7 @@ export default function SendInviteContent() {
       title: job.title,
       visibility: job.visibility,
     }));
-    const seed = MOCK_JOBS.slice(0, 6).map((job) => ({
-      id: job.id,
-      title: job.title,
-      visibility: "public" as const,
-    }));
-    return postedAsOptions.length > 0 ? postedAsOptions : seed;
+    return postedAsOptions;
   }, [state.postedJobs, user]);
 
   const [jobId, setJobId] = useState(jobs[0]?.id ?? "");

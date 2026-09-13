@@ -5,13 +5,16 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/i18n/language-provider";
 import { useAuth } from "@/hooks/use-auth";
-import { getApplicationBadgeCount } from "@/lib/mock-applications";
+import { useFlowchart } from "@/hooks/use-flowchart";
+import {
+  liveApplicationBadgeCount,
+  liveDirectBadgeCount,
+  liveMyJobBadgeCount,
+  liveSubmissionBadgeCount,
+} from "@/lib/flowchart/badges";
 import { getSeenIds, SEEN_CHANGE_EVENT } from "@/lib/seen-applications";
-import { getDirectBadgeCount } from "@/lib/mock-direct";
 import { getSeenDirectIds, SEEN_DIRECT_EVENT } from "@/lib/seen-direct";
-import { getSubmissionBadgeCount } from "@/lib/mock-submissions";
 import { getSeenSubmissionIds, SEEN_SUBMISSION_EVENT } from "@/lib/seen-submissions";
-import { getMyJobsBadgeCount } from "@/lib/mock-my-jobs";
 import { getSeenMyJobIds, SEEN_MY_JOBS_EVENT } from "@/lib/seen-my-jobs";
 import LanguageSwitcher from "./language-switcher";
 
@@ -51,6 +54,7 @@ export default function MainHeader() {
   const router = useRouter();
   const { t } = useLanguage();
   const { user, isLoggedIn, logout } = useAuth();
+  const { state } = useFlowchart();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -104,10 +108,18 @@ export default function MainHeader() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const applicationBadge = user ? getApplicationBadgeCount(user.id, user.role, seenIds) : 0;
-  const directBadge      = user ? getDirectBadgeCount(user.id, user.role, seenDirectIds) : 0;
-  const myJobBadge       = user ? getMyJobsBadgeCount(user.id, user.role, seenMyJobIds) : 0;
-  const submissionBadge  = user ? getSubmissionBadgeCount(user.id, user.role, seenSubmissionIds) : 0;
+  const applicationBadge = user
+    ? liveApplicationBadgeCount(state, user.id, user.role, seenIds)
+    : 0;
+  const directBadge = user
+    ? liveDirectBadgeCount(state, user.id, user.role, seenDirectIds)
+    : 0;
+  const myJobBadge = user
+    ? liveMyJobBadgeCount(state, user.id, user.role, seenMyJobIds)
+    : 0;
+  const submissionBadge = user
+    ? liveSubmissionBadgeCount(state, user.id, user.role, seenSubmissionIds)
+    : 0;
 
   const navItems = [
     { label: t("nav.application"), href: "/applications", badge: applicationBadge },

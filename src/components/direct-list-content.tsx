@@ -7,8 +7,6 @@ import SiteFooter from "@/components/site-footer";
 import { useLanguage } from "@/i18n/language-provider";
 import { useAuth } from "@/hooks/use-auth";
 import {
-  MOCK_DIRECT_OFFERS,
-  getDirectBadgeCount,
   formatSent,
   type DirectOffer,
 } from "@/lib/mock-direct";
@@ -180,14 +178,7 @@ export default function DirectListContent() {
           hasUpdate: inv.status === "pending",
         }))
     : [];
-  const seedOffers = isInfluencer
-    ? (MOCK_DIRECT_OFFERS[user.id] ?? MOCK_DIRECT_OFFERS["1"] ?? []).filter((o) => o.isPrivate)
-    : [];
-  const rawOffers = [
-    ...liveOffers,
-    ...seedOffers.filter((o) => !liveOffers.some((live) => live.id === o.id || live.jobId === o.jobId)),
-  ];
-  const sortedOffers = [...rawOffers].sort((a, b) => {
+  const sortedOffers = [...liveOffers].sort((a, b) => {
     if (sortKey === "dateAdded") {
       const n = notifFirst(a.hasUpdate, a.id, b.hasUpdate, b.id);
       if (n !== 0) return n;
@@ -233,9 +224,6 @@ export default function DirectListContent() {
       };
     }),
   });
-
-  // Suppress unused-import warning (getDirectBadgeCount is used in the header)
-  void getDirectBadgeCount;
 
   return (
     <div className="flex min-h-screen flex-col bg-white">

@@ -3,7 +3,6 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useFlowchart } from "@/hooks/use-flowchart";
-import { getEngagementById } from "@/lib/mock-my-jobs";
 import { jobDetailHref } from "@/lib/job-detail-href";
 
 export default function MyJobRedirect({ engagementId }: { engagementId: string }) {
@@ -12,8 +11,7 @@ export default function MyJobRedirect({ engagementId }: { engagementId: string }
 
   useEffect(() => {
     const live = state.engagements.find((item) => item.id === engagementId);
-    const seed = getEngagementById(engagementId);
-    const jobId = live?.jobId ?? seed?.jobId;
+    const jobId = live?.jobId;
     if (jobId) {
       router.replace(jobDetailHref(jobId, engagementId, "workspace"));
     } else {

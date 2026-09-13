@@ -8,12 +8,10 @@ import { useLanguage } from "@/i18n/language-provider";
 import { useAuth } from "@/hooks/use-auth";
 import { getSeenIds, markSeen, SEEN_CHANGE_EVENT } from "@/lib/seen-applications";
 import {
-  MOCK_INFLUENCER_APPLICATIONS,
   formatApplied,
   type ApplicationStatus,
   type InfluencerApplication,
 } from "@/lib/mock-applications";
-import { MOCK_JOB_APPLICANTS } from "@/lib/mock-direct";
 import { useFlowchart } from "@/hooks/use-flowchart";
 import { findJobById } from "@/lib/flowchart/jobs";
 import { logJobList } from "@/lib/jobs";
@@ -262,22 +260,15 @@ export default function ApplicationListContent() {
           hasUpdate: app.status !== "pending",
         }))
     : [];
-  const seedApps = isInfluencer
-    ? (MOCK_INFLUENCER_APPLICATIONS[user.id] ?? MOCK_INFLUENCER_APPLICATIONS["1"] ?? [])
-    : [];
-  const rawApps = [
-    ...liveApps,
-    ...seedApps.filter((app) => !liveApps.some((live) => live.id === app.id || live.jobId === app.jobId)),
-  ];
-  const sortedApps = [...rawApps].sort((a, b) => {
+  const sortedApps = [...liveApps].sort((a, b) => {
     // Notification items always come first on the default sort
     if (sortKey === "dateAdded") {
       const n = notifFirst(a.hasUpdate, a.id, b.hasUpdate, b.id);
       if (n !== 0) return n;
       return a.appliedDaysAgo - b.appliedDaysAgo;
     }
-    const jobA = MOCK_JOBS.find((j) => j.id === a.jobId);
-    const jobB = MOCK_JOBS.find((j) => j.id === b.jobId);
+    const jobA = findJobById(a.jobId) ?? MOCK_JOBS.find((j) => j.id === a.jobId);
+    const jobB = findJobById(b.jobId) ?? MOCK_JOBS.find((j) => j.id === b.jobId);
     if (sortKey === "name")        return (jobA?.title ?? "").localeCompare(jobB?.title ?? "");
     if (sortKey === "updatedDate") return a.updatedDaysAgo - b.updatedDaysAgo;
     return 0;
@@ -293,19 +284,7 @@ export default function ApplicationListContent() {
         handle: app.influencerHandle,
         status: app.status,
       }));
-  const seedIncoming = isInfluencer
-    ? []
-    : (MOCK_JOB_APPLICANTS[user.id] ?? MOCK_JOB_APPLICANTS["2"] ?? []).map((app) => ({
-        id: app.id,
-        jobId: app.jobId,
-        name: app.influencerName,
-        handle: app.influencerHandle,
-        status: app.status as ApplicationStatus,
-      }));
-  const incoming = [
-    ...liveIncoming,
-    ...seedIncoming.filter((app) => !liveIncoming.some((live) => live.id === app.id)),
-  ];
+  const incoming = liveIncoming;
   const isEmpty = isInfluencer ? sortedApps.length === 0 : incoming.length === 0;
 
   logJobList("applications", {

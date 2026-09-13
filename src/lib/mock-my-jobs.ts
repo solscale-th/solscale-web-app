@@ -417,3 +417,7 @@ export const WORK_STATUS_LABELS: Record<WorkStatus, { en: string; className: str
   revision_requested: { en: "Revision Requested",  className: "bg-amber-100 text-amber-700" },
   approved:           { en: "Approved",            className: "bg-green-100 text-green-700" },
 };
+
+export function canSubmitWork(workStatus: WorkStatus): boolean {
+  return workStatus === "not_submitted" || workStatus === "revision_requested";
+}

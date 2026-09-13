@@ -23,7 +23,6 @@ import {
 } from "@/lib/mock-influencers";
 import {
   formatBudgetRange,
-  MOCK_JOBS,
   PLATFORM_COLORS,
   type Job,
   type Platform,
@@ -396,11 +395,7 @@ export default function HomePageContent() {
     fetchMarketplaceJobs(controller.signal)
       .then((jobs) => {
         if (controller.signal.aborted) return;
-        const apiIds = new Set(jobs.map((job) => job.id));
-        setJobCatalog([
-          ...jobs,
-          ...MOCK_JOBS.filter((job) => !apiIds.has(job.id)),
-        ]);
+        setJobCatalog(jobs);
       })
       .catch((err) => {
         if (controller.signal.aborted) return;
@@ -409,7 +404,7 @@ export default function HomePageContent() {
           reason: "jobs request failed",
           error: err instanceof Error ? err.message : String(err),
         });
-        setJobCatalog(MOCK_JOBS);
+        setJobCatalog([]);
       });
 
     return () => controller.abort();

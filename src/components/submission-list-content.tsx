@@ -8,13 +8,12 @@ import { useLanguage } from "@/i18n/language-provider";
 import { useAuth } from "@/hooks/use-auth";
 import { useFlowchart } from "@/hooks/use-flowchart";
 import {
-  MOCK_SUBMISSIONS,
-  MOCK_RECEIVED_SUBMISSIONS,
   formatSubmitted,
   type Submission,
   type ReceivedSubmission,
 } from "@/lib/mock-submissions";
 import { MOCK_JOBS } from "@/lib/mock-jobs";
+import { findJobById } from "@/lib/flowchart/jobs";
 import { logJobList } from "@/lib/jobs";
 import { getSeenSubmissionIds, markSubmissionSeen, SEEN_SUBMISSION_EVENT } from "@/lib/seen-submissions";
 import { resolveJobDetailHref } from "@/lib/job-detail-href";
@@ -53,7 +52,7 @@ function SubmissionCard({
   detailHref: string;
 }) {
   const { t } = useLanguage();
-  const job = MOCK_JOBS.find((j) => j.id === submission.jobId);
+  const job = findJobById(submission.jobId) ?? MOCK_JOBS.find((j) => j.id === submission.jobId);
   if (!job) return null;
 
   return (
@@ -95,7 +94,7 @@ function ReceivedSubmissionCard({
   detailHref: string;
 }) {
   const { t } = useLanguage();
-  const job = MOCK_JOBS.find((j) => j.id === item.jobId);
+  const job = findJobById(item.jobId) ?? MOCK_JOBS.find((j) => j.id === item.jobId);
   if (!job) return null;
 
   const initials = item.influencerName
@@ -252,18 +251,7 @@ export default function SubmissionListContent() {
         }))
     : [];
 
-  const seedSubs = isInfluencer
-    ? (MOCK_SUBMISSIONS[user.id] ?? MOCK_SUBMISSIONS["1"] ?? [])
-    : [];
-
-  const rawSubs = [
-    ...liveSubs,
-    ...seedSubs.filter(
-      (sub) => !liveSubs.some((live) => live.id === sub.id || live.jobId === sub.jobId)
-    ),
-  ];
-
-  const sortedSubs = [...rawSubs].sort((a, b) => {
+  const sortedSubs = [...liveSubs].sort((a, b) => {
     if (sortKey === "dateAdded") {
       const n = notifFirst(a.hasUpdate, a.id, b.hasUpdate, b.id);
       if (n !== 0) return n;
@@ -271,8 +259,8 @@ export default function SubmissionListContent() {
     }
     if (sortKey === "updatedDate") return a.updatedDaysAgo - b.updatedDaysAgo;
     if (sortKey === "name") {
-      const jobA = MOCK_JOBS.find((j) => j.id === a.jobId);
-      const jobB = MOCK_JOBS.find((j) => j.id === b.jobId);
+      const jobA = findJobById(a.jobId) ?? MOCK_JOBS.find((j) => j.id === a.jobId);
+      const jobB = findJobById(b.jobId) ?? MOCK_JOBS.find((j) => j.id === b.jobId);
       return (jobA?.title ?? "").localeCompare(jobB?.title ?? "");
     }
     return 0;
@@ -298,23 +286,7 @@ export default function SubmissionListContent() {
           hasUpdate: true,
         }));
 
-  const seedReceived = isInfluencer
-    ? []
-    : (MOCK_RECEIVED_SUBMISSIONS[user.id] ?? MOCK_RECEIVED_SUBMISSIONS["2"] ?? []);
-
-  const rawReceived = [
-    ...liveReceived,
-    ...seedReceived.filter(
-      (item) =>
-        !liveReceived.some(
-          (live) =>
-            live.id === item.id ||
-            (live.jobId === item.jobId && live.influencerId === item.influencerId)
-        )
-    ),
-  ];
-
-  const sortedReceived = [...rawReceived].sort((a, b) => {
+  const sortedReceived = [...liveReceived].sort((a, b) => {
     if (sortKey === "dateAdded") {
       const n = notifFirst(a.hasUpdate, a.id, b.hasUpdate, b.id);
       if (n !== 0) return n;
@@ -331,7 +303,7 @@ export default function SubmissionListContent() {
     role: user.role,
     count: isInfluencer ? sortedSubs.length : sortedReceived.length,
     jobs: (isInfluencer ? sortedSubs : sortedReceived).map((item) => {
-      const job = MOCK_JOBS.find((entry) => entry.id === item.jobId);
+      const job = findJobById(item.jobId) ?? MOCK_JOBS.find((entry) => entry.id === item.jobId);
       return {
         id: item.id,
         jobId: item.jobId,

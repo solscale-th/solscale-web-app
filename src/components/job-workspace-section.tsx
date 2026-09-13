@@ -4,10 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { useLanguage } from "@/i18n/language-provider";
 import {
+  canSubmitWork,
   WORK_STATUS_LABELS,
   type WorkStatus,
 } from "@/lib/mock-my-jobs";
 import type { FlowEngagement } from "@/lib/flowchart/types";
+import { SubmissionUrlForm, SubmittedUrls } from "@/components/submission-url-form";
 
 export { jobDetailHref } from "@/lib/job-detail-href";
 
@@ -46,14 +48,11 @@ function WorkPanel({
   }) => void;
 }) {
   const { t } = useLanguage();
-  const [submitText, setSubmitText] = useState("");
   const [revisionText, setRevisionText] = useState("");
   const [showRevisionForm, setShowRevisionForm] = useState(false);
 
-  function handleSubmit() {
-    if (!submitText.trim()) return;
-    onUpdate({ workStatus: "submitted", submissionNote: submitText.trim() });
-    setSubmitText("");
+  function handleSubmit(note: string) {
+    onUpdate({ workStatus: "submitted", submissionNote: note });
   }
 
   function handleApprove() {
@@ -102,30 +101,19 @@ function WorkPanel({
             <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-[#888]">
               Your submission
             </p>
-            <p className="text-[13px] text-[#333]">{submissionNote}</p>
+            <SubmittedUrls note={submissionNote} />
           </div>
         )}
 
-        {(workStatus === "not_submitted" || workStatus === "revision_requested") && (
-          <div className="space-y-2.5">
-            <textarea
-              value={submitText}
-              onChange={(e) => setSubmitText(e.target.value)}
-              placeholder={t("myJob.detailSubmitPlaceholder")}
-              rows={3}
-              className="w-full resize-none rounded-xl border border-[#eee] bg-[#fafafa] px-4 py-3 text-[13px] text-[#333] outline-none placeholder:text-[#bbb] focus:border-[#9d003b]/40 focus:ring-2 focus:ring-[#9d003b]/10"
-            />
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={!submitText.trim()}
-              className="w-full rounded-xl bg-[#9d003b] py-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-[#850030] disabled:opacity-40"
-            >
-              {workStatus === "revision_requested"
+        {canSubmitWork(workStatus) && (
+          <SubmissionUrlForm
+            submitLabel={
+              workStatus === "revision_requested"
                 ? t("myJob.detailReSubmitBtn")
-                : t("myJob.detailSubmitBtn")}
-            </button>
-          </div>
+                : t("myJob.sendUrls")
+            }
+            onSubmit={handleSubmit}
+          />
         )}
       </div>
     );
@@ -150,7 +138,7 @@ function WorkPanel({
             <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-[#888]">
               Influencer&apos;s submission
             </p>
-            <p className="text-[13px] text-[#333]">{submissionNote}</p>
+            <SubmittedUrls note={submissionNote} />
           </div>
 
           <div className="flex gap-2">
