@@ -621,7 +621,7 @@ const en = {
     gilt: {
       name: "Gilt",
       style: "Rich",
-      desc: "A champagne hex with an espresso core. Gilt metal, not a coin. Type in gold, on black.",
+      desc: "A champagne hex with an espresso core, ringed by sun rays. Gilt metal, not a coin. Type in gold, on black.",
     },
     pair: {
       name: "Pair",
@@ -631,12 +631,12 @@ const en = {
     grip: {
       name: "Grip",
       style: "Unity",
-      desc: "A handshake from above: two palms, interlaced fingers, thumbs locking. Brand and creator hold the same deal.",
+      desc: "Two hands locking — a J meeting a hook. Brand and creator hold the same deal.",
     },
     sigil: {
       name: "Sigil",
       style: "Monogram",
-      desc: "A backward S beside a forward S — Sol facing Scale. Burgundy and a lime-to-rose gradient.",
+      desc: "A cosine wave that starts on a crest and finishes at a lime bead — the same track as Course, phase-shifted. Sol and Scale in one stroke.",
     },
     solrise: {
       name: "Solrise",
@@ -644,9 +644,14 @@ const en = {
       desc: "A stair that scales up into the sun. Sol and scale: lift the dream until it meets the light.",
     },
     dawn: {
-      name: "Dawn",
-      style: "Ambition",
-      desc: "A sun rising over the horizon, rings expanding. Same climb — scale the dream until it meets the sol.",
+      name: "Type",
+      style: "Wordmark",
+      desc: "No symbol — Solscale is the mark. Sans, tight tracking, Sol in a stronger weight.",
+    },
+    match: {
+      name: "Match",
+      style: "Marketplace",
+      desc: "A brief and a creator meet on a gold sine, above a smile. Entrepreneurs who need it done, influencers who want the work.",
     },
   },
 } as const;

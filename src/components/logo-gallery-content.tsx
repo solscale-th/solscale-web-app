@@ -28,6 +28,7 @@ const INDEX: { id: LogoChoice; number: string }[] = [
   { id: "sigil", number: "07" },
   { id: "solrise", number: "08" },
   { id: "dawn", number: "09" },
+  { id: "match", number: "10" },
 ];
 
 function SurfaceBoard({
@@ -132,9 +133,6 @@ function DesignSection({ id }: { id: LogoChoice }) {
           <span className="mt-3 inline-flex rounded-full border border-[#ead9c8] bg-[#fff8ef] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-[#9d003b]">
             {t(`logoPage.${id}.style`)}
           </span>
-          <p className="mt-4 text-[15px] leading-relaxed text-[#6a646c]">
-            {t(`logoPage.${id}.desc`)}
-          </p>
         </div>
         <div
           className="grid h-20 w-20 place-items-center rounded-2xl ring-1 ring-[#ece7e1]"
@@ -157,7 +155,9 @@ function DesignSection({ id }: { id: LogoChoice }) {
               choice={id}
               size="md"
               colors={
-                id === "sigil" ? { ...intended, text: "#ffffff" } : dark
+                id === "sigil"
+                  ? { ...intended, text: "#ffffff" }
+                  : dark
               }
             />
           </SurfaceBoard>
