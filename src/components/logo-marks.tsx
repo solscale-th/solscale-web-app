@@ -316,6 +316,8 @@ export function SigilMark({
 }: MarkProps) {
   const uid = useId().replace(/:/g, "");
   const flare = spark ?? accent;
+  const s =
+    "M47 14.5C39.5 8 18 10 16.5 23.5C15 36.5 46 35 47.5 47C49 59 26 63 14 54.5";
 
   return (
     <svg
@@ -332,50 +334,29 @@ export function SigilMark({
           <stop offset="38%" stopColor={flare} />
           <stop offset="100%" stopColor={primary} />
         </linearGradient>
-        <linearGradient id={`sigil-edge-${uid}`} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor={accent} stopOpacity="0.95" />
-          <stop offset="100%" stopColor={primary} stopOpacity="0.15" />
-        </linearGradient>
       </defs>
 
-      <path
-        d="M18 54c2 4 10 6 18 4"
-        stroke={flare}
-        strokeWidth="1.4"
-        strokeLinecap="round"
-        opacity="0.7"
-      />
-      <path
-        d="M14 10c8-4 22-3 28 4"
-        stroke={accent}
-        strokeWidth="1.3"
-        strokeLinecap="round"
-        opacity="0.55"
-      />
+      <g transform="translate(19 32) scale(-0.56 0.56) translate(-31.5 -34.5)">
+        <path
+          d={s}
+          stroke={primary}
+          strokeWidth="9"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </g>
+      <g transform="translate(45 32) scale(0.56 0.56) translate(-31.5 -34.5)">
+        <path
+          d={s}
+          stroke={`url(#sigil-body-${uid})`}
+          strokeWidth="9"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </g>
 
-      <path
-        d="M47 14.5C39.5 8 18 10 16.5 23.5C15 36.5 46 35 47.5 47C49 59 26 63 14 54.5"
-        stroke={`url(#sigil-body-${uid})`}
-        strokeWidth="9.2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M45.5 16C39 11 21 12.5 19.5 24C18.2 35 44.5 35.5 46 47C47.2 56.5 29 59.5 18 53"
-        stroke={`url(#sigil-edge-${uid})`}
-        strokeWidth="2.1"
-        strokeLinecap="round"
-        opacity="0.85"
-      />
-
-      <circle cx="47.2" cy="14.2" r="3.1" fill={accent} />
-      <circle cx="14.2" cy="54.4" r="2.5" fill={primary} />
-      <path
-        d="M47.2 9.2V6.4M51.4 14.2H54.2M43 14.2H40.2M47.2 19.2V16.8"
-        stroke={accent}
-        strokeWidth="1.35"
-        strokeLinecap="round"
-      />
+      <circle cx="8.5" cy="16" r="2.3" fill={primary} />
+      <circle cx="55.5" cy="16" r="2.3" fill={accent} />
     </svg>
   );
 }

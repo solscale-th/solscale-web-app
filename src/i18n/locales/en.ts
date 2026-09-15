@@ -636,7 +636,7 @@ const en = {
     sigil: {
       name: "Sigil",
       style: "Monogram",
-      desc: "A custom S with terminal sparks and a swash. Gradient from lime through rose into burgundy.",
+      desc: "A backward S beside a forward S — Sol facing Scale. Burgundy and a lime-to-rose gradient.",
     },
     solrise: {
       name: "Solrise",
