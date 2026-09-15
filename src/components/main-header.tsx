@@ -17,6 +17,8 @@ import { getSeenDirectIds, SEEN_DIRECT_EVENT } from "@/lib/seen-direct";
 import { getSeenSubmissionIds, SEEN_SUBMISSION_EVENT } from "@/lib/seen-submissions";
 import { getSeenMyJobIds, SEEN_MY_JOBS_EVENT } from "@/lib/seen-my-jobs";
 import LanguageSwitcher from "./language-switcher";
+import { useLogoPreview } from "@/hooks/use-logo-preview";
+import { LOGO_SURFACES, LogoLockup, type LogoColors } from "@/components/logo-marks";
 
 function UserAvatar({ name }: { name: string }) {
   return (
@@ -55,6 +57,8 @@ export default function MainHeader() {
   const { t } = useLanguage();
   const { user, isLoggedIn, logout } = useAuth();
   const { state } = useFlowchart();
+  const { choice: logoChoice } = useLogoPreview();
+  const brand = LOGO_SURFACES.brand.colors as LogoColors;
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -142,10 +146,18 @@ export default function MainHeader() {
 
         {/* Logo – left column */}
         <Link href="/" className="flex items-center gap-2 shrink-0 col-start-1">
-          <div className="grid h-7 w-7 place-items-center rounded-lg bg-[#d7ff2f] text-xs font-black text-[#840031]">
-            ⬢
-          </div>
-          <span className="text-xl font-black tracking-tight max-[380px]:hidden">Solscale</span>
+          {logoChoice === "current" ? (
+            <>
+              <div className="grid h-7 w-7 place-items-center rounded-lg bg-[#d7ff2f] text-xs font-black text-[#840031]">
+                ⬢
+              </div>
+              <span className="text-xl font-black tracking-tight max-[380px]:hidden">
+                Solscale
+              </span>
+            </>
+          ) : (
+            <LogoLockup id={logoChoice} size="sm" colors={brand} />
+          )}
         </Link>
 
         {/* Desktop nav – centre column (logged-in only) */}

@@ -582,6 +582,73 @@ const en = {
     error: "Could not complete that step.",
     postJobLocal: "Saved on this device. Marketplace Job API is not connected yet.",
   },
+  logoPage: {
+    kicker: "Brand exploration",
+    title: "Logo library",
+    subtitle:
+      "Pick a mark in the sidebar. The detail board updates, and the header follows.",
+    sidebar: "Designs",
+    jump: "Jump to a design",
+    onLight: "On light",
+    onBrand: "On brand",
+    onDark: "On dark",
+    onLime: "On lime",
+    icon: "Icon",
+    header: "Header",
+    wordmark: "Intended lockup",
+    headerPreview: "In the product",
+    headerPreviewTitle: "How each lockup sits on the burgundy bar",
+    current: {
+      name: "Current",
+      style: "Live",
+      desc: "Lime tile with a hexagon glyph. The mark the product uses today.",
+    },
+    clasp: {
+      name: "Clasp",
+      style: "Connection",
+      desc: "Two discs overlapping on a diagonal. Brand and creator meet in a lime lens.",
+    },
+    twin: {
+      name: "Twin",
+      style: "Cooperation",
+      desc: "Two facing arcs holding a lime seed. Partners that make a space, not a handshake.",
+    },
+    course: {
+      name: "Course",
+      style: "Success",
+      desc: "A track that finishes at a lime bead. The name sits underneath.",
+    },
+    gilt: {
+      name: "Gilt",
+      style: "Rich",
+      desc: "A champagne hex with an espresso core. Gilt metal, not a coin. Type in gold, on black.",
+    },
+    pair: {
+      name: "Pair",
+      style: "Match",
+      desc: "Two rounded tiles overlapping on a diagonal. Brand and creator as paired blocks. The name sits underneath.",
+    },
+    grip: {
+      name: "Grip",
+      style: "Unity",
+      desc: "A handshake from above: two palms, interlaced fingers, thumbs locking. Brand and creator hold the same deal.",
+    },
+    sigil: {
+      name: "Sigil",
+      style: "Monogram",
+      desc: "A custom S with terminal sparks and a swash. Gradient from lime through rose into burgundy.",
+    },
+    solrise: {
+      name: "Solrise",
+      style: "Ambition",
+      desc: "A stair that scales up into the sun. Sol and scale: lift the dream until it meets the light.",
+    },
+    dawn: {
+      name: "Dawn",
+      style: "Ambition",
+      desc: "A sun rising over the horizon, rings expanding. Same climb — scale the dream until it meets the sol.",
+    },
+  },
 } as const;
 
 export default en;
