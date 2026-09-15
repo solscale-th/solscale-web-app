@@ -95,10 +95,9 @@ type ApiShapedJob = {
     id: number;
     companyName: string;
     brandDescription?: string | null;
-    logoUrl?: string | null;
-    depositBalance?: number | null;
+      logoUrl?: string | null;
+    };
   };
-};
 
 function mapApiShapedJob(job: ApiShapedJob): Job {
   return {
@@ -161,7 +160,6 @@ const MOCK_API_JOBS: ApiShapedJob[] = [
       companyName: "heew",
       brandDescription: null,
       logoUrl: null,
-      depositBalance: 50000,
     },
   },
   {
@@ -196,7 +194,6 @@ const MOCK_API_JOBS: ApiShapedJob[] = [
       companyName: "test",
       brandDescription: null,
       logoUrl: null,
-      depositBalance: 0,
     },
   },
   {
@@ -231,7 +228,6 @@ const MOCK_API_JOBS: ApiShapedJob[] = [
       companyName: "Pasit",
       brandDescription: null,
       logoUrl: "",
-      depositBalance: 0,
     },
   },
 ];

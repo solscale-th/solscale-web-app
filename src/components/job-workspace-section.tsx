@@ -255,38 +255,12 @@ export default function JobWorkspaceSection({
         </div>
       )}
 
-      {engagement.paymentStatus === "unfunded" && (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 sm:p-6">
-          <p className="text-[14px] font-semibold text-amber-800">
-            {t("myJob.awaitingDeposit")}
-          </p>
-          {!isInfluencer && (
-            <Link
-              href={`/wallet/deposit?engagementId=${engagement.id}`}
-              className="mt-3 inline-flex h-11 items-center rounded-xl bg-[#9d003b] px-5 text-[13px] font-semibold text-white"
-            >
-              {t("myJob.fundJob")}
-            </Link>
-          )}
-        </div>
-      )}
-
       <div id="job-submit-work">
-        {engagement.paymentStatus === "unfunded" ? (
-          <div className={`p-5 sm:p-7 ${PANEL}`}>
-            <p className="text-[13px] text-[#888]">
-              {isInfluencer
-                ? t("jobDetail.offerAcceptedBody")
-                : t("myJob.awaitingDeposit")}
-            </p>
-          </div>
-        ) : (
-          <WorkPanel
-            engagement={engagement}
-            isInfluencer={isInfluencer}
-            onUpdate={onWorkUpdate}
-          />
-        )}
+        <WorkPanel
+          engagement={engagement}
+          isInfluencer={isInfluencer}
+          onUpdate={onWorkUpdate}
+        />
       </div>
 
       {!isInfluencer &&

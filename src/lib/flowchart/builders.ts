@@ -81,7 +81,7 @@ export function buildEngagement(input: {
     id: createFlowId("eng"),
     influencerAvatarBg: input.influencerAvatarBg ?? "bg-[#fce8ee]",
     workStatus: "not_submitted",
-    paymentStatus: "unfunded",
+    paymentStatus: "escrowed",
     submissionNote: "",
     reviewNote: "",
     createdAt: Date.now(),

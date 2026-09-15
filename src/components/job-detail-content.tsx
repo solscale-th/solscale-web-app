@@ -49,14 +49,6 @@ function CheckIcon({ className = "shrink-0" }: { className?: string }) {
   );
 }
 
-function BookmarkIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
-      <path d="M4 2.5H12V13.5L8 10.5L4 13.5V2.5Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
 const TONES = {
   brand: { tile: "bg-[#9d003b]/10 text-[#9d003b]", mark: "text-[#9d003b]" },
   green: { tile: "bg-[#0f7b34]/10 text-[#0f7b34]", mark: "text-[#0f7b34]" },
@@ -231,7 +223,7 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
       try {
         await acceptInvite(apiInviteId);
       } catch {
-        // Local flowchart still records the accept so the brand can deposit.
+        // Local flowchart still records the accept so the job can go active.
       }
     }
     const eng = buildEngagement({
@@ -679,16 +671,12 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
                     ) : hasEngagement && engagementForJob ? (
                       <div className="rounded-xl bg-[#faf8f6] px-3.5 py-4">
                         <p className="text-[13px] font-semibold text-[#3a3530]">
-                          {engagementForJob.paymentStatus === "unfunded"
-                            ? t("myJob.awaitingDeposit")
-                            : t("flow.jobActive")}
+                          {t("flow.jobActive")}
                         </p>
                         <p className="mt-1 text-[12px] leading-relaxed text-[#7a7570]">
-                          {engagementForJob.paymentStatus === "unfunded" && isInfluencer
-                            ? t("jobDetail.offerAcceptedBody")
-                            : engagementForJob.workStatus === "submitted" && !isInfluencer
-                              ? t("myJob.detailWorkSection")
-                              : t("jobDetail.viewActiveJob")}
+                          {engagementForJob.workStatus === "submitted" && !isInfluencer
+                            ? t("myJob.detailWorkSection")
+                            : t("jobDetail.viewActiveJob")}
                         </p>
                         <a
                           href="#job-workspace"
@@ -706,42 +694,29 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
                           {t("jobDetail.offerDeclinedBody")}
                         </p>
                       </div>
-                    ) : (
-                      <>
-                        {canApply && applyDone ? (
-                          <div className="rounded-xl bg-[#ecfdf5] px-3.5 py-4 text-center">
-                            <p className="text-[13px] font-semibold text-[#0f7b34]">
-                              {dictionary.jobDetail.applySection.successTitle}
-                            </p>
-                            <p className="mt-1 text-[12px] leading-relaxed text-[#5a5550]">
-                              {dictionary.jobDetail.applySection.successBody}
-                            </p>
-                          </div>
-                        ) : canApply ? (
-                          <motion.button
-                            type="button"
-                            onClick={handleApply}
-                            disabled={applyStatus === "submitting"}
-                            whileHover={applyStatus === "submitting" ? undefined : { y: -1 }}
-                            whileTap={applyStatus === "submitting" ? undefined : { scale: 0.99 }}
-                            className={`flex h-11 w-full items-center justify-center rounded-xl bg-[#9d003b] text-[14px] font-semibold text-white transition-colors hover:bg-[#850030] disabled:opacity-60 ${FOCUS_RING}`}
-                          >
-                            {applyStatus === "submitting"
-                              ? dictionary.jobDetail.applySection.submitting
-                              : t("jobDetail.applyNow")}
-                          </motion.button>
-                        ) : null}
-                        {offerStatus !== "accepted" && (
-                          <button
-                            type="button"
-                            className={`flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#dcd6cf] bg-white text-[14px] text-[#5a5550] transition-colors hover:border-[#b9b1a8] hover:text-[#2a2622] ${FOCUS_RING}`}
-                          >
-                            <BookmarkIcon />
-                            {t("jobDetail.saveForLater")}
-                          </button>
-                        )}
-                      </>
-                    )}
+                    ) : canApply && applyDone ? (
+                      <div className="rounded-xl bg-[#ecfdf5] px-3.5 py-4 text-center">
+                        <p className="text-[13px] font-semibold text-[#0f7b34]">
+                          {dictionary.jobDetail.applySection.successTitle}
+                        </p>
+                        <p className="mt-1 text-[12px] leading-relaxed text-[#5a5550]">
+                          {dictionary.jobDetail.applySection.successBody}
+                        </p>
+                      </div>
+                    ) : canApply ? (
+                      <motion.button
+                        type="button"
+                        onClick={handleApply}
+                        disabled={applyStatus === "submitting"}
+                        whileHover={applyStatus === "submitting" ? undefined : { y: -1 }}
+                        whileTap={applyStatus === "submitting" ? undefined : { scale: 0.99 }}
+                        className={`flex h-11 w-full items-center justify-center rounded-xl bg-[#9d003b] text-[14px] font-semibold text-white transition-colors hover:bg-[#850030] disabled:opacity-60 ${FOCUS_RING}`}
+                      >
+                        {applyStatus === "submitting"
+                          ? dictionary.jobDetail.applySection.submitting
+                          : t("jobDetail.applyNow")}
+                      </motion.button>
+                    ) : null}
                   </div>
                 </motion.div>
               </aside>

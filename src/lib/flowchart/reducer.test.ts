@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { reduceFlowchart, createEmptyFlowchartState, getWalletBalance } from "./reducer";
+import { reduceFlowchart, createEmptyFlowchartState } from "./reducer";
 import { FlowchartError, type FlowAction, type FlowApplication, type FlowEngagement, type FlowInvite } from "./types";
 
 function invite(overrides: Partial<FlowInvite> = {}): FlowInvite {
@@ -43,7 +43,7 @@ function engagement(overrides: Partial<FlowEngagement> = {}): FlowEngagement {
     influencerHandle: "@nina",
     influencerAvatarBg: "bg-[#fce8ee]",
     workStatus: "not_submitted",
-    paymentStatus: "unfunded",
+    paymentStatus: "escrowed",
     escrowAmount: 20_000,
     submissionNote: "",
     reviewNote: "",
@@ -100,8 +100,8 @@ describe("flowchart: marketplace match", () => {
   });
 });
 
-describe("flowchart: accept → deposit → job active", () => {
-  it("does not activate the job when an application is accepted", () => {
+describe("flowchart: accept → job active", () => {
+  it("activates the job when an application is accepted", () => {
     const state = run([
       { type: "APPLY_TO_JOB", application: application() },
       {
@@ -111,11 +111,11 @@ describe("flowchart: accept → deposit → job active", () => {
       },
     ]);
     expect(state.applications[0].status).toBe("accepted");
-    expect(state.engagements[0].paymentStatus).toBe("unfunded");
+    expect(state.engagements[0].paymentStatus).toBe("escrowed");
     expect(state.engagements[0].workStatus).toBe("not_submitted");
   });
 
-  it("does not activate the job when an invite is accepted", () => {
+  it("activates the job when an invite is accepted", () => {
     const state = run([
       { type: "SEND_INVITE", invite: invite() },
       {
@@ -125,7 +125,7 @@ describe("flowchart: accept → deposit → job active", () => {
       },
     ]);
     expect(state.invites[0].status).toBe("accepted");
-    expect(state.engagements[0].paymentStatus).toBe("unfunded");
+    expect(state.engagements[0].paymentStatus).toBe("escrowed");
   });
 
   it("declining an invite returns to the review loop (no engagement)", () => {
@@ -137,7 +137,7 @@ describe("flowchart: accept → deposit → job active", () => {
     expect(state.engagements).toHaveLength(0);
   });
 
-  it("requires a deposit before Job Active", () => {
+  it("lets the influencer submit work after the job is matched", () => {
     const accepted = run([
       { type: "APPLY_TO_JOB", application: application() },
       {
@@ -146,56 +146,16 @@ describe("flowchart: accept → deposit → job active", () => {
         engagement: engagement(),
       },
     ]);
-    expectCode(
-      () =>
-        reduceFlowchart(accepted, {
-          type: "FUND_ENGAGEMENT",
-          engagementId: "eng-1",
-          entrepreneurId: "ent-1",
-        }),
-      "INSUFFICIENT_FUNDS"
-    );
-
-    const funded = run([
-      { type: "APPLY_TO_JOB", application: application() },
-      {
-        type: "ACCEPT_APPLICATION",
-        applicationId: "app-1",
-        engagement: engagement(),
-      },
-      { type: "DEPOSIT", userId: "ent-1", amount: 20_000 },
-      {
-        type: "FUND_ENGAGEMENT",
-        engagementId: "eng-1",
-        entrepreneurId: "ent-1",
-      },
-    ]);
-    expect(funded.engagements[0].paymentStatus).toBe("escrowed");
-    expect(getWalletBalance(funded, "ent-1")).toBe(0);
-  });
-
-  it("blocks work submission until the job is funded", () => {
-    const unfunded = run([
-      { type: "APPLY_TO_JOB", application: application() },
-      {
-        type: "ACCEPT_APPLICATION",
-        applicationId: "app-1",
-        engagement: engagement(),
-      },
-    ]);
-    expectCode(
-      () =>
-        reduceFlowchart(unfunded, {
-          type: "SUBMIT_WORK",
-          engagementId: "eng-1",
-          note: "https://instagram.com/p/demo",
-        }),
-      "JOB_NOT_ACTIVE"
-    );
+    const submitted = reduceFlowchart(accepted, {
+      type: "SUBMIT_WORK",
+      engagementId: "eng-1",
+      note: "https://instagram.com/p/demo",
+    });
+    expect(submitted.engagements[0].workStatus).toBe("submitted");
   });
 });
 
-describe("flowchart: work review → pay → withdraw", () => {
+describe("flowchart: work review → pay", () => {
   function activeJob() {
     return run([
       { type: "APPLY_TO_JOB", application: application() },
@@ -203,12 +163,6 @@ describe("flowchart: work review → pay → withdraw", () => {
         type: "ACCEPT_APPLICATION",
         applicationId: "app-1",
         engagement: engagement(),
-      },
-      { type: "DEPOSIT", userId: "ent-1", amount: 20_000 },
-      {
-        type: "FUND_ENGAGEMENT",
-        engagementId: "eng-1",
-        entrepreneurId: "ent-1",
       },
     ]);
   }
@@ -238,7 +192,7 @@ describe("flowchart: work review → pay → withdraw", () => {
     expect(approved.engagements[0].workStatus).toBe("approved");
   });
 
-  it("releases escrow to the influencer wallet only after approve", () => {
+  it("releases payment only after approve", () => {
     const submitted = reduceFlowchart(activeJob(), {
       type: "SUBMIT_WORK",
       engagementId: "eng-1",
@@ -262,30 +216,6 @@ describe("flowchart: work review → pay → withdraw", () => {
       engagementId: "eng-1",
     });
     expect(paid.engagements[0].paymentStatus).toBe("released");
-    expect(getWalletBalance(paid, "inf-1")).toBe(20_000);
-    expect(getWalletBalance(paid, "ent-1")).toBe(0);
-  });
-
-  it("lets the influencer withdraw credited funds", () => {
-    const paid = run([
-      { type: "APPLY_TO_JOB", application: application() },
-      {
-        type: "ACCEPT_APPLICATION",
-        applicationId: "app-1",
-        engagement: engagement(),
-      },
-      { type: "DEPOSIT", userId: "ent-1", amount: 20_000 },
-      {
-        type: "FUND_ENGAGEMENT",
-        engagementId: "eng-1",
-        entrepreneurId: "ent-1",
-      },
-      { type: "SUBMIT_WORK", engagementId: "eng-1", note: "done" },
-      { type: "APPROVE_WORK", engagementId: "eng-1" },
-      { type: "RELEASE_PAYMENT", engagementId: "eng-1" },
-      { type: "WITHDRAW", userId: "inf-1", amount: 8_000 },
-    ]);
-    expect(getWalletBalance(paid, "inf-1")).toBe(12_000);
   });
 
   it("blocks release after a dispute is raised", () => {

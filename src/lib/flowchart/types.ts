@@ -6,11 +6,11 @@
  *
  * API connecting (replace this module, do not grow it):
  * - Jobs, invites, applications, engagements → marketplace Job / Match APIs
- * - Wallet / escrow / withdraw → a ledger service + payment provider
+ * - Accept & pay / disputes → a ledger service + payment provider
  * - Ratings / disputes → moderation + review APIs
  *
- * RISK: two tabs can race on the same wallet. Production escrow MUST be a
- * single atomic "hold funds + activate job" transaction on the server.
+ * RISK: two tabs can race on the same engagement. Production payment MUST be a
+ * single atomic transaction on the server.
  */
 
 export type InviteStatus = "pending" | "accepted" | "declined";
@@ -23,12 +23,11 @@ export type WorkStatus =
   | "approved";
 
 /**
- * unfunded  = match accepted, waiting on Deposit Funds (before Job Active)
- * escrowed  = Job Active — brand funds held
- * released  = Accept & Pay completed — influencer wallet credited
+ * escrowed  = Job Active after match — brand can review work and release pay
+ * released  = Accept & Pay completed
  * disputed  = Report path — funds stay held until admin resolves
  */
-export type PaymentStatus = "unfunded" | "escrowed" | "released" | "disputed";
+export type PaymentStatus = "escrowed" | "released" | "disputed";
 
 export type FlowPostedJob = {
   id: string;
@@ -109,13 +108,8 @@ export type FlowDispute = {
   createdAt: number;
 };
 
-export type FlowWallet = {
-  available: number;
-};
-
 export type FlowchartState = {
   version: 1;
-  wallets: Record<string, FlowWallet>;
   postedJobs: FlowPostedJob[];
   invites: FlowInvite[];
   applications: FlowApplication[];
@@ -126,7 +120,6 @@ export type FlowchartState = {
 
 export const EMPTY_FLOWCHART_STATE: FlowchartState = {
   version: 1,
-  wallets: {},
   postedJobs: [],
   invites: [],
   applications: [],
@@ -145,14 +138,11 @@ export type FlowErrorCode =
   | "JOB_NOT_ACTIVE"
   | "WORK_NOT_SUBMITTED"
   | "WORK_NOT_APPROVED"
-  | "ALREADY_FUNDED"
-  | "INSUFFICIENT_FUNDS"
   | "PAYMENT_NOT_ESCROWED"
   | "ALREADY_RELEASED"
   | "PAYMENT_NOT_RELEASED"
   | "DISPUTED"
   | "ALREADY_RATED"
-  | "INVALID_AMOUNT"
   | "INVALID_STARS";
 
 export class FlowchartError extends Error {
@@ -173,12 +163,9 @@ export type FlowAction =
   | { type: "DECLINE_INVITE"; inviteId: string }
   | { type: "ACCEPT_APPLICATION"; applicationId: string; engagement: FlowEngagement }
   | { type: "REJECT_APPLICATION"; applicationId: string }
-  | { type: "DEPOSIT"; userId: string; amount: number }
-  | { type: "FUND_ENGAGEMENT"; engagementId: string; entrepreneurId: string }
   | { type: "SUBMIT_WORK"; engagementId: string; note: string }
   | { type: "REQUEST_REVISION"; engagementId: string; note: string }
   | { type: "APPROVE_WORK"; engagementId: string }
   | { type: "RELEASE_PAYMENT"; engagementId: string }
-  | { type: "WITHDRAW"; userId: string; amount: number }
   | { type: "RAISE_DISPUTE"; dispute: FlowDispute }
   | { type: "LEAVE_RATING"; rating: FlowRating };

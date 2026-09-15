@@ -7,7 +7,13 @@
  */
 
 import { createEmptyFlowchartState, reduceFlowchart } from "./reducer";
-import { EMPTY_FLOWCHART_STATE, type FlowAction, type FlowchartState } from "./types";
+import {
+  EMPTY_FLOWCHART_STATE,
+  type FlowAction,
+  type FlowchartState,
+  type FlowEngagement,
+  type PaymentStatus,
+} from "./types";
 
 export const FLOWCHART_STORAGE_KEY = "solscale_flowchart_v1";
 export const FLOWCHART_CHANGE_EVENT = "solscale-flowchart-change";
@@ -15,17 +21,35 @@ export const FLOWCHART_CHANGE_EVENT = "solscale-flowchart-change";
 let cachedRaw: string | null | undefined;
 let cachedState: FlowchartState = EMPTY_FLOWCHART_STATE;
 
+function normalizePaymentStatus(status: unknown): PaymentStatus {
+  if (status === "released" || status === "disputed" || status === "escrowed") {
+    return status;
+  }
+  // Legacy "unfunded" rows (wallet deposit gate) become active jobs.
+  return "escrowed";
+}
+
+function normalizeEngagements(items: unknown): FlowEngagement[] {
+  if (!Array.isArray(items)) return [];
+  return items.map((item) => {
+    const engagement = item as FlowEngagement;
+    return {
+      ...engagement,
+      paymentStatus: normalizePaymentStatus(engagement.paymentStatus),
+    };
+  });
+}
+
 function parseRaw(raw: string): FlowchartState | null {
   try {
     const parsed = JSON.parse(raw) as Partial<FlowchartState>;
     if (parsed.version !== 1) return null;
     return {
       version: 1,
-      wallets: parsed.wallets ?? {},
       postedJobs: parsed.postedJobs ?? [],
       invites: parsed.invites ?? [],
       applications: parsed.applications ?? [],
-      engagements: parsed.engagements ?? [],
+      engagements: normalizeEngagements(parsed.engagements),
       ratings: parsed.ratings ?? [],
       disputes: parsed.disputes ?? [],
     };

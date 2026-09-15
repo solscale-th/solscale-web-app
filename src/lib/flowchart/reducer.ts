@@ -4,26 +4,7 @@ import {
   type FlowAction,
   type FlowchartState,
   type FlowEngagement,
-  type FlowWallet,
 } from "./types";
-
-function walletOf(state: FlowchartState, userId: string): FlowWallet {
-  return state.wallets[userId] ?? { available: 0 };
-}
-
-function withWallet(
-  state: FlowchartState,
-  userId: string,
-  available: number
-): FlowchartState {
-  return {
-    ...state,
-    wallets: {
-      ...state.wallets,
-      [userId]: { available },
-    },
-  };
-}
 
 function requireEngagement(
   state: FlowchartState,
@@ -104,8 +85,6 @@ export function reduceFlowchart(
       if (invite.status !== "pending") {
         throw new FlowchartError("INVITE_NOT_PENDING");
       }
-      // Chart: Accept Offer → (entrepreneur) Deposit → Job Active.
-      // Do not mark the job active here.
       return {
         ...state,
         invites: state.invites.map((item) =>
@@ -150,34 +129,6 @@ export function reduceFlowchart(
         ),
         engagements: [...state.engagements, action.engagement],
       };
-    }
-
-    case "DEPOSIT": {
-      if (action.amount <= 0) throw new FlowchartError("INVALID_AMOUNT");
-      const current = walletOf(state, action.userId);
-      return withWallet(state, action.userId, current.available + action.amount);
-    }
-
-    case "FUND_ENGAGEMENT": {
-      // RISK: this is two steps in UI (deposit then hold). The API must combine
-      // them: verify balance, debit wallet, write escrow row, set job active.
-      const engagement = requireEngagement(state, action.engagementId);
-      if (engagement.paymentStatus !== "unfunded") {
-        throw new FlowchartError("ALREADY_FUNDED");
-      }
-      const current = walletOf(state, action.entrepreneurId);
-      if (current.available < engagement.escrowAmount) {
-        throw new FlowchartError("INSUFFICIENT_FUNDS");
-      }
-      const funded: FlowEngagement = {
-        ...engagement,
-        paymentStatus: "escrowed",
-      };
-      return withWallet(
-        replaceEngagement(state, funded),
-        action.entrepreneurId,
-        current.available - engagement.escrowAmount
-      );
     }
 
     case "SUBMIT_WORK": {
@@ -242,25 +193,10 @@ export function reduceFlowchart(
       if (engagement.paymentStatus !== "escrowed") {
         throw new FlowchartError("PAYMENT_NOT_ESCROWED");
       }
-      const influencerWallet = walletOf(state, engagement.influencerId);
-      const released: FlowEngagement = {
+      return replaceEngagement(state, {
         ...engagement,
         paymentStatus: "released",
-      };
-      return withWallet(
-        replaceEngagement(state, released),
-        engagement.influencerId,
-        influencerWallet.available + engagement.escrowAmount
-      );
-    }
-
-    case "WITHDRAW": {
-      if (action.amount <= 0) throw new FlowchartError("INVALID_AMOUNT");
-      const current = walletOf(state, action.userId);
-      if (current.available < action.amount) {
-        throw new FlowchartError("INSUFFICIENT_FUNDS");
-      }
-      return withWallet(state, action.userId, current.available - action.amount);
+      });
     }
 
     case "RAISE_DISPUTE": {
@@ -312,7 +248,6 @@ export function reduceFlowchart(
 export function createEmptyFlowchartState(): FlowchartState {
   return {
     ...EMPTY_FLOWCHART_STATE,
-    wallets: {},
     postedJobs: [],
     invites: [],
     applications: [],
@@ -320,11 +255,4 @@ export function createEmptyFlowchartState(): FlowchartState {
     ratings: [],
     disputes: [],
   };
-}
-
-export function getWalletBalance(
-  state: FlowchartState,
-  userId: string
-): number {
-  return walletOf(state, userId).available;
 }

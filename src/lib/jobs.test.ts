@@ -24,7 +24,6 @@ function apiJob(overrides: Partial<ApiJob> = {}): ApiJob {
     entrepreneur: {
       id: 2,
       companyName: "heew",
-      depositBalance: 50_000,
     },
     ...overrides,
   };

@@ -6,7 +6,6 @@ export type ApiJobEntrepreneur = {
   companyName: string;
   brandDescription?: string | null;
   logoUrl?: string | null;
-  depositBalance?: number | null;
 };
 
 export type ApiJob = {
@@ -62,7 +61,6 @@ const JOB_FIELDS = /* GraphQL */ `
     companyName
     brandDescription
     logoUrl
-    depositBalance
   }
 `;
 
@@ -232,7 +230,6 @@ export async function fetchMarketplaceJobs(signal?: AbortSignal): Promise<Job[]>
       status: job.status,
       entrepreneurId: job.entrepreneurId,
       companyName: job.entrepreneur?.companyName ?? null,
-      depositBalance: job.entrepreneur?.depositBalance ?? 0,
     })),
   });
   return openJobs.map(mapApiJobToJob);

@@ -126,7 +126,6 @@ export default function MainHeader() {
     { label: t("nav.direct"),      href: "/direct",       badge: directBadge      },
     { label: t("nav.myJob"),       href: "/my-jobs",      badge: myJobBadge       },
     { label: t("nav.submission"),  href: "/submission",   badge: submissionBadge  },
-    { label: t("nav.wallet"),      href: "/wallet",       badge: 0 },
   ];
 
   function handleLogout() {
@@ -223,18 +222,6 @@ export default function MainHeader() {
                       </svg>
                       {t("common.myProfile")}
                     </Link>
-
-                    <Link
-                      href="/wallet"
-                      onClick={() => setUserMenuOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2.5 text-[13px] text-[#333] transition-colors hover:bg-[#fafafa]"
-                    >
-                      <svg width="15" height="15" viewBox="0 0 15 15" fill="none" className="text-[#888]">
-                        <rect x="2" y="4" width="11" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
-                        <path d="M2 7h11" stroke="currentColor" strokeWidth="1.4" />
-                      </svg>
-                      {t("common.wallet")}
-                    </Link>
                   </div>
 
                   {/* Divider + Logout */}
@@ -325,18 +312,6 @@ export default function MainHeader() {
                   <path d="M2 13c0-3.038 2.462-5.5 5.5-5.5S13 9.962 13 13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
                 </svg>
                 {t("common.myProfile")}
-              </Link>
-
-              <Link
-                href="/wallet"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-white/10"
-              >
-                <svg width="15" height="15" viewBox="0 0 15 15" fill="none" className="opacity-70">
-                  <rect x="2" y="4" width="11" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
-                  <path d="M2 7h11" stroke="currentColor" strokeWidth="1.4" />
-                </svg>
-                {t("common.wallet")}
               </Link>
 
               <button

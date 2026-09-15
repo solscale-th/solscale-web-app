@@ -48,10 +48,9 @@ export function liveMyJobBadgeCount(
   return state.engagements.filter((eng) => {
     const mine =
       role === "influencer"
-        ? eng.influencerId === userId && eng.paymentStatus !== "unfunded"
+        ? eng.influencerId === userId
         : eng.entrepreneurId === userId;
-    const hasUpdate =
-      eng.paymentStatus === "unfunded" || eng.workStatus === "submitted";
+    const hasUpdate = eng.workStatus === "submitted";
     return mine && hasUpdate && !seenIds.has(eng.id);
   }).length;
 }

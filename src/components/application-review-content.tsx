@@ -7,6 +7,7 @@ import { useFlowchart } from "@/hooks/use-flowchart";
 import { useLanguage } from "@/i18n/language-provider";
 import { buildEngagement } from "@/lib/flowchart/builders";
 import { escrowAmountForJob, findJobById } from "@/lib/flowchart/jobs";
+import { jobDetailHref } from "@/lib/job-detail-href";
 
 export default function ApplicationReviewContent({ applicationId }: { applicationId: string }) {
   const { t } = useLanguage();
@@ -53,7 +54,7 @@ export default function ApplicationReviewContent({ applicationId }: { applicatio
       sourceId: application.id,
     });
     dispatch({ type: "ACCEPT_APPLICATION", applicationId: application.id, engagement: eng });
-    router.push(`/wallet/deposit?engagementId=${eng.id}`);
+    router.push(jobDetailHref(job.id, eng.id, "workspace"));
   }
 
   return (

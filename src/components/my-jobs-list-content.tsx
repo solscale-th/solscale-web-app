@@ -32,7 +32,7 @@ function flowToEngagement(eng: FlowEngagement): JobEngagement {
     submissionNote: eng.submissionNote,
     reviewNote: eng.reviewNote,
     messages: [],
-    hasUpdate: eng.paymentStatus === "unfunded" || eng.workStatus === "submitted",
+    hasUpdate: eng.workStatus === "submitted",
   };
 }
 
@@ -262,9 +262,7 @@ export default function MyJobsListContent() {
   const liveList = state.engagements
     .filter((eng) => {
       if (isInfluencer) {
-        return (
-          eng.influencerId === user.id && eng.paymentStatus !== "unfunded"
-        );
+        return eng.influencerId === user.id;
       }
       return eng.entrepreneurId === user.id;
     })
