@@ -61,7 +61,7 @@ export type InfluencerListItem = {
 };
 
 const AVATAR_BACKGROUNDS = [
-  "bg-[#fce8ee]",
+  "bg-brand-tint",
   "bg-[#ffe8cc]",
   "bg-[#cce4ff]",
   "bg-[#d0f0e8]",

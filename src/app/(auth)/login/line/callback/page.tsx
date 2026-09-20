@@ -135,7 +135,7 @@ function LineCallback() {
         </p>
         <Link
           href="/login"
-          className="mt-4 inline-block text-[14px] font-semibold text-[#9d003b] hover:underline"
+          className="mt-4 inline-block text-[14px] font-semibold text-brand hover:underline"
         >
           {t("auth.login.backToLoginLink")}
         </Link>

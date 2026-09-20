@@ -2,7 +2,7 @@ import { MOCK_JOBS, PLATFORM_COLORS, type Job, type Platform } from "@/lib/mock-
 import { loadFlowchartState } from "./store";
 import type { FlowPostedJob, FlowchartState } from "./types";
 
-const POSTED_THUMB = "bg-[#9d003b]";
+const POSTED_THUMB = "bg-brand";
 const KNOWN_PLATFORMS = Object.keys(PLATFORM_COLORS) as Platform[];
 
 function toPostedPlatform(raw: string): Platform {

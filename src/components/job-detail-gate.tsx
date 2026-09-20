@@ -42,7 +42,7 @@ export default function JobDetailGate({ jobId }: { jobId: string }) {
 
   if (!ready) {
     return (
-      <div className="flex min-h-screen flex-col bg-[#faf8f6]">
+      <div className="flex min-h-screen flex-col bg-surface">
         <MainHeader />
         <p className="px-4 py-16 text-center text-[14px] text-[#888]">Loading…</p>
       </div>
@@ -51,7 +51,7 @@ export default function JobDetailGate({ jobId }: { jobId: string }) {
 
   if (!job) {
     return (
-      <div className="flex min-h-screen flex-col bg-[#faf8f6]">
+      <div className="flex min-h-screen flex-col bg-surface">
         <MainHeader />
         <p className="px-4 py-16 text-center text-[14px] text-[#888]">Job not found.</p>
       </div>
@@ -61,7 +61,7 @@ export default function JobDetailGate({ jobId }: { jobId: string }) {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen flex-col bg-[#faf8f6]">
+        <div className="flex min-h-screen flex-col bg-surface">
           <MainHeader />
           <p className="px-4 py-16 text-center text-[14px] text-[#888]">Loading…</p>
         </div>

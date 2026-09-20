@@ -15,7 +15,7 @@ import { formatBudgetRange, formatPosted } from "@/lib/mock-jobs";
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
     <div className="mb-5 flex items-center gap-3">
-      <span className="h-6 w-1 shrink-0 rounded-full bg-[#9d003b]" />
+      <span className="h-6 w-1 shrink-0 rounded-full bg-brand" />
       <h2 className="text-[17px] sm:text-[18px] font-extrabold tracking-tight text-[#111]">
         {children}
       </h2>
@@ -40,7 +40,7 @@ function BrandAvatar({
   if (logoUrl) {
     return (
       <div
-        className={`shrink-0 overflow-hidden rounded-2xl bg-[#fce8ee] bg-cover bg-center shadow-sm ring-2 ring-white ${dim}`}
+        className={`shrink-0 overflow-hidden rounded-2xl bg-brand-tint bg-cover bg-center shadow-sm ring-2 ring-white ${dim}`}
         style={{ backgroundImage: `url(${logoUrl})` }}
         role="img"
         aria-label={companyName}
@@ -50,8 +50,8 @@ function BrandAvatar({
 
   return (
     <div
-      className={`grid shrink-0 place-items-center rounded-2xl font-bold text-[#9d003b] shadow-sm ring-2 ring-white ${dim} ${
-        fallbackClass ?? "bg-[#fce8ee]"
+      className={`grid shrink-0 place-items-center rounded-2xl font-bold text-brand shadow-sm ring-2 ring-white ${dim} ${
+        fallbackClass ?? "bg-brand-tint"
       }`}
     >
       {initial}
@@ -111,7 +111,7 @@ export default function EntrepreneurDetailContent({
     >
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(157,0,59,0.10)_0%,rgba(157,0,59,0.05)_25%,rgba(157,0,59,0.03)_40%,rgba(214,238,58,0.08)_55%,rgba(214,238,58,0.14)_100%)]"
+        className="pointer-events-none absolute inset-0 detail-header-wash"
       />
 
       <MainHeader />
@@ -145,11 +145,11 @@ export default function EntrepreneurDetailContent({
                 transition={{ duration: 0.4 }}
               >
                 <div className="mb-4 flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-[#9d003b]/20 bg-[#9d003b]/8 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-[#9d003b]">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/20 bg-brand/8 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-brand">
                     {t("entrepreneurDetail.brand")}
                   </span>
                   {campaigns.length > 0 && (
-                    <span className="inline-flex items-center rounded-full bg-[#d7ff2f] px-3 py-1.5 text-[12px] font-medium leading-none text-[#333]">
+                    <span className="inline-flex items-center rounded-full bg-accent px-3 py-1.5 text-[12px] font-medium leading-none text-[#333]">
                       {t("entrepreneurDetail.openCampaigns", {
                         count: campaigns.length,
                       })}
@@ -225,11 +225,11 @@ export default function EntrepreneurDetailContent({
                         >
                           <Link
                             href={`/jobs/${campaign.id}`}
-                            className="group flex items-center gap-4 rounded-2xl border border-[#eee] bg-[#fafafa] p-4 transition-all hover:border-[#9d003b]/25 hover:bg-white hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)]"
+                            className="group flex items-center gap-4 rounded-2xl border border-[#eee] bg-[#fafafa] p-4 transition-all hover:border-brand/25 hover:bg-white hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)]"
                           >
                             <div
-                              className={`grid h-14 w-14 shrink-0 place-items-center rounded-xl text-[18px] font-bold text-[#9d003b] ${
-                                campaign.thumbnailBg ?? "bg-[#fce8ee]"
+                              className={`grid h-14 w-14 shrink-0 place-items-center rounded-xl text-[18px] font-bold text-brand ${
+                                campaign.thumbnailBg ?? "bg-brand-tint"
                               }`}
                             >
                               {campaign.promoted ? (
@@ -252,7 +252,7 @@ export default function EntrepreneurDetailContent({
                                   {campaign.title}
                                 </p>
                                 {campaign.promoted && (
-                                  <span className="rounded-full bg-[#d7ff2f] px-2 py-0.5 text-[10px] font-semibold text-[#333]">
+                                  <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-semibold text-[#333]">
                                     {t("jobDetail.promoted")}
                                   </span>
                                 )}
@@ -262,7 +262,7 @@ export default function EntrepreneurDetailContent({
                               </p>
                               <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px]">
                                 {budget && (
-                                  <span className="font-bold text-[#9d003b]">
+                                  <span className="font-bold text-brand">
                                     {budget}
                                   </span>
                                 )}
@@ -285,7 +285,7 @@ export default function EntrepreneurDetailContent({
                               </div>
                             </div>
                             <svg
-                              className="shrink-0 text-[#ccc] transition-colors group-hover:text-[#9d003b]"
+                              className="shrink-0 text-[#ccc] transition-colors group-hover:text-brand"
                               width="16"
                               height="16"
                               viewBox="0 0 16 16"
@@ -327,7 +327,7 @@ export default function EntrepreneurDetailContent({
                       size="md"
                     />
                     <div className="min-w-0 w-full">
-                      <p className="text-[10px] font-semibold tracking-[0.14em] text-[#9d003b]">
+                      <p className="text-[10px] font-semibold tracking-[0.14em] text-brand">
                         {t("jobDetail.aboutBrand")}
                       </p>
                       <p className="mt-1 truncate text-[16px] font-bold text-[#111]">
@@ -362,7 +362,7 @@ export default function EntrepreneurDetailContent({
                       </p>
                       <a
                         href={`mailto:${entrepreneur.email}`}
-                        className="mt-1 block truncate text-[13px] font-semibold text-[#9d003b] hover:underline"
+                        className="mt-1 block truncate text-[13px] font-semibold text-brand hover:underline"
                       >
                         {entrepreneur.email}
                       </a>
@@ -375,7 +375,7 @@ export default function EntrepreneurDetailContent({
                         href="#active-campaigns"
                         whileHover={{ scale: 1.01, y: -1 }}
                         whileTap={{ scale: 0.99 }}
-                        className="flex h-11 w-full items-center justify-center rounded-xl bg-[#9d003b] text-[14px] font-semibold text-white hover:bg-[#850030] transition-colors"
+                        className="flex h-11 w-full items-center justify-center rounded-xl bg-brand text-[14px] font-semibold text-white hover:bg-brand-hover transition-colors"
                       >
                         {t("entrepreneurDetail.browseCampaigns")}
                       </motion.a>
@@ -385,7 +385,7 @@ export default function EntrepreneurDetailContent({
                         href={`mailto:${entrepreneur.email}`}
                         whileHover={{ scale: 1.01 }}
                         whileTap={{ scale: 0.99 }}
-                        className="flex h-11 w-full items-center justify-center rounded-xl border border-[#9d003b]/20 bg-white/60 text-[14px] font-medium text-[#555] hover:border-[#9d003b] hover:text-[#9d003b] transition-colors"
+                        className="flex h-11 w-full items-center justify-center rounded-xl border border-brand/20 bg-white/60 text-[14px] font-medium text-[#555] hover:border-brand hover:text-brand transition-colors"
                       >
                         {t("entrepreneurDetail.contactBrand")}
                       </motion.a>

@@ -24,16 +24,14 @@ import { acceptInvite, declineInvite, parseApiId } from "@/lib/applications";
 import { markMyJobSeen } from "@/lib/seen-my-jobs";
 import type { FlowEngagement } from "@/lib/flowchart/types";
 
-const LIME = "#d7ff2f";
-
 const PANEL =
-  "rounded-[1.25rem] border border-[#ece7e1] bg-white shadow-[0_1px_2px_rgba(40,20,10,0.04),0_18px_36px_-26px_rgba(74,0,27,0.45)]";
+  "rounded-[1.25rem] border border-[#ece7e1] bg-white shadow-panel";
 const FIELD =
-  "w-full rounded-lg border border-[#e0dbd5] bg-[#faf8f6] px-4 py-3 text-[14px] text-[#2a2622] placeholder-[#b3aca4] outline-none transition-[border-color,background-color,box-shadow] focus:border-[#9d003b] focus:bg-white focus:ring-2 focus:ring-[#9d003b]/25";
+  "w-full rounded-lg border border-[#e0dbd5] bg-surface px-4 py-3 text-[14px] text-[#2a2622] placeholder-[#b3aca4] outline-none transition-[border-color,background-color,box-shadow] focus:border-brand focus:bg-white focus:ring-2 focus:ring-brand/25";
 const FOCUS_RING =
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9d003b]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#faf8f6]";
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2 focus-visible:ring-offset-surface";
 const FOCUS_RING_ON_DARK =
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d7ff2f]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#6d0028]";
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70 focus-visible:ring-offset-2 focus-visible:ring-offset-brand-deep";
 
 function CheckIcon({ className = "shrink-0" }: { className?: string }) {
   return (
@@ -50,7 +48,7 @@ function CheckIcon({ className = "shrink-0" }: { className?: string }) {
 }
 
 const TONES = {
-  brand: { tile: "bg-[#9d003b]/10 text-[#9d003b]", mark: "text-[#9d003b]" },
+  brand: { tile: "bg-brand/10 text-brand", mark: "text-brand" },
   green: { tile: "bg-[#0f7b34]/10 text-[#0f7b34]", mark: "text-[#0f7b34]" },
 } as const;
 
@@ -78,7 +76,7 @@ function PanelHeading({
 /** Unordered list row — no index badge; these items have no sequence. */
 function ListRow({ tone, children }: { tone: Tone; children: React.ReactNode }) {
   return (
-    <li className="flex items-start gap-3 rounded-xl bg-[#faf8f6] px-3.5 py-3">
+    <li className="flex items-start gap-3 rounded-xl bg-surface px-3.5 py-3">
       <CheckIcon className={`mt-[3px] shrink-0 ${TONES[tone].mark}`} />
       <span className="text-[14px] leading-snug text-[#3a3530]">{children}</span>
     </li>
@@ -289,13 +287,13 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className="flex min-h-screen flex-col bg-[#faf8f6]">
+      <div className="flex min-h-screen flex-col bg-surface">
         <MainHeader />
 
         {/* ── Colored hero band ── */}
-        <section className="relative overflow-hidden bg-[#6d0028] text-white">
+        <section className="relative overflow-hidden bg-brand-deep text-white">
           <div aria-hidden className="pointer-events-none absolute inset-0">
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_12%_0%,rgba(157,0,59,0.85)_0%,transparent_55%),radial-gradient(ellipse_at_88%_25%,rgba(37,94,54,0.35)_0%,transparent_50%),linear-gradient(160deg,#8f0035_0%,#6d0028_52%,#48001a_100%)]" />
+            <div className="job-hero-wash absolute inset-0" />
             <div className="hero-glow hero-glow-a absolute -left-16 top-[-30%] h-72 w-72" />
             <div className="hero-glow hero-glow-b absolute right-[-6%] top-[10%] h-80 w-80" />
             <div className="hero-shape hero-shape-a absolute -left-32 bottom-[-60%] h-80 w-80 rounded-full border border-white/12" />
@@ -327,7 +325,7 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
                   {job.platform}
                 </span>
                 {job.promoted && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[#d7ff2f] px-3 py-1.5 text-[12px] font-semibold leading-none text-[#2a1018]">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1.5 text-[12px] font-semibold leading-none text-on-accent">
                     <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" aria-hidden className="shrink-0">
                       <path d="M5 0L6.2 3.8H10L7 6.1L8.2 10L5 7.6L1.8 10L3 6.1L0 3.8H3.8L5 0Z" />
                     </svg>
@@ -348,14 +346,14 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
 
               <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 text-[13px] text-white/70">
                 <span className="inline-flex items-center gap-2">
-                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-[#d7ff2f] text-[12px] font-semibold text-[#6d0028]">
+                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-accent text-[12px] font-semibold text-brand-deep">
                     {job.company.charAt(0)}
                   </span>
                   <span className="font-medium text-white">{job.company}</span>
                   {job.verified && (
                     <svg width="15" height="15" viewBox="0 0 16 16" fill="none" className="shrink-0" aria-label={t("common.verified")}>
-                      <circle cx="8" cy="8" r="7" fill="#d7ff2f" />
-                      <path d="M4.8 8.1L7 10.2L11.2 5.8" stroke="#2a1018" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                      <circle cx="8" cy="8" r="7" fill="var(--color-accent)" />
+                      <path d="M4.8 8.1L7 10.2L11.2 5.8" stroke="var(--color-on-accent)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   )}
                 </span>
@@ -366,10 +364,7 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
               <dl className="mt-9 grid grid-cols-2 gap-y-6 border-t border-white/15 pt-7 sm:flex sm:flex-wrap sm:items-end sm:gap-x-7">
                 <div className="col-span-2 sm:pr-1">
                   <dt className="text-[12px] text-white/55">{t("jobDetail.budgetRange")}</dt>
-                  <dd
-                    className="mt-1 text-[26px] font-semibold tracking-[-0.035em] tabular-nums sm:text-[30px]"
-                    style={{ color: LIME }}
-                  >
+                  <dd className="mt-1 text-[26px] font-semibold tracking-[-0.035em] tabular-nums text-accent sm:text-[30px]">
                     {budget}
                   </dd>
                 </div>
@@ -412,7 +407,7 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
                       {job.tags.map((tag) => (
                         <span
                           key={tag}
-                          className="rounded-full bg-[#9d003b]/8 px-3 py-1.5 text-[12px] font-medium text-[#9d003b]"
+                          className="rounded-full bg-brand/8 px-3 py-1.5 text-[12px] font-medium text-brand"
                         >
                           {tag}
                         </span>
@@ -510,12 +505,12 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
                       <motion.div
                         initial={{ opacity: 0, scale: 0.97 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="mt-5 flex flex-col items-center gap-2 rounded-xl bg-[#faf8f6] py-7 text-center"
+                        className="mt-5 flex flex-col items-center gap-2 rounded-xl bg-surface py-7 text-center"
                       >
-                        <span className="grid h-10 w-10 place-items-center rounded-full bg-[#9d003b]/10 text-[#9d003b]">
+                        <span className="grid h-10 w-10 place-items-center rounded-full bg-brand/10 text-brand">
                           <CheckIcon />
                         </span>
-                        <p className="text-[14px] font-semibold text-[#9d003b]">
+                        <p className="text-[14px] font-semibold text-brand">
                           {dictionary.jobDetail.askSection.successTitle}
                         </p>
                         <p className="max-w-xs text-[13px] text-[#5a5550]">
@@ -530,7 +525,7 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
                             className="mb-1.5 block text-[13px] font-semibold text-[#3a3530]"
                           >
                             {dictionary.jobDetail.askSection.questionLabel}
-                            <span className="ml-1 text-[#9d003b]">*</span>
+                            <span className="ml-1 text-brand">*</span>
                           </label>
                           <textarea
                             id="job-question"
@@ -591,8 +586,8 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
                   transition={{ delay: 0.12, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
                   className={`overflow-hidden ${PANEL}`}
                 >
-                  <div className="flex w-full items-center gap-3.5 bg-[#faf8f6] px-5 py-4">
-                    <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#9d003b] text-[16px] font-semibold text-white">
+                  <div className="flex w-full items-center gap-3.5 bg-surface px-5 py-4">
+                    <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-brand text-[16px] font-semibold text-white">
                       {job.company.charAt(0)}
                     </div>
                     <div className="min-w-0 flex-1 text-left">
@@ -625,7 +620,7 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
                     <Link
                       href={`/entrepreneurs/${job.companyId}`}
                       aria-label={t("jobDetail.aboutBrand")}
-                      className={`grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white text-[#9d003b] shadow-sm transition-colors hover:bg-[#9d003b] hover:text-white ${FOCUS_RING}`}
+                      className={`grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white text-brand shadow-sm transition-colors hover:bg-brand hover:text-white ${FOCUS_RING}`}
                     >
                       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
                         <path
@@ -642,7 +637,7 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
                   <div className="space-y-2.5 border-t border-[#f1ece6] p-4">
                     {isPendingOffer ? (
                       <>
-                        <div className="mb-1 rounded-xl bg-[#9d003b]/6 px-3.5 py-3">
+                        <div className="mb-1 rounded-xl bg-brand/6 px-3.5 py-3">
                           <p className="text-[13px] font-semibold text-[#141414]">
                             {t("jobDetail.offerPendingTitle")}
                           </p>
@@ -656,7 +651,7 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
                           whileTap={acceptStatus === "submitting" ? undefined : { scale: 0.99 }}
                           onClick={handleAcceptOffer}
                           disabled={acceptStatus === "submitting"}
-                          className={`flex h-11 w-full items-center justify-center rounded-xl bg-[#d7ff2f] text-[14px] font-semibold text-[#2a1018] transition-colors hover:bg-[#c8f020] disabled:opacity-60 ${FOCUS_RING}`}
+                          className={`flex h-11 w-full items-center justify-center rounded-xl bg-accent text-[14px] font-semibold text-on-accent transition-colors hover:bg-accent-hover disabled:opacity-60 ${FOCUS_RING}`}
                         >
                           {t("jobDetail.acceptOffer")}
                         </motion.button>
@@ -669,7 +664,7 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
                         </button>
                       </>
                     ) : hasEngagement && engagementForJob ? (
-                      <div className="rounded-xl bg-[#faf8f6] px-3.5 py-4">
+                      <div className="rounded-xl bg-surface px-3.5 py-4">
                         <p className="text-[13px] font-semibold text-[#3a3530]">
                           {t("flow.jobActive")}
                         </p>
@@ -680,13 +675,13 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
                         </p>
                         <a
                           href="#job-workspace"
-                          className={`mt-3 flex h-11 w-full items-center justify-center rounded-xl bg-[#d7ff2f] text-[14px] font-semibold text-[#2a1018] ${FOCUS_RING}`}
+                          className={`mt-3 flex h-11 w-full items-center justify-center rounded-xl bg-accent text-[14px] font-semibold text-on-accent ${FOCUS_RING}`}
                         >
                           {t("jobDetail.viewActiveJob")}
                         </a>
                       </div>
                     ) : isDeclinedOffer ? (
-                      <div className="rounded-xl bg-[#faf8f6] px-3.5 py-4 text-center">
+                      <div className="rounded-xl bg-surface px-3.5 py-4 text-center">
                         <p className="text-[13px] font-semibold text-[#3a3530]">
                           {t("jobDetail.offerDeclinedTitle")}
                         </p>
@@ -710,7 +705,7 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
                         disabled={applyStatus === "submitting"}
                         whileHover={applyStatus === "submitting" ? undefined : { y: -1 }}
                         whileTap={applyStatus === "submitting" ? undefined : { scale: 0.99 }}
-                        className={`flex h-11 w-full items-center justify-center rounded-xl bg-[#9d003b] text-[14px] font-semibold text-white transition-colors hover:bg-[#850030] disabled:opacity-60 ${FOCUS_RING}`}
+                        className={`flex h-11 w-full items-center justify-center rounded-xl bg-brand text-[14px] font-semibold text-white transition-colors hover:bg-brand-hover disabled:opacity-60 ${FOCUS_RING}`}
                       >
                         {applyStatus === "submitting"
                           ? dictionary.jobDetail.applySection.submitting
@@ -728,7 +723,7 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
         {showMobileApplyBar && (
           <>
             <div aria-hidden className="h-20 lg:hidden" />
-            <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#ece7e1] bg-white/95 px-4 py-3 shadow-[0_-8px_24px_rgba(74,0,27,0.12)] backdrop-blur lg:hidden">
+            <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#ece7e1] bg-white/95 px-4 py-3 shadow-panel-dock backdrop-blur lg:hidden">
               <div className="mx-auto flex max-w-md items-center gap-3">
                 <div className="min-w-0 flex-1">
                   <p className="text-[11px] text-[#9a9590]">{t("jobDetail.budgetRange")}</p>
@@ -740,7 +735,7 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
                   type="button"
                   onClick={handleApply}
                   disabled={applyStatus === "submitting"}
-                  className={`flex h-11 shrink-0 items-center justify-center rounded-xl bg-[#9d003b] px-6 text-[14px] font-semibold text-white transition-colors hover:bg-[#850030] disabled:opacity-60 ${FOCUS_RING}`}
+                  className={`flex h-11 shrink-0 items-center justify-center rounded-xl bg-brand px-6 text-[14px] font-semibold text-white transition-colors hover:bg-brand-hover disabled:opacity-60 ${FOCUS_RING}`}
                 >
                   {applyStatus === "submitting"
                     ? dictionary.jobDetail.applySection.submitting

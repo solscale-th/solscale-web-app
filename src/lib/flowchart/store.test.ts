@@ -78,7 +78,7 @@ describe("flowchart snapshot cache", () => {
             entrepreneurId: "ent-1",
             influencerName: "Nina",
             influencerHandle: "@nina",
-            influencerAvatarBg: "bg-[#fce8ee]",
+            influencerAvatarBg: "bg-brand-tint",
             workStatus: "not_submitted",
             paymentStatus: "unfunded",
             escrowAmount: 20_000,

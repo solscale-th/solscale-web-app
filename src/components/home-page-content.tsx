@@ -116,7 +116,7 @@ function FilterDropdown({
         onClick={() => setOpenFilter(open ? null : id)}
         className={`flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-[13px] font-medium transition-colors ${
           open || hasValue
-            ? "border-[#9d003b]/25 bg-[#9d003b]/8 text-[#9d003b]"
+            ? "border-brand/25 bg-brand/8 text-brand"
             : "border-[#d8d2e0] bg-white/80 text-[#4a4450] hover:border-[#c4bdcc] hover:text-[#1a1218]"
         }`}
       >
@@ -170,7 +170,7 @@ function FilterOption({
       aria-selected={active}
       onClick={onClick}
       className={`flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left text-[13px] transition-colors hover:bg-[#f5f2f8] ${
-        active ? "bg-[#9d003b]/8 font-semibold text-[#9d003b]" : "text-[#3a3530]"
+        active ? "bg-brand/8 font-semibold text-brand" : "text-[#3a3530]"
       }`}
     >
       <span className="min-w-0 flex-1 truncate">{children}</span>
@@ -666,7 +666,7 @@ export default function HomePageContent() {
       <div className="flex-1">
       {/* Hero */}
       <section
-        className="relative flex min-h-[88dvh] flex-col justify-center overflow-hidden bg-[#faf8f6] pb-20 pt-14 text-[#1a1218] sm:min-h-screen sm:pb-28 sm:pt-20"
+        className="relative flex min-h-[88dvh] flex-col justify-center overflow-hidden bg-surface pb-20 pt-14 text-[#1a1218] sm:min-h-screen sm:pb-28 sm:pt-20"
         onPointerMove={handleHeroPointerMove}
         onPointerLeave={handleHeroPointerLeave}
       >
@@ -753,7 +753,7 @@ export default function HomePageContent() {
                 <button
                   type="submit"
                   aria-label={t("common.search")}
-                  className="hero-submit-pulse grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#9d003b] text-white transition-colors hover:bg-[#850030]"
+                  className="hero-submit-pulse grid h-10 w-10 shrink-0 place-items-center rounded-full bg-brand text-white transition-colors hover:bg-brand-hover"
                 >
                   <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden>
                     <circle cx="7" cy="7" r="4.5" stroke="currentColor" strokeWidth="1.6" />
@@ -954,7 +954,7 @@ export default function HomePageContent() {
                   <button
                     type="button"
                     onClick={clearAllFilters}
-                    className="ml-auto text-[12px] font-medium text-[#7a7480] transition-colors hover:text-[#9d003b]"
+                    className="ml-auto text-[12px] font-medium text-[#7a7480] transition-colors hover:text-brand"
                   >
                     {t("common.clearAll")}
                   </button>
@@ -968,7 +968,7 @@ export default function HomePageContent() {
             <div className="hero-rise hero-rise-delay-3 mt-6 sm:mt-7">
               <Link
                 href={postJobHref}
-                className="inline-flex items-center gap-2 rounded-full bg-[#d7ff2f] px-6 py-3 text-[13px] font-semibold text-[#151515] transition-colors hover:bg-[#c8f020] sm:text-[14px]"
+                className="inline-flex items-center gap-2 rounded-full bg-accent px-6 py-3 text-[13px] font-semibold text-on-accent transition-colors hover:bg-accent-hover sm:text-[14px]"
               >
                 <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden>
                   <path d="M6 2.5V9.5M2.5 6H9.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
@@ -982,7 +982,7 @@ export default function HomePageContent() {
 
       {/* Jobs section — shown to logged-in influencers */}
       {isInfluencer ? (
-        <section className="bg-[#faf8f6] px-4 pb-20 pt-12 sm:px-8 sm:pt-14">
+        <section className="bg-surface px-4 pb-20 pt-12 sm:px-8 sm:pt-14">
           <div className="mx-auto max-w-7xl">
             <motion.div
               {...sectionReveal}
@@ -1036,7 +1036,7 @@ export default function HomePageContent() {
                       <p className="truncate text-[12px] text-[#7a7570]">{job.company}</p>
                       <p className="truncate text-[11px] text-[#9a9590]">{job.location}</p>
 
-                      <span className="mt-auto inline-flex items-center gap-1 pt-3 text-[12px] font-semibold text-[#9d003b] transition-colors group-hover:text-[#850030]">
+                      <span className="mt-auto inline-flex items-center gap-1 pt-3 text-[12px] font-semibold text-brand transition-colors group-hover:text-brand-hover">
                         {t("homeJobs.viewJob")}
                         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
                           <path d="M2.5 6H9.5M9.5 6L6.5 3M9.5 6L6.5 9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
@@ -1061,7 +1061,7 @@ export default function HomePageContent() {
                   onClick={() =>
                     setVisibleCount((count) => count + INFLUENCERS_PER_PAGE)
                   }
-                  className="flex items-center gap-2 rounded-full border border-[#e0dbd5] bg-white px-7 py-2.5 text-[13px] font-semibold text-[#444] transition-colors hover:border-[#9d003b] hover:text-[#9d003b]"
+                  className="flex items-center gap-2 rounded-full border border-[#e0dbd5] bg-white px-7 py-2.5 text-[13px] font-semibold text-[#444] transition-colors hover:border-brand hover:text-brand"
                 >
                   {t("homeJobs.loadMore")}
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -1074,7 +1074,7 @@ export default function HomePageContent() {
         </section>
       ) : (
       /* Influencers section */
-      <section className="bg-[#faf8f6] px-4 pb-20 pt-12 sm:px-8 sm:pt-14">
+      <section className="bg-surface px-4 pb-20 pt-12 sm:px-8 sm:pt-14">
         <div className="mx-auto max-w-7xl">
           <motion.div
             {...sectionReveal}
@@ -1110,7 +1110,7 @@ export default function HomePageContent() {
               </p>
               <button
                 onClick={retryLoad}
-                className="rounded-full border border-[#e0dbd5] bg-white px-5 py-2 text-[13px] font-semibold text-[#555] transition-colors hover:border-[#9d003b] hover:text-[#9d003b]"
+                className="rounded-full border border-[#e0dbd5] bg-white px-5 py-2 text-[13px] font-semibold text-[#555] transition-colors hover:border-brand hover:text-brand"
               >
                 {t("influencers.retry")}
               </button>
@@ -1137,7 +1137,7 @@ export default function HomePageContent() {
                   <div className="relative flex flex-1 flex-col gap-2.5 px-4 pb-4 pt-0">
                     <div className="-mt-8 mb-1 flex items-end gap-3">
                       <div
-                        className={`grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-full border-[3px] border-white bg-cover bg-center text-lg font-semibold text-[#9d003b] shadow-sm ${influencer.avatarBg}`}
+                        className={`grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-full border-[3px] border-white bg-cover bg-center text-lg font-semibold text-brand shadow-sm ${influencer.avatarBg}`}
                         style={
                           influencer.avatarUrl
                             ? { backgroundImage: `url(${influencer.avatarUrl})` }
@@ -1183,7 +1183,7 @@ export default function HomePageContent() {
                       </p>
                     )}
 
-                    <span className="mt-auto inline-flex items-center gap-1 pt-2 text-[12px] font-semibold text-[#9d003b] transition-colors group-hover:text-[#850030]">
+                    <span className="mt-auto inline-flex items-center gap-1 pt-2 text-[12px] font-semibold text-brand transition-colors group-hover:text-brand-hover">
                       {t("influencers.viewProfile")}
                       <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
                         <path d="M2.5 6H9.5M9.5 6L6.5 3M9.5 6L6.5 9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
@@ -1209,7 +1209,7 @@ export default function HomePageContent() {
               <button
                 onClick={loadMoreInfluencers}
                 disabled={loadingMoreInfluencers}
-                className="flex items-center gap-2 rounded-full border border-[#e0dbd5] bg-white px-7 py-2.5 text-[13px] font-semibold text-[#444] transition-colors hover:border-[#9d003b] hover:text-[#9d003b] disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex items-center gap-2 rounded-full border border-[#e0dbd5] bg-white px-7 py-2.5 text-[13px] font-semibold text-[#444] transition-colors hover:border-brand hover:text-brand disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {loadingMoreInfluencers ? t("influencers.loading") : t("influencers.loadMore")}
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -1240,13 +1240,13 @@ export default function HomePageContent() {
               {...cardReveal(0)}
               className="rounded-3xl bg-white px-6 sm:px-8 py-7 shadow-[0_4px_16px_rgba(0,0,0,0.1)]"
             >
-              <span className="inline-flex rounded-full bg-[#9d003b] px-3.5 py-1 text-[13px] font-semibold text-white">
+              <span className="inline-flex rounded-full bg-brand px-3.5 py-1 text-[13px] font-semibold text-white">
                 {t("howItWorks.forInfluencers")}
               </span>
               <ol className="mt-6 space-y-6">
                 {dictionary.howItWorks.influencerSteps.map((step, idx) => (
                   <li key={step.title} className="flex items-start gap-4">
-                    <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-[#e8e38d] text-[13px] font-semibold text-[#9d003b]">
+                    <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-[#e8e38d] text-[13px] font-semibold text-brand">
                       {`0${idx + 1}`}
                     </span>
                     <div>

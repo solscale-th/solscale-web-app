@@ -12,10 +12,10 @@ export default function AuthLayoutShell({
   const { t } = useLanguage();
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#eeebe3]">
+    <div className="flex min-h-screen flex-col bg-surface-auth">
       <header className="flex w-full items-center justify-between px-4 sm:px-10 py-4 sm:py-5">
         <Link href="/" className="inline-flex items-center gap-2.5">
-          <div className="grid h-8 w-8 place-items-center rounded-lg bg-[#d7ff2f] text-sm font-black text-[#840031]">
+          <div className="grid h-8 w-8 place-items-center rounded-lg bg-accent text-sm font-black text-brand-mark">
             ⬢
           </div>
           <span className="text-[20px] sm:text-[22px] font-black tracking-tight text-[#111]">

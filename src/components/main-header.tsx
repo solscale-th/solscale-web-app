@@ -22,7 +22,7 @@ import { LOGO_SURFACES, LogoLockup, type LogoColors } from "@/components/logo-ma
 
 function UserAvatar({ name }: { name: string }) {
   return (
-    <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#d7ff2f] text-[13px] font-black text-[#840031] select-none">
+    <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent text-[13px] font-black text-brand-mark select-none">
       {name.charAt(0).toUpperCase()}
     </div>
   );
@@ -42,7 +42,7 @@ function AuthLinks({ compact = false }: { compact?: boolean }) {
       </Link>
       <Link
         href="/signup"
-        className={`flex h-9 items-center rounded-lg bg-[#d7ff2f] text-sm font-semibold whitespace-nowrap text-[#121212] transition-colors hover:bg-[#c8f020] ${
+        className={`flex h-9 items-center rounded-lg bg-accent text-sm font-semibold whitespace-nowrap text-on-accent transition-colors hover:bg-accent-hover ${
           compact ? "px-3" : "px-5"
         }`}
       >
@@ -140,7 +140,7 @@ export default function MainHeader() {
   }
 
   return (
-    <header className="sticky top-0 z-50 bg-[#8f0035] text-white shadow-md">
+    <header className="sticky top-0 z-50 bg-brand-header text-white shadow-md">
       {/* ── Main bar ── */}
       <div className="mx-auto grid h-16 max-w-7xl grid-cols-[1fr_auto_1fr] items-center px-4 sm:px-8">
 
@@ -148,7 +148,7 @@ export default function MainHeader() {
         <Link href="/" className="flex items-center gap-2 shrink-0 col-start-1">
           {logoChoice === "current" ? (
             <>
-              <div className="grid h-7 w-7 place-items-center rounded-lg bg-[#d7ff2f] text-xs font-black text-[#840031]">
+              <div className="grid h-7 w-7 place-items-center rounded-lg bg-accent text-xs font-black text-brand-mark">
                 ⬢
               </div>
               <span className="text-xl font-black tracking-tight max-[380px]:hidden">
@@ -171,7 +171,7 @@ export default function MainHeader() {
               >
                 {item.label}
                 {item.badge > 0 && (
-                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#d7ff2f] px-1.5 text-[11px] font-black leading-none text-[#840031]">
+                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1.5 text-[11px] font-black leading-none text-brand-mark">
                     {item.badge > 99 ? "99+" : item.badge}
                   </span>
                 )}
@@ -212,7 +212,7 @@ export default function MainHeader() {
                 <div className="absolute right-0 top-full mt-2 w-52 overflow-hidden rounded-2xl border border-[#eee] bg-white py-1.5 shadow-[0_8px_24px_rgba(0,0,0,0.15)]">
                   {/* User info header */}
                   <div className="flex items-center gap-3 border-b border-[#f0f0f0] px-4 pb-3 pt-2.5">
-                    <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#fce8ee] text-sm font-black text-[#9d003b]">
+                    <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand-tint text-sm font-black text-brand">
                       {user.name.charAt(0).toUpperCase()}
                     </div>
                     <div className="min-w-0">
@@ -285,7 +285,7 @@ export default function MainHeader() {
 
       {/* ── Mobile dropdown menu (logged-in only) ── */}
       {isLoggedIn && user && mobileMenuOpen && (
-        <div className="md:hidden border-t border-white/10 bg-[#8f0035] px-4 pb-4 pt-2">
+        <div className="md:hidden border-t border-white/10 bg-brand-header px-4 pb-4 pt-2">
           <nav className="flex flex-col gap-1">
             {navItems.map((item) => (
               <a
@@ -296,7 +296,7 @@ export default function MainHeader() {
               >
                 {item.label}
                 {item.badge > 0 && (
-                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#d7ff2f] px-1.5 text-[11px] font-black leading-none text-[#840031]">
+                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1.5 text-[11px] font-black leading-none text-brand-mark">
                     {item.badge > 99 ? "99+" : item.badge}
                   </span>
                 )}

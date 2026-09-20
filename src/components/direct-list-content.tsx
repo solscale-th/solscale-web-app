@@ -69,7 +69,7 @@ function DirectOfferCard({
           <Link
             href={`/jobs/${job.id}`}
             onClick={() => { if (offer.hasUpdate) markDirectSeen(offer.id); }}
-            className="block w-full rounded-xl bg-[#9d003b] px-3.5 py-2 text-center text-[12px] font-semibold text-white transition-colors hover:bg-[#850030]"
+            className="block w-full rounded-xl bg-brand px-3.5 py-2 text-center text-[12px] font-semibold text-white transition-colors hover:bg-brand-hover"
           >
             {t("direct.viewJob")}
           </Link>
@@ -115,7 +115,7 @@ function SortDropdown({
               key={opt.key}
               type="button"
               onClick={() => { onChange(opt.key); setOpen(false); }}
-              className={`block w-full px-4 py-2.5 text-left text-[13px] transition-colors hover:bg-[#fafafa] ${value === opt.key ? "font-semibold text-[#9d003b]" : "text-[#333]"}`}
+              className={`block w-full px-4 py-2.5 text-left text-[13px] transition-colors hover:bg-[#fafafa] ${value === opt.key ? "font-semibold text-brand" : "text-[#333]"}`}
             >
               {opt.label}
             </button>

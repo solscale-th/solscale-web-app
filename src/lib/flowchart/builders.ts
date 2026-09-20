@@ -61,7 +61,7 @@ export function buildApplication(input: {
 }): FlowApplication {
   return {
     id: createFlowId("app"),
-    influencerAvatarBg: input.influencerAvatarBg ?? "bg-[#fce8ee]",
+    influencerAvatarBg: input.influencerAvatarBg ?? "bg-brand-tint",
     status: "pending",
     createdAt: Date.now(),
     ...input,
@@ -81,7 +81,7 @@ export function buildEngagement(input: {
 }): FlowEngagement {
   return {
     id: createFlowId("eng"),
-    influencerAvatarBg: input.influencerAvatarBg ?? "bg-[#fce8ee]",
+    influencerAvatarBg: input.influencerAvatarBg ?? "bg-brand-tint",
     workStatus: "not_submitted",
     paymentStatus: "escrowed",
     submissionNote: "",

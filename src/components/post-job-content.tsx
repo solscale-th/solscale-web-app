@@ -34,9 +34,9 @@ const PLATFORM_ANY_STYLE = { bg: "#efeae4", text: "#5a5550" };
 const CARD =
   "rounded-[1.75rem] bg-white p-5 shadow-[0_8px_32px_rgba(17,17,17,0.08)] sm:p-8";
 const FIELD =
-  "w-full rounded-xl border border-[#e0dbd5] bg-[#faf8f6] px-3.5 py-3 text-[14px] text-[#2a2622] placeholder-[#b3aca4] outline-none transition-[border-color,background-color,box-shadow] focus:border-[#9d003b] focus:bg-white focus:ring-2 focus:ring-[#9d003b]/25";
+  "w-full rounded-xl border border-[#e0dbd5] bg-surface px-3.5 py-3 text-[14px] text-[#2a2622] placeholder-[#b3aca4] outline-none transition-[border-color,background-color,box-shadow] focus:border-brand focus:bg-white focus:ring-2 focus:ring-brand/25";
 const FOCUS_RING =
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9d003b]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white";
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white";
 
 function splitLines(value: string): string[] {
   return value
@@ -87,7 +87,7 @@ function Field({
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
     <div className="mb-5 flex items-center gap-3">
-      <span className="h-5 w-1 rounded-full bg-[#9d003b]" aria-hidden />
+      <span className="h-5 w-1 rounded-full bg-brand" aria-hidden />
       <h2 className="text-[15px] font-semibold tracking-[-0.01em] text-[#141414]">
         {children}
       </h2>
@@ -100,7 +100,7 @@ function PromoteSwitch({ checked }: { checked: boolean }) {
     <span
       aria-hidden
       className={`inline-flex h-7 w-12 shrink-0 items-center rounded-full p-0.5 transition-colors ${
-        checked ? "bg-[#9d003b] justify-end" : "bg-[#d9d4ce] justify-start"
+        checked ? "bg-brand justify-end" : "bg-[#d9d4ce] justify-start"
       }`}
     >
       <span className="block h-6 w-6 rounded-full bg-white shadow-[0_1px_4px_rgba(0,0,0,0.18)]" />
@@ -148,7 +148,7 @@ function SelectedTag({
   return (
     <span
       className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-semibold"
-      style={style ?? { backgroundColor: "rgba(157,0,59,0.08)", color: "#9d003b" }}
+      style={style ?? { backgroundColor: "color-mix(in srgb, var(--color-brand) 8%, transparent)", color: "var(--color-brand)" }}
     >
       {label}
       <button
@@ -303,7 +303,7 @@ function PlatformAutocomplete({
                     role="option"
                     aria-selected={active}
                     className={`flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13px] ${
-                      active ? "bg-[#9d003b]/8 text-[#141414]" : "text-[#333] hover:bg-[#faf8f6]"
+                      active ? "bg-brand/8 text-[#141414]" : "text-[#333] hover:bg-surface"
                     }`}
                     onMouseEnter={() => setActiveIndex(index)}
                     onClick={() => addPlatform(platform)}
@@ -499,13 +499,13 @@ function InfluencerAutocomplete({
                     role="option"
                     aria-selected={active}
                     className={`flex w-full items-center gap-3 px-3.5 py-2.5 text-left ${
-                      active ? "bg-[#9d003b]/8" : "hover:bg-[#faf8f6]"
+                      active ? "bg-brand/8" : "hover:bg-surface"
                     }`}
                     onMouseEnter={() => setActiveIndex(index)}
                     onClick={() => addInfluencer(influencer)}
                   >
                     <span
-                      className={`grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full text-[12px] font-semibold text-[#6d0028] ${influencer.avatarBg}`}
+                      className={`grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full text-[12px] font-semibold text-brand-deep ${influencer.avatarBg}`}
                       style={
                         influencer.avatarUrl
                           ? {
@@ -542,10 +542,10 @@ function InfluencerAutocomplete({
             {selected.map((influencer) => (
               <li
                 key={influencer.id}
-                className="flex items-center gap-3 rounded-2xl border border-[#ece7e1] bg-[#faf8f6] px-3 py-2.5"
+                className="flex items-center gap-3 rounded-2xl border border-[#ece7e1] bg-surface px-3 py-2.5"
               >
                 <span
-                  className={`grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full text-[12px] font-semibold text-[#6d0028] ${influencer.avatarBg}`}
+                  className={`grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full text-[12px] font-semibold text-brand-deep ${influencer.avatarBg}`}
                   style={
                     influencer.avatarUrl
                       ? {
@@ -572,7 +572,7 @@ function InfluencerAutocomplete({
                     onChange(selected.filter((item) => item.id !== influencer.id))
                   }
                   aria-label={`${removeLabel} ${influencer.name}`}
-                  className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg text-[#888] hover:bg-white hover:text-[#9d003b] ${FOCUS_RING}`}
+                  className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg text-[#888] hover:bg-white hover:text-brand ${FOCUS_RING}`}
                 >
                   <RemoveIcon />
                 </button>
@@ -630,7 +630,7 @@ export default function PostJobContent() {
 
   if (user && user.role !== "entrepreneur") {
     return (
-      <div className="flex min-h-screen flex-col bg-[#faf8f6]">
+      <div className="flex min-h-screen flex-col bg-surface">
         <MainHeader />
         <main className="mx-auto flex-1 max-w-2xl px-4 py-16 text-center">
           <p className="text-[15px] text-[#555]">{t("postJob.notEntrepreneur")}</p>
@@ -712,7 +712,7 @@ export default function PostJobContent() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#faf8f6]">
+    <div className="flex min-h-screen flex-col bg-surface">
       <MainHeader />
       <main className="mx-auto flex-1 w-full max-w-2xl px-4 py-10 sm:py-14">
         <h1 className="text-[1.85rem] font-semibold leading-[1.15] tracking-[-0.04em] text-[#141414] sm:text-[2.1rem]">
@@ -882,8 +882,8 @@ export default function PostJobContent() {
                       key={value}
                       className={`flex cursor-pointer items-start gap-3 rounded-2xl border px-4 py-3.5 text-[13px] leading-snug transition-colors ${
                         selected
-                          ? "border-[#9d003b]/40 bg-[#9d003b]/8 text-[#141414]"
-                          : "border-[#ece7e1] bg-[#faf8f6] text-[#555] hover:border-[#ddd6ce]"
+                          ? "border-brand/40 bg-brand/8 text-[#141414]"
+                          : "border-[#ece7e1] bg-surface text-[#555] hover:border-[#ddd6ce]"
                       }`}
                     >
                       <input
@@ -892,7 +892,7 @@ export default function PostJobContent() {
                         value={value}
                         checked={selected}
                         onChange={() => setVisibility(value)}
-                        className="mt-0.5 accent-[#9d003b]"
+                        className="mt-0.5 accent-brand"
                       />
                       <span>
                         {value === "public"
@@ -932,7 +932,7 @@ export default function PostJobContent() {
               aria-checked={promoted}
               aria-labelledby={promoteLabelId}
               onClick={() => setPromoted((value) => !value)}
-              className={`mt-4 flex w-full items-center justify-between gap-4 rounded-2xl border border-[#ece7e1] bg-[#faf8f6] px-4 py-3.5 text-left transition-colors hover:border-[#ddd6ce] ${FOCUS_RING}`}
+              className={`mt-4 flex w-full items-center justify-between gap-4 rounded-2xl border border-[#ece7e1] bg-surface px-4 py-3.5 text-left transition-colors hover:border-[#ddd6ce] ${FOCUS_RING}`}
             >
               <span>
                 <span
@@ -955,14 +955,14 @@ export default function PostJobContent() {
             <button
               type="button"
               onClick={() => setPreviewOpen(true)}
-              className={`flex-1 rounded-2xl border border-[#e0dbd5] bg-white px-6 py-3.5 text-[15px] font-semibold text-[#333] transition-colors hover:border-[#9d003b] hover:text-[#9d003b] ${FOCUS_RING}`}
+              className={`flex-1 rounded-2xl border border-[#e0dbd5] bg-white px-6 py-3.5 text-[15px] font-semibold text-[#333] transition-colors hover:border-brand hover:text-brand ${FOCUS_RING}`}
             >
               {t("postJob.preview")}
             </button>
             <button
               type="submit"
               disabled={!canSubmit}
-              className="flex-1 rounded-2xl bg-[#d7ff2f] px-6 py-3.5 text-[15px] font-extrabold text-[#151515] shadow-[0_6px_20px_rgba(215,255,47,0.4)] transition-colors hover:bg-[#c8f020] disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex-1 rounded-2xl bg-accent px-6 py-3.5 text-[15px] font-extrabold text-on-accent shadow-accent transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? t("postJob.submitting") : t("postJob.submit")}
             </button>
@@ -1008,7 +1008,7 @@ export default function PostJobContent() {
             </div>
 
             <article className="overflow-hidden rounded-[1.25rem] border border-[#ebe6e0] bg-white shadow-[0_1px_2px_rgba(40,20,10,0.04)]">
-              <div className="relative h-32 overflow-hidden bg-[#9d003b]">
+              <div className="relative h-32 overflow-hidden bg-brand">
                 <div className="absolute inset-0 bg-gradient-to-t from-black/35 to-transparent" />
                 <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
                   {(platforms.length > 0 ? platforms : [primaryPlatform]).map(
@@ -1030,7 +1030,7 @@ export default function PostJobContent() {
                   )}
                 </div>
                 {promoted ? (
-                  <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-[#d7ff2f] px-2 py-0.5 text-[10px] font-semibold text-[#2a1018]">
+                  <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-[10px] font-semibold text-on-accent">
                     <svg width="8" height="8" viewBox="0 0 10 10" fill="currentColor" aria-hidden>
                       <path d="M5 0L6.2 3.8H10L7 6.1L8.2 10L5 7.6L1.8 10L3 6.1L0 3.8H3.8L5 0Z" />
                     </svg>
@@ -1094,7 +1094,7 @@ export default function PostJobContent() {
                     {tagItems.map((tag) => (
                       <span
                         key={tag}
-                        className="rounded-full bg-[#9d003b]/8 px-3 py-1.5 text-[12px] font-medium text-[#9d003b]"
+                        className="rounded-full bg-brand/8 px-3 py-1.5 text-[12px] font-medium text-brand"
                       >
                         {tag}
                       </span>

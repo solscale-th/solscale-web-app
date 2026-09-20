@@ -68,7 +68,7 @@ export const MOCK_INFLUENCERS: Influencer[] = [
     avgViews: 45000,
     responseTime: "Within 12 hours",
     collaborations: 38,
-    avatarBg: "bg-[#fce8ee]",
+    avatarBg: "bg-brand-tint",
     verified: true,
     featured: true,
   },

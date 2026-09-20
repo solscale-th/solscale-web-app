@@ -14,7 +14,7 @@ import { SubmissionUrlForm, SubmittedUrls } from "@/components/submission-url-fo
 export { jobDetailHref } from "@/lib/job-detail-href";
 
 const PANEL =
-  "rounded-[1.25rem] border border-[#ece7e1] bg-white shadow-[0_1px_2px_rgba(40,20,10,0.04),0_18px_36px_-26px_rgba(74,0,27,0.45)]";
+  "rounded-[1.25rem] border border-[#ece7e1] bg-white shadow-panel";
 
 function StatusChip({ workStatus }: { workStatus: WorkStatus }) {
   const info = WORK_STATUS_LABELS[workStatus];
@@ -235,7 +235,7 @@ export default function JobWorkspaceSection({
           </p>
           <div className="mt-3 flex items-center gap-3">
             <div
-              className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm font-black text-[#9d003b] ${engagement.influencerAvatarBg}`}
+              className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm font-black text-brand ${engagement.influencerAvatarBg}`}
             >
               {initials}
             </div>
@@ -268,7 +268,7 @@ export default function JobWorkspaceSection({
         engagement.paymentStatus === "escrowed" && (
           <Link
             href={`/my-jobs/${engagement.id}/pay`}
-            className="flex h-11 items-center justify-center rounded-xl bg-[#d7ff2f] text-[14px] font-semibold text-[#2a1018]"
+            className="flex h-11 items-center justify-center rounded-xl bg-accent text-[14px] font-semibold text-on-accent"
           >
             {t("myJob.releasePay")}
           </Link>
@@ -288,7 +288,7 @@ export default function JobWorkspaceSection({
       {engagement.paymentStatus === "released" && (
         <Link
           href={`/my-jobs/${engagement.id}/rate`}
-          className="flex h-11 items-center justify-center rounded-xl bg-[#9d003b] text-[14px] font-semibold text-white"
+          className="flex h-11 items-center justify-center rounded-xl bg-brand text-[14px] font-semibold text-white"
         >
           {t("myJob.leaveRating")}
         </Link>

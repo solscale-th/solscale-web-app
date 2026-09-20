@@ -35,8 +35,8 @@ export default function LanguageSwitcher({
             className={`rounded-md px-2.5 py-1 transition-colors ${
               active
                 ? isLight
-                  ? "bg-white text-[#8f0035]"
-                  : "bg-[#9d003b] text-white"
+                  ? "bg-white text-brand-header"
+                  : "bg-brand text-white"
                 : isLight
                   ? "text-white/80 hover:text-white"
                   : "text-[#666] hover:text-[#333]"

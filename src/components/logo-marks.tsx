@@ -34,9 +34,9 @@ type MarkProps = {
 };
 
 const LIGHT: LogoColors = {
-  primary: "#840031",
-  accent: "#d7ff2f",
-  text: "#171117",
+  primary: "var(--color-brand-mark)",
+  accent: "var(--color-accent)",
+  text: "var(--color-ink-strong)",
 };
 
 const LOCKUP = {
@@ -46,51 +46,51 @@ const LOCKUP = {
 } as const;
 
 export const LOGO_SURFACES = {
-  light: { bg: "#faf8f6", colors: LIGHT },
+  light: { bg: "var(--color-surface)", colors: LIGHT },
   brand: {
-    bg: "#8f0035",
-    colors: { primary: "#d7ff2f", accent: "#ffffff", text: "#ffffff" },
+    bg: "var(--color-brand-header)",
+    colors: { primary: "var(--color-accent)", accent: "#ffffff", text: "#ffffff" },
   },
   dark: {
-    bg: "#121417",
-    colors: { primary: "#d7ff2f", accent: "#ffffff", text: "#ffffff" },
+    bg: "var(--color-footer)",
+    colors: { primary: "var(--color-accent)", accent: "#ffffff", text: "#ffffff" },
   },
   lime: {
-    bg: "#d7ff2f",
-    colors: { primary: "#840031", accent: "#171117", text: "#840031" },
+    bg: "var(--color-accent)",
+    colors: { primary: "var(--color-brand-mark)", accent: "var(--color-ink-strong)", text: "var(--color-brand-mark)" },
   },
 } as const;
 
 export const DESIGN_THEME: Record<DesignId, LogoColors> = {
-  clasp: { primary: "#840031", accent: "#d7ff2f", text: "#171117" },
-  twin: { primary: "#6e0029", accent: "#d7ff2f", text: "#6e0029" },
-  course: { primary: "#840031", accent: "#d7ff2f", text: "#840031" },
+  clasp: { primary: "var(--color-brand-mark)", accent: "var(--color-accent)", text: "var(--color-ink-strong)" },
+  twin: { primary: "var(--color-brand-deep)", accent: "var(--color-accent)", text: "var(--color-brand-deep)" },
+  course: { primary: "var(--color-brand-mark)", accent: "var(--color-accent)", text: "var(--color-brand-mark)" },
   gilt: {
     primary: "#c9ae7c",
     accent: "#1a1612",
     spark: "#e8d5a8",
     text: "#c9ae7c",
   },
-  pair: { primary: "#840031", accent: "#d7ff2f", text: "#840031" },
-  grip: { primary: "#840031", accent: "#d7ff2f", text: "#171117" },
+  pair: { primary: "var(--color-brand-mark)", accent: "var(--color-accent)", text: "var(--color-brand-mark)" },
+  grip: { primary: "var(--color-brand-mark)", accent: "var(--color-accent)", text: "var(--color-ink-strong)" },
   sigil: {
-    primary: "#840031",
-    accent: "#d7ff2f",
+    primary: "var(--color-brand-mark)",
+    accent: "var(--color-accent)",
     spark: "#ff4d8d",
-    text: "#171117",
+    text: "var(--color-ink-strong)",
   },
-  solrise: { primary: "#840031", accent: "#e8940f", text: "#171117" },
-  dawn: { primary: "#840031", accent: "#d7ff2f", text: "#171117" },
+  solrise: { primary: "var(--color-brand-mark)", accent: "#e8940f", text: "var(--color-ink-strong)" },
+  dawn: { primary: "var(--color-brand-mark)", accent: "var(--color-accent)", text: "var(--color-ink-strong)" },
   match: {
-    primary: "#840031",
+    primary: "var(--color-brand-mark)",
     accent: "#e8940f",
     spark: "#e8940f",
-    text: "#171117",
+    text: "var(--color-ink-strong)",
   },
 };
 
 export const HERO_BG: Record<DesignId, string> = {
-  clasp: "#faf8f6",
+  clasp: "var(--color-surface)",
   twin: "#f4efe6",
   course: "#ffffff",
   gilt: "#14110f",
@@ -118,7 +118,7 @@ const LAYOUT: Record<DesignId, LockupLayout> = {
 export function CurrentMark({ size = 28, className }: { size?: number; className?: string }) {
   return (
     <div
-      className={`grid place-items-center rounded-lg bg-[#d7ff2f] font-black text-[#840031] ${className ?? ""}`}
+      className={`grid place-items-center rounded-lg bg-accent font-black text-brand-mark ${className ?? ""}`}
       style={{ width: size, height: size, fontSize: size * 0.42 }}
       aria-hidden
     >
@@ -534,7 +534,7 @@ export function MatchMark({
 }: MarkProps) {
   const fill = (spark ?? accent).toLowerCase();
   const inner =
-    fill === "#ffffff" || fill === "#fff" ? "#840031" : spark ?? accent;
+    fill === "#ffffff" || fill === "#fff" ? "var(--color-brand-mark)" : spark ?? accent;
 
   return (
     <svg

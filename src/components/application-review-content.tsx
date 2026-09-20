@@ -72,7 +72,7 @@ export default function ApplicationReviewContent({ applicationId }: { applicatio
           </p>
         )}
         {application.coverMessage && (
-          <p className="mt-3 rounded-xl bg-[#faf8f6] px-3.5 py-3 text-[13px] text-[#333]">
+          <p className="mt-3 rounded-xl bg-surface px-3.5 py-3 text-[13px] text-[#333]">
             {application.coverMessage}
           </p>
         )}

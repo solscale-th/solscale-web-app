@@ -51,7 +51,7 @@ export const CATEGORIES: { label: Platform; count: number; icon: string }[] = [
  * Listing screens should prefer the jobs API + live flowchart, not this array.
  */
 const JOB_THUMBNAILS = [
-  "bg-[#fce8ee]",
+  "bg-brand-tint",
   "bg-[#ffe8cc]",
   "bg-[#cce4ff]",
   "bg-[#d0f0e8]",

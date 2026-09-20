@@ -51,7 +51,7 @@ function SurfaceBoard({
         style={{
           backgroundColor: bg,
           backgroundImage: tall
-            ? "radial-gradient(rgba(23,17,23,0.08) 0.7px, transparent 0.7px)"
+            ? "radial-gradient(color-mix(in srgb, var(--color-ink-strong) 8%, transparent) 0.7px, transparent 0.7px)"
             : undefined,
           backgroundSize: tall ? "14px 14px" : undefined,
         }}
@@ -67,7 +67,7 @@ function SurfaceBoard({
 
 function HeaderBar({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-14 w-full max-w-md items-center rounded-xl bg-[#8f0035] px-4 shadow-[0_8px_24px_rgba(143,0,53,0.22)]">
+    <div className="flex h-14 w-full max-w-md items-center rounded-xl bg-brand-header px-4 shadow-header">
       {children}
     </div>
   );
@@ -107,30 +107,30 @@ function DesignSection({ id }: { id: LogoChoice }) {
   const { t } = useLanguage();
   const intended =
     id === "current"
-      ? ({ primary: "#840031", accent: "#d7ff2f", text: "#171117" } as LogoColors)
+      ? ({ primary: "var(--color-brand-mark)", accent: "var(--color-accent)", text: "var(--color-ink-strong)" } as LogoColors)
       : DESIGN_THEME[id];
   const brand = LOGO_SURFACES.brand.colors as LogoColors;
   const dark = LOGO_SURFACES.dark.colors as LogoColors;
   const lime = LOGO_SURFACES.lime.colors as LogoColors;
-  const hero = id === "current" ? "#faf8f6" : HERO_BG[id];
+  const hero = id === "current" ? "var(--color-surface)" : HERO_BG[id];
   const number = INDEX.find((item) => item.id === id)?.number ?? "";
 
   return (
     <section className="rounded-[28px] border border-[#ece7e1] bg-white p-5 shadow-[0_1px_2px_rgba(40,20,10,0.04)] sm:p-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="max-w-xl">
-          <p className="text-[12px] font-medium uppercase tracking-[0.18em] text-[#9d003b]">
+          <p className="text-[12px] font-medium uppercase tracking-[0.18em] text-brand">
             {number}
           </p>
           <h2
-            className="mt-1.5 text-[32px] font-medium tracking-tight text-[#171117] sm:text-[38px]"
+            className="mt-1.5 text-[32px] font-medium tracking-tight text-ink-strong sm:text-[38px]"
             style={{
               fontFamily: "var(--font-display), var(--font-display-thai), serif",
             }}
           >
             {t(`logoPage.${id}.name`)}
           </h2>
-          <span className="mt-3 inline-flex rounded-full border border-[#ead9c8] bg-[#fff8ef] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-[#9d003b]">
+          <span className="mt-3 inline-flex rounded-full border border-[#ead9c8] bg-[#fff8ef] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-brand">
             {t(`logoPage.${id}.style`)}
           </span>
         </div>
@@ -147,10 +147,10 @@ function DesignSection({ id }: { id: LogoChoice }) {
           <PreviewLockup choice={id} size="lg" colors={intended} />
         </SurfaceBoard>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-          <SurfaceBoard bg="#8f0035" label={t("logoPage.onBrand")}>
+          <SurfaceBoard bg="var(--color-brand-header)" label={t("logoPage.onBrand")}>
             <PreviewLockup choice={id} size="md" colors={brand} />
           </SurfaceBoard>
-          <SurfaceBoard bg="#121417" label={t("logoPage.onDark")}>
+          <SurfaceBoard bg="var(--color-footer)" label={t("logoPage.onDark")}>
             <PreviewLockup
               choice={id}
               size="md"
@@ -165,21 +165,21 @@ function DesignSection({ id }: { id: LogoChoice }) {
       </div>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-3">
-        <SurfaceBoard bg="#d7ff2f" label={t("logoPage.onLime")}>
+        <SurfaceBoard bg="var(--color-accent)" label={t("logoPage.onLime")}>
           <PreviewLockup choice={id} size="sm" colors={lime} />
         </SurfaceBoard>
         <SurfaceBoard bg="#f4f1f7" label={t("logoPage.icon")}>
           <div className="flex items-center gap-4">
             <PreviewMark choice={id} size={48} colors={intended} />
-            <div className="grid h-12 w-12 place-items-center rounded-xl bg-[#8f0035]">
+            <div className="grid h-12 w-12 place-items-center rounded-xl bg-brand-header">
               <PreviewMark choice={id} size={32} colors={brand} />
             </div>
-            <div className="grid h-10 w-10 place-items-center rounded-lg bg-[#121417]">
+            <div className="grid h-10 w-10 place-items-center rounded-lg bg-footer">
               <PreviewMark choice={id} size={26} colors={dark} />
             </div>
           </div>
         </SurfaceBoard>
-        <SurfaceBoard bg="#eeebe3" label={t("logoPage.header")}>
+        <SurfaceBoard bg="var(--color-surface-auth)" label={t("logoPage.header")}>
           <HeaderBar>
             <PreviewLockup choice={id} size="sm" colors={brand} />
           </HeaderBar>
@@ -203,9 +203,9 @@ function SidebarButton({
   const { t } = useLanguage();
   const colors =
     id === "current"
-      ? ({ primary: "#840031", accent: "#d7ff2f", text: "#171117" } as LogoColors)
+      ? ({ primary: "var(--color-brand-mark)", accent: "var(--color-accent)", text: "var(--color-ink-strong)" } as LogoColors)
       : DESIGN_THEME[id];
-  const hero = id === "current" ? "#faf8f6" : HERO_BG[id];
+  const hero = id === "current" ? "var(--color-surface)" : HERO_BG[id];
 
   return (
     <button
@@ -214,7 +214,7 @@ function SidebarButton({
       aria-current={active ? "true" : undefined}
       className={`flex w-full items-center gap-3 rounded-2xl px-2.5 py-2 text-left transition-colors ${
         active
-          ? "bg-[#fff8ef] ring-1 ring-[#9d003b]/25"
+          ? "bg-[#fff8ef] ring-1 ring-brand/25"
           : "hover:bg-[#f7f4ef]"
       }`}
     >
@@ -230,7 +230,7 @@ function SidebarButton({
         </span>
         <span
           className={`block truncate text-[13px] font-medium ${
-            active ? "text-[#9d003b]" : "text-[#171117]"
+            active ? "text-brand" : "text-ink-strong"
           }`}
         >
           {t(`logoPage.${id}.name`)}
@@ -245,7 +245,7 @@ export default function LogoGalleryContent() {
   const { choice, setChoice } = useLogoPreview();
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#faf8f6]">
+    <div className="flex min-h-screen flex-col bg-surface">
       <MainHeader />
 
       <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col lg:flex-row">
@@ -254,7 +254,7 @@ export default function LogoGalleryContent() {
             <div className="px-4 pb-3 pt-6 sm:px-5">
               <p className="hero-kicker">{t("logoPage.kicker")}</p>
               <h1
-                className="mt-2 text-[22px] font-medium tracking-tight text-[#171117]"
+                className="mt-2 text-[22px] font-medium tracking-tight text-ink-strong"
                 style={{
                   fontFamily: "var(--font-display), var(--font-display-thai), serif",
                 }}

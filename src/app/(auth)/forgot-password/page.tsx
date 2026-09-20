@@ -39,8 +39,8 @@ export default function ForgotPasswordPage() {
       </p>
 
       {submitted ? (
-        <div className="mt-8 rounded-2xl border border-[#9d003b]/20 bg-[#fce8ee] px-5 py-5 text-center">
-          <p className="text-[15px] font-semibold text-[#9d003b]">
+        <div className="mt-8 rounded-2xl border border-brand/20 bg-brand-tint px-5 py-5 text-center">
+          <p className="text-[15px] font-semibold text-brand">
             {t("auth.forgotPassword.successTitle")}
           </p>
           <p className="mt-1 text-[13px] text-[#777]">
@@ -49,7 +49,7 @@ export default function ForgotPasswordPage() {
           </p>
           <Link
             href="/login"
-            className="mt-4 inline-flex items-center justify-center gap-2 h-[44px] w-full rounded-xl bg-[#9d003b] text-[14px] font-semibold text-white hover:bg-[#850030] transition-colors"
+            className="mt-4 inline-flex items-center justify-center gap-2 h-[44px] w-full rounded-xl bg-brand text-[14px] font-semibold text-white hover:bg-brand-hover transition-colors"
           >
             {t("auth.forgotPassword.backToSignIn")}
           </Link>
@@ -60,7 +60,7 @@ export default function ForgotPasswordPage() {
             <label className="block text-[14px] font-medium text-[#333] mb-1.5">
               {t("auth.forgotPassword.email")}
             </label>
-            <div className="flex items-center gap-2.5 rounded-xl border border-[#ddd] bg-white px-3.5 py-3 focus-within:border-[#9d003b] focus-within:ring-1 focus-within:ring-[#9d003b]">
+            <div className="flex items-center gap-2.5 rounded-xl border border-[#ddd] bg-white px-3.5 py-3 focus-within:border-brand focus-within:ring-1 focus-within:ring-brand">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0 text-[#aaa]">
                 <rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.4" />
                 <path d="M1 5.5L8 10L15 5.5" stroke="currentColor" strokeWidth="1.4" />
@@ -79,7 +79,7 @@ export default function ForgotPasswordPage() {
           <button
             type="submit"
             disabled={loading}
-            className="flex items-center justify-center gap-2 h-[48px] w-full rounded-xl bg-[#9d003b] text-[15px] font-semibold text-white shadow-[0_4px_14px_rgba(157,0,59,0.3)] hover:bg-[#850030] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            className="flex items-center justify-center gap-2 h-[48px] w-full rounded-xl bg-brand text-[15px] font-semibold text-white shadow-brand hover:bg-brand-hover transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {loading ? t("auth.forgotPassword.submitting") : (
               <>
@@ -105,7 +105,7 @@ export default function ForgotPasswordPage() {
 
       <p className="mt-7 text-center text-[14px] text-[#777]">
         {t("auth.forgotPassword.remembered")}{" "}
-        <Link href="/login" className="font-semibold text-[#9d003b] hover:underline">
+        <Link href="/login" className="font-semibold text-brand hover:underline">
           {t("auth.forgotPassword.signIn")}
         </Link>
       </p>

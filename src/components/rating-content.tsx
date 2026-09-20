@@ -68,7 +68,7 @@ export default function RatingContent({ engagementId }: { engagementId: string }
                   onClick={() => setStars(value)}
                   className={`h-10 w-10 rounded-xl text-[14px] font-semibold ${
                     value <= stars
-                      ? "bg-[#d7ff2f] text-[#2a1018]"
+                      ? "bg-accent text-on-accent"
                       : "bg-[#f4f1ec] text-[#888]"
                   }`}
                   aria-label={`${value}`}

@@ -11,7 +11,7 @@ import {
 } from "@/lib/submission-urls";
 
 const FIELD =
-  "w-full rounded-xl border border-[#eee] bg-[#fafafa] px-4 py-2.5 text-[13px] text-[#333] outline-none placeholder:text-[#bbb] focus:border-[#9d003b]/40 focus:ring-2 focus:ring-[#9d003b]/10";
+  "w-full rounded-xl border border-[#eee] bg-[#fafafa] px-4 py-2.5 text-[13px] text-[#333] outline-none placeholder:text-[#bbb] focus:border-brand/40 focus:ring-2 focus:ring-brand/10";
 
 export function SubmittedUrls({ note }: { note: string }) {
   const parsed = parseSubmissionNote(note);
@@ -27,7 +27,7 @@ export function SubmittedUrls({ note }: { note: string }) {
                 href={url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="break-all text-[13px] font-medium text-[#9d003b] underline-offset-2 hover:underline"
+                className="break-all text-[13px] font-medium text-brand underline-offset-2 hover:underline"
               >
                 {url}
               </a>
@@ -112,7 +112,7 @@ export function SubmissionUrlForm({
                   type="button"
                   onClick={() => removeUrl(index)}
                   aria-label={t("myJob.removeUrl")}
-                  className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[#eee] text-[#888] transition-colors hover:border-[#ccc] hover:text-[#9d003b]"
+                  className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-[#eee] text-[#888] transition-colors hover:border-[#ccc] hover:text-brand"
                 >
                   <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
                     <path d="M2.5 2.5L9.5 9.5M9.5 2.5L2.5 9.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -127,7 +127,7 @@ export function SubmissionUrlForm({
       <button
         type="button"
         onClick={addUrl}
-        className="inline-flex items-center gap-1.5 rounded-lg px-1 py-1 text-[12px] font-semibold text-[#9d003b] transition-colors hover:bg-[#9d003b]/5"
+        className="inline-flex items-center gap-1.5 rounded-lg px-1 py-1 text-[12px] font-semibold text-brand transition-colors hover:bg-brand/5"
       >
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
           <path d="M6 2V10M2 6H10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
@@ -143,12 +143,12 @@ export function SubmissionUrlForm({
         className={`resize-none ${FIELD}`}
       />
 
-      {error ? <p className="text-[12px] text-[#9d003b]">{error}</p> : null}
+      {error ? <p className="text-[12px] text-brand">{error}</p> : null}
 
       <button
         type="submit"
         disabled={!canSend}
-        className="w-full rounded-xl bg-[#9d003b] py-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-[#850030] disabled:opacity-40"
+        className="w-full rounded-xl bg-brand py-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-brand-hover disabled:opacity-40"
       >
         {submitLabel}
       </button>

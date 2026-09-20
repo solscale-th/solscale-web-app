@@ -52,7 +52,7 @@ export const MOCK_MY_JOBS_INFLUENCER: Record<string, JobEngagement[]> = {
       influencerId: "inf1",
       influencerName: "Nina Somchai",
       influencerHandle: "@nina.glows",
-      influencerAvatarBg: "bg-[#fce8ee]",
+      influencerAvatarBg: "bg-brand-tint",
       acceptedDaysAgo: 3,
       workStatus: "revision_requested",
       submissionNote:
@@ -72,7 +72,7 @@ export const MOCK_MY_JOBS_INFLUENCER: Record<string, JobEngagement[]> = {
       influencerId: "inf1",
       influencerName: "Nina Somchai",
       influencerHandle: "@nina.glows",
-      influencerAvatarBg: "bg-[#fce8ee]",
+      influencerAvatarBg: "bg-brand-tint",
       acceptedDaysAgo: 6,
       workStatus: "approved",
       submissionNote:
@@ -91,7 +91,7 @@ export const MOCK_MY_JOBS_INFLUENCER: Record<string, JobEngagement[]> = {
       influencerId: "inf1",
       influencerName: "Nina Somchai",
       influencerHandle: "@nina.glows",
-      influencerAvatarBg: "bg-[#fce8ee]",
+      influencerAvatarBg: "bg-brand-tint",
       acceptedDaysAgo: 1,
       workStatus: "not_submitted",
       submissionNote: "",
@@ -107,7 +107,7 @@ export const MOCK_MY_JOBS_INFLUENCER: Record<string, JobEngagement[]> = {
       influencerId: "inf1",
       influencerName: "Nina Somchai",
       influencerHandle: "@nina.glows",
-      influencerAvatarBg: "bg-[#fce8ee]",
+      influencerAvatarBg: "bg-brand-tint",
       acceptedDaysAgo: 2,
       workStatus: "submitted",
       submissionNote:
@@ -126,7 +126,7 @@ export const MOCK_MY_JOBS_INFLUENCER: Record<string, JobEngagement[]> = {
       influencerId: "inf1",
       influencerName: "Nina Somchai",
       influencerHandle: "@nina.glows",
-      influencerAvatarBg: "bg-[#fce8ee]",
+      influencerAvatarBg: "bg-brand-tint",
       acceptedDaysAgo: 4,
       workStatus: "approved",
       submissionNote:
@@ -146,7 +146,7 @@ export const MOCK_MY_JOBS_INFLUENCER: Record<string, JobEngagement[]> = {
       influencerId: "inf1",
       influencerName: "Nina Somchai",
       influencerHandle: "@nina.glows",
-      influencerAvatarBg: "bg-[#fce8ee]",
+      influencerAvatarBg: "bg-brand-tint",
       acceptedDaysAgo: 0,
       workStatus: "not_submitted",
       submissionNote: "",
@@ -162,7 +162,7 @@ export const MOCK_MY_JOBS_INFLUENCER: Record<string, JobEngagement[]> = {
       influencerId: "inf1",
       influencerName: "Nina Somchai",
       influencerHandle: "@nina.glows",
-      influencerAvatarBg: "bg-[#fce8ee]",
+      influencerAvatarBg: "bg-brand-tint",
       acceptedDaysAgo: 8,
       workStatus: "approved",
       submissionNote:

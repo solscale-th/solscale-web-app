@@ -63,7 +63,7 @@ function CountryCodePicker({
               key={c.code}
               type="button"
               onClick={() => { onChange(c.code); setOpen(false); }}
-              className={`flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-[13px] transition-colors hover:bg-[#fafafa] ${value === c.code ? "font-semibold text-[#9d003b]" : "text-[#333]"}`}
+              className={`flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-[13px] transition-colors hover:bg-[#fafafa] ${value === c.code ? "font-semibold text-brand" : "text-[#333]"}`}
             >
               <span className="text-base">{c.flag}</span>
               <span className="flex-1">{c.name}</span>
@@ -100,7 +100,7 @@ function PhoneEditField({
           type="tel"
           value={phone}
           onChange={(e) => onPhoneChange(e.target.value)}
-          className="min-w-0 flex-1 rounded-r-lg border border-l-0 border-[#e0e0e0] bg-[#fafafa] px-3 py-2 text-[14px] font-medium text-[#111] outline-none transition-colors focus:border-[#9d003b] focus:bg-white"
+          className="min-w-0 flex-1 rounded-r-lg border border-l-0 border-[#e0e0e0] bg-[#fafafa] px-3 py-2 text-[14px] font-medium text-[#111] outline-none transition-colors focus:border-brand focus:bg-white"
         />
       </div>
     </div>
@@ -165,7 +165,7 @@ function EditField({
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="rounded-lg border border-[#e0e0e0] bg-[#fafafa] px-3 py-2 text-[14px] font-medium text-[#111] outline-none transition-colors focus:border-[#9d003b] focus:bg-white"
+        className="rounded-lg border border-[#e0e0e0] bg-[#fafafa] px-3 py-2 text-[14px] font-medium text-[#111] outline-none transition-colors focus:border-brand focus:bg-white"
       />
     </div>
   );
@@ -322,7 +322,7 @@ export default function ProfileContent() {
             {/* ── Left sidebar ── */}
             <div className="flex w-full flex-col items-center gap-4 rounded-2xl border border-[#f0f0f0] bg-white p-6 shadow-[0_2px_10px_rgba(0,0,0,0.06)] lg:w-56 lg:shrink-0">
               <div
-                className="grid h-24 w-24 place-items-center overflow-hidden rounded-full bg-[#fce8ee] bg-cover bg-center text-3xl font-black text-[#9d003b]"
+                className="grid h-24 w-24 place-items-center overflow-hidden rounded-full bg-brand-tint bg-cover bg-center text-3xl font-black text-brand"
                 style={
                   avatarImage ? { backgroundImage: `url(${avatarImage})` } : undefined
                 }
@@ -334,7 +334,7 @@ export default function ProfileContent() {
                 <p className="text-[16px] font-black text-[#111]">
                   {editing ? (currentForm.name || "—") : (user.name || "—")}
                 </p>
-                <span className="mt-1 inline-flex items-center rounded-full bg-[#9d003b]/10 px-3 py-0.5 text-[11px] font-semibold text-[#9d003b]">
+                <span className="mt-1 inline-flex items-center rounded-full bg-brand/10 px-3 py-0.5 text-[11px] font-semibold text-brand">
                   {roleLabel}
                 </span>
               </div>
@@ -344,7 +344,7 @@ export default function ProfileContent() {
                   <button
                     type="button"
                     onClick={handleSave}
-                    className="w-full rounded-xl bg-[#9d003b] py-2 text-[13px] font-semibold text-white transition-colors hover:bg-[#850030]"
+                    className="w-full rounded-xl bg-brand py-2 text-[13px] font-semibold text-white transition-colors hover:bg-brand-hover"
                   >
                     {t("profile.save")}
                   </button>
@@ -371,7 +371,7 @@ export default function ProfileContent() {
                 <button
                   type="button"
                   onClick={handleSwitchRole}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-[#9d003b]/40 bg-[#9d003b]/5 py-2 text-[12px] font-semibold text-[#9d003b] transition-colors hover:bg-[#9d003b]/10"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-brand/40 bg-brand/5 py-2 text-[12px] font-semibold text-brand transition-colors hover:bg-brand/10"
                 >
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                     <path d="M1 5h9M7 2l3 3-3 3M13 9H4M7 12l-3-3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />

@@ -29,7 +29,7 @@ export type ApiJob = {
 };
 
 const JOB_THUMBNAILS = [
-  "bg-[#fce8ee]",
+  "bg-brand-tint",
   "bg-[#ffe8cc]",
   "bg-[#cce4ff]",
   "bg-[#d0f0e8]",

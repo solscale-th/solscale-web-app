@@ -59,7 +59,7 @@ function RoleSelector({
     <div className="relative flex rounded-xl bg-[#e3dfd7] p-1">
       {role && (
         <motion.div
-          className="absolute inset-y-1 w-[calc(50%-4px)] rounded-lg bg-[#9d003b] shadow-sm"
+          className="absolute inset-y-1 w-[calc(50%-4px)] rounded-lg bg-brand shadow-sm"
           initial={false}
           animate={{
             left: role === "influencer" ? 4 : "calc(50%)",
@@ -102,7 +102,7 @@ function StepIndicator({
         {/* 40px = 32px circle + 8px gap on each side */}
         <div
           className={`absolute left-10 right-10 top-4 h-0.5 -translate-y-1/2 rounded-full transition-colors ${
-            step > 1 ? "bg-[#9d003b]" : "bg-[#e8e4dc]"
+            step > 1 ? "bg-brand" : "bg-[#e8e4dc]"
           }`}
         />
         {labels.map((label, index) => {
@@ -115,7 +115,7 @@ function StepIndicator({
               <div
                 className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[13px] font-semibold transition-colors ${
                   isActive || isDone
-                    ? "bg-[#9d003b] text-white"
+                    ? "bg-brand text-white"
                     : "bg-[#e8e4dc] text-[#999]"
                 }`}
               >
@@ -135,7 +135,7 @@ function StepIndicator({
               </div>
               <span
                 className={`whitespace-nowrap text-center text-[12px] font-medium ${
-                  isActive ? "text-[#9d003b]" : isDone ? "text-[#555]" : "text-[#aaa]"
+                  isActive ? "text-brand" : isDone ? "text-[#555]" : "text-[#aaa]"
                 }`}
               >
                 {label}
@@ -340,7 +340,7 @@ function LoginForm() {
             >
               <div>
                 <label className="block text-[14px] font-medium text-[#333] mb-1.5">
-                  {t("auth.login.selectRole")} <span className="text-[#9d003b]">*</span>
+                  {t("auth.login.selectRole")} <span className="text-brand">*</span>
                 </label>
                 <RoleSelector
                   role={role}
@@ -363,7 +363,7 @@ function LoginForm() {
                 type="button"
                 onClick={handleNext}
                 disabled={!role}
-                className="mt-1 flex items-center justify-center gap-2 h-[48px] w-full rounded-xl bg-[#9d003b] text-[15px] font-semibold text-white shadow-[0_4px_14px_rgba(157,0,59,0.35)] hover:bg-[#850030] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                className="mt-1 flex items-center justify-center gap-2 h-[48px] w-full rounded-xl bg-brand text-[15px] font-semibold text-white shadow-brand hover:bg-brand-hover transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {t("auth.login.next")}
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -379,7 +379,7 @@ function LoginForm() {
 
               <p className="mt-2 text-center text-[14px] text-[#777]">
                 {t("auth.login.noAccount")}{" "}
-                <Link href="/signup" className="font-semibold text-[#9d003b] hover:underline">
+                <Link href="/signup" className="font-semibold text-brand hover:underline">
                   {t("auth.login.signUpFree")}
                 </Link>
               </p>
@@ -397,7 +397,7 @@ function LoginForm() {
               <button
                 type="button"
                 onClick={handleBack}
-                className="mb-4 flex items-center gap-1.5 text-[13px] font-medium text-[#777] hover:text-[#9d003b] transition-colors"
+                className="mb-4 flex items-center gap-1.5 text-[13px] font-medium text-[#777] hover:text-brand transition-colors"
               >
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                   <path
@@ -422,7 +422,7 @@ function LoginForm() {
                   <label className="block text-[14px] font-medium text-[#333] mb-1.5">
                     {t("auth.login.email")}
                   </label>
-                  <div className="flex items-center gap-2.5 rounded-xl border border-[#ddd] bg-white px-3.5 py-3 focus-within:border-[#9d003b] focus-within:ring-1 focus-within:ring-[#9d003b]">
+                  <div className="flex items-center gap-2.5 rounded-xl border border-[#ddd] bg-white px-3.5 py-3 focus-within:border-brand focus-within:ring-1 focus-within:ring-brand">
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0 text-[#aaa]">
                       <rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.4" />
                       <path d="M1 5.5L8 10L15 5.5" stroke="currentColor" strokeWidth="1.4" />
@@ -444,11 +444,11 @@ function LoginForm() {
                     <label className="block text-[14px] font-medium text-[#333]">
                       {t("auth.login.password")}
                     </label>
-                    <Link href="/forgot-password" className="text-[13px] font-medium text-[#9d003b] hover:underline">
+                    <Link href="/forgot-password" className="text-[13px] font-medium text-brand hover:underline">
                       {t("auth.login.forgotPassword")}
                     </Link>
                   </div>
-                  <div className="flex items-center gap-2.5 rounded-xl border border-[#ddd] bg-white px-3.5 py-3 focus-within:border-[#9d003b] focus-within:ring-1 focus-within:ring-[#9d003b]">
+                  <div className="flex items-center gap-2.5 rounded-xl border border-[#ddd] bg-white px-3.5 py-3 focus-within:border-brand focus-within:ring-1 focus-within:ring-brand">
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0 text-[#aaa]">
                       <rect x="4" y="6" width="8" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
                       <path d="M5.5 6V4.5a2.5 2.5 0 015 0V6" stroke="currentColor" strokeWidth="1.4" />
@@ -481,7 +481,7 @@ function LoginForm() {
                 </div>
 
                 <label className="flex items-center gap-2.5 cursor-pointer select-none">
-                  <input type="checkbox" className="h-4 w-4 rounded border-[#ccc] accent-[#9d003b]" />
+                  <input type="checkbox" className="h-4 w-4 rounded border-[#ccc] accent-brand" />
                   <span className="text-[14px] text-[#555]">{t("auth.login.rememberMe")}</span>
                 </label>
 
@@ -494,7 +494,7 @@ function LoginForm() {
                 <button
                   type="submit"
                   disabled={!canSubmit}
-                  className="mt-1 flex items-center justify-center gap-2 h-[48px] w-full rounded-xl bg-[#9d003b] text-[15px] font-semibold text-white shadow-[0_4px_14px_rgba(157,0,59,0.35)] hover:bg-[#850030] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="mt-1 flex items-center justify-center gap-2 h-[48px] w-full rounded-xl bg-brand text-[15px] font-semibold text-white shadow-brand hover:bg-brand-hover transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {loading ? t("auth.login.submitting") : (
                     <>
@@ -544,7 +544,7 @@ function LoginForm() {
 
               <p className="mt-6 text-center text-[14px] text-[#777]">
                 {t("auth.login.noAccount")}{" "}
-                <Link href="/signup" className="font-semibold text-[#9d003b] hover:underline">
+                <Link href="/signup" className="font-semibold text-brand hover:underline">
                   {t("auth.login.signUpFree")}
                 </Link>
               </p>

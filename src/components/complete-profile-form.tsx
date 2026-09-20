@@ -65,7 +65,7 @@ export default function CompleteProfileForm({
               onChange={(e) => setEmail(e.target.value)}
               placeholder={t("auth.login.emailPlaceholder")}
               required
-              className="w-full rounded-xl border border-[#ddd] bg-white px-3.5 py-3 text-[14px] text-[#111] outline-none focus:border-[#9d003b] focus:ring-1 focus:ring-[#9d003b]"
+              className="w-full rounded-xl border border-[#ddd] bg-white px-3.5 py-3 text-[14px] text-[#111] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
             />
           </div>
         )}
@@ -81,7 +81,7 @@ export default function CompleteProfileForm({
               onChange={(e) => setCompanyName(e.target.value)}
               placeholder={t("auth.signup.companyNamePlaceholder")}
               required
-              className="w-full rounded-xl border border-[#ddd] bg-white px-3.5 py-3 text-[14px] text-[#111] outline-none focus:border-[#9d003b] focus:ring-1 focus:ring-[#9d003b]"
+              className="w-full rounded-xl border border-[#ddd] bg-white px-3.5 py-3 text-[14px] text-[#111] outline-none focus:border-brand focus:ring-1 focus:ring-brand"
             />
           </div>
         )}
@@ -95,7 +95,7 @@ export default function CompleteProfileForm({
         <button
           type="submit"
           disabled={!canSubmit}
-          className="mt-1 flex items-center justify-center gap-2 h-[48px] w-full rounded-xl bg-[#9d003b] text-[15px] font-semibold text-white shadow-[0_4px_14px_rgba(157,0,59,0.35)] hover:bg-[#850030] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          className="mt-1 flex items-center justify-center gap-2 h-[48px] w-full rounded-xl bg-brand text-[15px] font-semibold text-white shadow-brand hover:bg-brand-hover transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {loading ? t("auth.login.submitting") : t("auth.login.continueButton")}
         </button>

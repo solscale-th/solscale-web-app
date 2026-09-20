@@ -28,13 +28,13 @@ export function FlowPage({
   const { t } = useLanguage();
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#faf8f6]">
+    <div className="flex min-h-screen flex-col bg-surface">
       <MainHeader />
       <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-5 px-4 py-10 sm:px-8">
         {backHref && (
           <Link
             href={backHref}
-            className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#888] hover:text-[#9d003b]"
+            className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#888] hover:text-brand"
           >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
               <path d="M9 2L4 7L9 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -63,10 +63,10 @@ export function FlowCard({ children }: { children: React.ReactNode }) {
 }
 
 export const fieldClass =
-  "w-full rounded-xl border border-[#ddd] bg-white px-3.5 py-3 text-[14px] text-[#111] outline-none focus:border-[#9d003b] focus:ring-1 focus:ring-[#9d003b]";
+  "w-full rounded-xl border border-[#ddd] bg-white px-3.5 py-3 text-[14px] text-[#111] outline-none focus:border-brand focus:ring-1 focus:ring-brand";
 
 export const primaryBtn =
-  "flex h-11 w-full items-center justify-center rounded-xl bg-[#9d003b] text-[14px] font-semibold text-white transition-colors hover:bg-[#850030] disabled:cursor-not-allowed disabled:opacity-40";
+  "flex h-11 w-full items-center justify-center rounded-xl bg-brand text-[14px] font-semibold text-white transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-40";
 
 export const secondaryBtn =
   "flex h-11 w-full items-center justify-center rounded-xl border border-[#dcd6cf] bg-white text-[14px] font-medium text-[#3a3530] transition-colors hover:border-[#b9b1a8]";

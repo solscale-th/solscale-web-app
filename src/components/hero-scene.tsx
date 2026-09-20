@@ -18,7 +18,7 @@ export function HeroScene({
 }) {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden [perspective:1600px]">
-      <div className="hero-atmosphere absolute inset-[-12%] bg-[radial-gradient(ellipse_at_18%_16%,rgba(157,0,59,0.28)_0%,transparent_48%),radial-gradient(ellipse_at_86%_22%,rgba(215,255,47,0.22)_0%,transparent_44%),radial-gradient(ellipse_at_70%_78%,rgba(157,0,59,0.16)_0%,transparent_46%),radial-gradient(ellipse_at_28%_72%,rgba(215,255,47,0.1)_0%,transparent_40%),linear-gradient(180deg,#f3e8eb_0%,#faf8f6_48%,#f1efe4_100%)]" />
+      <div className="hero-atmosphere absolute inset-[-12%]" />
 
       <motion.div
         className="absolute inset-0 [transform-style:preserve-3d]"
@@ -95,8 +95,8 @@ export function HeroScene({
         </div>
       </motion.div>
 
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_38%,rgba(250,248,246,0.08)_0%,rgba(250,248,246,0.42)_55%,rgba(250,248,246,0.78)_100%)]" />
-      <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#faf8f6] via-[#faf8f6]/80 to-transparent" />
+      <div className="hero-atmosphere-veil absolute inset-0" />
+      <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-surface via-surface/80 to-transparent" />
     </div>
   );
 }

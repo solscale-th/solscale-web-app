@@ -72,7 +72,7 @@ function SubmissionCard({
           <Link
             href={detailHref}
             onClick={() => { if (submission.hasUpdate) markSubmissionSeen(submission.id); }}
-            className="block w-full rounded-xl bg-[#9d003b] px-3.5 py-2 text-center text-[12px] font-semibold text-white transition-colors hover:bg-[#850030]"
+            className="block w-full rounded-xl bg-brand px-3.5 py-2 text-center text-[12px] font-semibold text-white transition-colors hover:bg-brand-hover"
           >
             {t("myJob.viewDetails")}
           </Link>
@@ -109,7 +109,7 @@ function ReceivedSubmissionCard({
       {item.hasUpdate && !seen && <UpdateDot />}
 
       <div className={`relative flex h-28 items-center justify-center overflow-hidden rounded-t-2xl ${item.influencerAvatarBg}`}>
-        <div className="grid h-16 w-16 place-items-center rounded-full bg-white/80 text-2xl font-black text-[#9d003b]">
+        <div className="grid h-16 w-16 place-items-center rounded-full bg-white/80 text-2xl font-black text-brand">
           {initials}
         </div>
       </div>
@@ -130,7 +130,7 @@ function ReceivedSubmissionCard({
           <Link
             href={detailHref}
             onClick={() => { if (item.hasUpdate) markSubmissionSeen(item.id); }}
-            className="block w-full rounded-xl bg-[#9d003b] px-3.5 py-2 text-center text-[12px] font-semibold text-white transition-colors hover:bg-[#850030]"
+            className="block w-full rounded-xl bg-brand px-3.5 py-2 text-center text-[12px] font-semibold text-white transition-colors hover:bg-brand-hover"
           >
             {t("submission.viewProfile")}
           </Link>
@@ -176,7 +176,7 @@ function SortDropdown({
               key={opt.key}
               type="button"
               onClick={() => { onChange(opt.key); setOpen(false); }}
-              className={`block w-full px-4 py-2.5 text-left text-[13px] transition-colors hover:bg-[#fafafa] ${value === opt.key ? "font-semibold text-[#9d003b]" : "text-[#333]"}`}
+              className={`block w-full px-4 py-2.5 text-left text-[13px] transition-colors hover:bg-[#fafafa] ${value === opt.key ? "font-semibold text-brand" : "text-[#333]"}`}
             >
               {opt.label}
             </button>

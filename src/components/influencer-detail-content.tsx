@@ -15,7 +15,7 @@ import {
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
     <div className="mb-5 flex items-center gap-3">
-      <span className="h-6 w-1 shrink-0 rounded-full bg-[#9d003b]" />
+      <span className="h-6 w-1 shrink-0 rounded-full bg-brand" />
       <h2 className="text-[17px] sm:text-[18px] font-extrabold tracking-tight text-[#111]">
         {children}
       </h2>
@@ -43,7 +43,7 @@ function ProfileAvatar({
   if (avatarUrl) {
     return (
       <div
-        className={`shrink-0 overflow-hidden rounded-2xl bg-[#fce8ee] bg-cover bg-center shadow-sm ring-2 ring-white ${dim}`}
+        className={`shrink-0 overflow-hidden rounded-2xl bg-brand-tint bg-cover bg-center shadow-sm ring-2 ring-white ${dim}`}
         style={{ backgroundImage: `url(${avatarUrl})` }}
         role="img"
         aria-label={name}
@@ -53,8 +53,8 @@ function ProfileAvatar({
 
   return (
     <div
-      className={`grid shrink-0 place-items-center rounded-2xl font-bold text-[#9d003b] shadow-sm ring-2 ring-white ${dim} ${
-        fallbackClass ?? "bg-[#fce8ee]"
+      className={`grid shrink-0 place-items-center rounded-2xl font-bold text-brand shadow-sm ring-2 ring-white ${dim} ${
+        fallbackClass ?? "bg-brand-tint"
       }`}
     >
       {initial}
@@ -121,7 +121,7 @@ export default function InfluencerDetailContent({ influencer }: Props) {
     >
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(157,0,59,0.10)_0%,rgba(157,0,59,0.05)_25%,rgba(157,0,59,0.03)_40%,rgba(214,238,58,0.08)_55%,rgba(214,238,58,0.14)_100%)]"
+        className="pointer-events-none absolute inset-0 detail-header-wash"
       />
 
       <MainHeader />
@@ -155,11 +155,11 @@ export default function InfluencerDetailContent({ influencer }: Props) {
                 transition={{ duration: 0.4 }}
               >
                 <div className="mb-4 flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-[#9d003b]/20 bg-[#9d003b]/8 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-[#9d003b]">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/20 bg-brand/8 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-brand">
                     {t("influencerDetail.role")}
                   </span>
                   {hasRating && (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#d7ff2f] px-3 py-1.5 text-[12px] font-medium leading-none text-[#333]">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1.5 text-[12px] font-medium leading-none text-[#333]">
                       <StarIcon />
                       {influencer.averageRating.toFixed(1)}
                       {influencer.reviewCount > 0 && (
@@ -203,7 +203,7 @@ export default function InfluencerDetailContent({ influencer }: Props) {
                     {influencer.contentCategories.map((cat) => (
                       <span
                         key={cat}
-                        className="rounded-lg border border-[#9d003b]/15 bg-[#9d003b]/5 px-3 py-1.5 text-[12px] font-semibold text-[#9d003b]"
+                        className="rounded-lg border border-brand/15 bg-brand/5 px-3 py-1.5 text-[12px] font-semibold text-brand"
                       >
                         {categoryLabel(cat)}
                       </span>
@@ -236,7 +236,7 @@ export default function InfluencerDetailContent({ influencer }: Props) {
                           transition={{ delay: 0.28 + i * 0.05 }}
                           className="flex items-center gap-3 rounded-xl bg-[#f5f5f3] px-3.5 py-3"
                         >
-                          <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-[#9d003b]/10 text-[12px] font-bold text-[#9d003b]">
+                          <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-brand/10 text-[12px] font-bold text-brand">
                             {i + 1}
                           </span>
                           <span className="text-[14px] font-medium text-[#333]">
@@ -320,7 +320,7 @@ export default function InfluencerDetailContent({ influencer }: Props) {
                       size="md"
                     />
                     <div className="min-w-0 w-full">
-                      <p className="text-[10px] font-semibold tracking-[0.14em] text-[#9d003b]">
+                      <p className="text-[10px] font-semibold tracking-[0.14em] text-brand">
                         {t("influencerDetail.role")}
                       </p>
                       <p className="mt-1 truncate text-[16px] font-bold text-[#111]">
@@ -381,7 +381,7 @@ export default function InfluencerDetailContent({ influencer }: Props) {
                       </p>
                       <a
                         href={`mailto:${influencer.email}`}
-                        className="mt-1 block truncate text-[13px] font-semibold text-[#9d003b] hover:underline"
+                        className="mt-1 block truncate text-[13px] font-semibold text-brand hover:underline"
                       >
                         {influencer.email}
                       </a>
@@ -391,7 +391,7 @@ export default function InfluencerDetailContent({ influencer }: Props) {
                   <div className="space-y-2.5 border-t border-[#f0f0f0] p-4">
                     <Link
                       href={`/invites/new?influencerId=${encodeURIComponent(influencer.id)}&name=${encodeURIComponent(influencer.name)}`}
-                      className="flex h-11 w-full items-center justify-center rounded-xl bg-[#9d003b] text-[14px] font-semibold text-white hover:bg-[#850030] transition-colors"
+                      className="flex h-11 w-full items-center justify-center rounded-xl bg-brand text-[14px] font-semibold text-white hover:bg-brand-hover transition-colors"
                     >
                       {t("influencerDetail.hireInfluencer")}
                     </Link>
@@ -400,7 +400,7 @@ export default function InfluencerDetailContent({ influencer }: Props) {
                         href={`mailto:${influencer.email}`}
                         whileHover={{ scale: 1.01 }}
                         whileTap={{ scale: 0.99 }}
-                        className="flex h-11 w-full items-center justify-center rounded-xl border border-[#9d003b]/20 bg-white/60 text-[14px] font-medium text-[#555] hover:border-[#9d003b] hover:text-[#9d003b] transition-colors"
+                        className="flex h-11 w-full items-center justify-center rounded-xl border border-brand/20 bg-white/60 text-[14px] font-medium text-[#555] hover:border-brand hover:text-brand transition-colors"
                       >
                         {t("influencerDetail.sendMessage")}
                       </motion.a>
@@ -409,7 +409,7 @@ export default function InfluencerDetailContent({ influencer }: Props) {
                         type="button"
                         whileHover={{ scale: 1.01 }}
                         whileTap={{ scale: 0.99 }}
-                        className="flex h-11 w-full items-center justify-center rounded-xl border border-[#9d003b]/20 bg-white/60 text-[14px] font-medium text-[#555] hover:border-[#9d003b] hover:text-[#9d003b] transition-colors"
+                        className="flex h-11 w-full items-center justify-center rounded-xl border border-brand/20 bg-white/60 text-[14px] font-medium text-[#555] hover:border-brand hover:text-brand transition-colors"
                       >
                         {t("influencerDetail.sendMessage")}
                       </motion.button>

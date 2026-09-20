@@ -106,7 +106,7 @@ function EngagementCard({
         {/* For entrepreneur view: show influencer avatar */}
         {!isInfluencer && (
           <div className="absolute bottom-2 left-2.5 flex items-center gap-1.5">
-            <div className={`grid h-8 w-8 place-items-center rounded-full text-xs font-black text-[#9d003b] ${engagement.influencerAvatarBg}`}>
+            <div className={`grid h-8 w-8 place-items-center rounded-full text-xs font-black text-brand ${engagement.influencerAvatarBg}`}>
               {initials}
             </div>
             <div>
@@ -131,7 +131,7 @@ function EngagementCard({
             <button
               type="button"
               onClick={onSendUrls}
-              className="block w-full rounded-xl bg-[#9d003b] px-3.5 py-2 text-center text-[12px] font-semibold text-white transition-colors hover:bg-[#850030]"
+              className="block w-full rounded-xl bg-brand px-3.5 py-2 text-center text-[12px] font-semibold text-white transition-colors hover:bg-brand-hover"
             >
               {t("myJob.sendUrls")}
             </button>
@@ -141,8 +141,8 @@ function EngagementCard({
             onClick={() => navigate("submit-work")}
             className={`block w-full rounded-xl px-3.5 py-2 text-center text-[12px] font-semibold transition-colors ${
               isInfluencer && canSubmitWork(engagement.workStatus)
-                ? "border border-[#9d003b] text-[#9d003b] hover:bg-[#9d003b]/5"
-                : "bg-[#9d003b] text-white hover:bg-[#850030]"
+                ? "border border-brand text-brand hover:bg-brand/5"
+                : "bg-brand text-white hover:bg-brand-hover"
             }`}
           >
             {primaryLabel}
@@ -151,7 +151,7 @@ function EngagementCard({
             <button
               type="button"
               onClick={() => navigate()}
-              className="rounded-xl border border-[#9d003b] px-2 py-1.5 text-[11px] font-semibold text-[#9d003b] transition-colors hover:bg-[#9d003b]/5"
+              className="rounded-xl border border-brand px-2 py-1.5 text-[11px] font-semibold text-brand transition-colors hover:bg-brand/5"
             >
               {t("myJob.viewDetails")}
             </button>
@@ -205,7 +205,7 @@ function SortDropdown({
               key={opt.key}
               type="button"
               onClick={() => { onChange(opt.key); setOpen(false); }}
-              className={`block w-full px-4 py-2.5 text-left text-[13px] transition-colors hover:bg-[#fafafa] ${value === opt.key ? "font-semibold text-[#9d003b]" : "text-[#333]"}`}
+              className={`block w-full px-4 py-2.5 text-left text-[13px] transition-colors hover:bg-[#fafafa] ${value === opt.key ? "font-semibold text-brand" : "text-[#333]"}`}
             >
               {opt.label}
             </button>
