@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getMarketplaceJobs } from "./jobs";
+import { getMarketplaceJobs, postedJobToJob } from "./jobs";
 import { createEmptyFlowchartState } from "./reducer";
 import type { FlowPostedJob } from "./types";
 
@@ -38,6 +38,11 @@ describe("marketplace posted jobs", () => {
 
   it("does not list catalog jobs from an empty flowchart", () => {
     expect(getMarketplaceJobs(createEmptyFlowchartState())).toHaveLength(0);
+  });
+
+  it("maps promoted onto the listing job", () => {
+    expect(postedJobToJob(postedJob({ promoted: true })).promoted).toBe(true);
+    expect(postedJobToJob(postedJob()).promoted).toBe(false);
   });
 
   it("hides private postings", () => {

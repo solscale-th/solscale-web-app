@@ -1,8 +1,17 @@
-import { MOCK_JOBS, type Job, type Platform } from "@/lib/mock-jobs";
+import { MOCK_JOBS, PLATFORM_COLORS, type Job, type Platform } from "@/lib/mock-jobs";
 import { loadFlowchartState } from "./store";
 import type { FlowPostedJob, FlowchartState } from "./types";
 
 const POSTED_THUMB = "bg-[#9d003b]";
+const KNOWN_PLATFORMS = Object.keys(PLATFORM_COLORS) as Platform[];
+
+function toPostedPlatform(raw: string): Platform {
+  const first = raw.split(",")[0]?.trim() ?? "";
+  const match = KNOWN_PLATFORMS.find(
+    (platform) => platform.toLowerCase() === first.toLowerCase()
+  );
+  return match ?? "Instagram";
+}
 
 export function postedJobToJob(posted: FlowPostedJob): Job {
   return {
@@ -12,7 +21,7 @@ export function postedJobToJob(posted: FlowPostedJob): Job {
     companyId: posted.entrepreneurId,
     companyRating: 0,
     companyReviews: 0,
-    platform: (posted.platform as Platform) || "Instagram",
+    platform: toPostedPlatform(posted.platform),
     description: posted.description,
     brief: posted.brief,
     deliverables: posted.deliverables,
@@ -27,6 +36,7 @@ export function postedJobToJob(posted: FlowPostedJob): Job {
     budgetMin: posted.budgetMin,
     budgetMax: posted.budgetMax,
     postedDaysAgo: 0,
+    promoted: posted.promoted ?? false,
     thumbnailBg: POSTED_THUMB,
   };
 }

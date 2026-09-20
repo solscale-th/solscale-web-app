@@ -45,6 +45,7 @@ export type FlowPostedJob = {
   budgetMin: number;
   budgetMax: number;
   visibility: JobVisibility;
+  promoted?: boolean;
   createdAt: number;
 };
 

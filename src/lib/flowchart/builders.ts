@@ -24,10 +24,12 @@ export function buildPostedJob(input: {
   budgetMin: number;
   budgetMax: number;
   visibility: JobVisibility;
+  promoted?: boolean;
 }): FlowPostedJob {
   return {
     id: createFlowId("job"),
     createdAt: Date.now(),
+    promoted: false,
     ...input,
   };
 }
