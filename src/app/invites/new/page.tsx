@@ -1,13 +1,13 @@
 import { Suspense } from "react";
-import RequireAuth from "@/components/require-auth";
 import SendInviteContent from "@/components/send-invite-content";
+import InviteReturn from "@/components/invite-return";
 
 export default function NewInvitePage() {
   return (
-    <RequireAuth returnTo="/invites/new">
-      <Suspense>
+    <Suspense>
+      <InviteReturn>
         <SendInviteContent />
-      </Suspense>
-    </RequireAuth>
+      </InviteReturn>
+    </Suspense>
   );
 }

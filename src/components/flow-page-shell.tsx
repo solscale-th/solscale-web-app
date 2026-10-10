@@ -18,11 +18,13 @@ export function FlowPage({
   title,
   subtitle,
   backHref,
+  leading,
   children,
 }: {
   title: string;
   subtitle?: string;
   backHref?: string;
+  leading?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const { t } = useLanguage();
@@ -42,6 +44,7 @@ export function FlowPage({
             {t("common.back")}
           </Link>
         )}
+        {leading}
         <div>
           <h1 className="text-[22px] font-bold tracking-tight text-[#111]">{title}</h1>
           {subtitle && <p className="mt-1 text-[14px] text-[#777]">{subtitle}</p>}
