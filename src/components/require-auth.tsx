@@ -15,7 +15,7 @@ type RequireAuthProps = {
 
 export default function RequireAuth({ returnTo, children }: RequireAuthProps) {
   const router = useRouter();
-  const [allowed, setAllowed] = useState(() => isLoggedIn());
+  const [allowed, setAllowed] = useState<boolean | null>(null);
 
   useEffect(() => {
     const sync = () => setAllowed(isLoggedIn());
@@ -31,12 +31,12 @@ export default function RequireAuth({ returnTo, children }: RequireAuthProps) {
   }, []);
 
   useEffect(() => {
-    if (!allowed) {
+    if (allowed === false) {
       router.replace(buildLoginUrl(returnTo));
     }
   }, [allowed, router, returnTo]);
 
-  if (!allowed) {
+  if (allowed !== true) {
     return null;
   }
 

@@ -1,13 +1,19 @@
 "use client";
 
 import {
+  useCallback,
   useEffect,
   useId,
   useRef,
   useState,
   type KeyboardEvent,
 } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import JobAudienceModal, {
+  jobCreateHref,
+  parseJobAudience,
+  type JobAudience,
+} from "@/components/job-audience-modal";
 import MainHeader from "@/components/main-header";
 import SiteFooter from "@/components/site-footer";
 import { useAuth } from "@/hooks/use-auth";
@@ -21,7 +27,9 @@ import { useFlowchart } from "@/hooks/use-flowchart";
 import { buildInvite, buildPostedJob } from "@/lib/flowchart/builders";
 import type { JobVisibility } from "@/lib/flowchart/types";
 import {
+  fetchInfluencerById,
   fetchInfluencers,
+  mapInfluencer,
   type InfluencerListItem,
 } from "@/lib/influencers";
 
@@ -587,6 +595,9 @@ function InfluencerAutocomplete({
 
 export default function PostJobContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const audienceFromUrl = parseJobAudience(searchParams.get("audience"));
+  const influencersParam = searchParams.get("influencers") ?? "";
   const { t } = useLanguage();
   const { user } = useAuth();
   const { dispatch } = useFlowchart();
@@ -606,13 +617,43 @@ export default function PostJobContent() {
   const [duration, setDuration] = useState("");
   const [budgetMin, setBudgetMin] = useState("");
   const [budgetMax, setBudgetMax] = useState("");
-  const [visibility, setVisibility] = useState<JobVisibility>("public");
+  const [audience, setAudience] = useState<JobAudience | null>(audienceFromUrl);
+  const [audiencePickerOpen, setAudiencePickerOpen] = useState(audienceFromUrl === null);
   const [promoted, setPromoted] = useState(false);
   const [invitees, setInvitees] = useState<InfluencerListItem[]>([]);
+
+  useEffect(() => {
+    if (audienceFromUrl !== "specific" || !influencersParam) return;
+    const ids = influencersParam
+      .split(",")
+      .map((value) => Number(value))
+      .filter((id) => Number.isInteger(id) && id > 0);
+    if (ids.length === 0) return;
+
+    const controller = new AbortController();
+    Promise.all(
+      ids.map((id) => fetchInfluencerById(id, controller.signal).catch(() => null))
+    ).then((rows) => {
+      if (controller.signal.aborted) return;
+      setInvitees(rows.flatMap((row) => (row ? [mapInfluencer(row)] : [])));
+    });
+    return () => controller.abort();
+  }, [audienceFromUrl, influencersParam]);
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+
+  const visibility: JobVisibility = audience === "specific" ? "private" : "public";
+  const showAudiencePicker = user?.role === "entrepreneur" && audiencePickerOpen;
+
+  const dismissAudiencePicker = useCallback(() => {
+    if (audience) {
+      setAudiencePickerOpen(false);
+      return;
+    }
+    router.back();
+  }, [audience, router]);
 
   useEffect(() => {
     if (!previewOpen) return;
@@ -641,10 +682,30 @@ export default function PostJobContent() {
   }
 
   const canSubmit =
+    audience !== null &&
     title.trim() !== "" &&
     description.trim() !== "" &&
     platforms.length > 0 &&
+    (audience === "open" || invitees.length > 0) &&
     !loading;
+
+  function selectAudience(next: JobAudience) {
+    setAudience(next);
+    setAudiencePickerOpen(false);
+    if (next === "open") {
+      setInvitees([]);
+      router.replace(jobCreateHref("open"));
+      return;
+    }
+    setPromoted(false);
+    if (invitees.length === 0) {
+      router.push(jobCreateHref("specific"));
+      return;
+    }
+    router.replace(
+      `/jobs/new?audience=specific&influencers=${invitees.map((item) => item.id).join(",")}`
+    );
+  }
 
   const deliverableItems = splitLines(deliverables);
   const requirementItems = splitLines(requirements);
@@ -714,13 +775,40 @@ export default function PostJobContent() {
   return (
     <div className="flex min-h-screen flex-col bg-surface">
       <MainHeader />
-      <main className="mx-auto flex-1 w-full max-w-2xl px-4 py-10 sm:py-14">
+      <main
+        className="mx-auto flex-1 w-full max-w-2xl px-4 py-10 sm:py-14"
+        inert={showAudiencePicker ? true : undefined}
+      >
         <h1 className="text-[1.85rem] font-semibold leading-[1.15] tracking-[-0.04em] text-[#141414] sm:text-[2.1rem]">
           {t("postJob.title")}
         </h1>
         <p className="mt-2 max-w-lg text-[14px] leading-relaxed text-[#7a7570]">
           {t("postJob.subtitle")}
         </p>
+
+        {audience ? (
+          <div className="mt-6 flex items-start justify-between gap-3 rounded-2xl border border-brand/40 bg-brand/8 px-4 py-3.5">
+            <div>
+              <p className="text-[14px] font-semibold text-[#141414]">
+                {audience === "specific"
+                  ? t("postJob.audienceSpecific")
+                  : t("postJob.audienceOpen")}
+              </p>
+              <p className="mt-0.5 text-[12px] leading-snug text-[#7a7570]">
+                {audience === "specific"
+                  ? t("postJob.audienceSpecificHint")
+                  : t("postJob.audienceOpenHint")}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setAudiencePickerOpen(true)}
+              className={`shrink-0 rounded-xl px-3 py-1.5 text-[13px] font-semibold text-brand hover:bg-white ${FOCUS_RING}`}
+            >
+              {t("postJob.audienceChange")}
+            </button>
+          </div>
+        ) : null}
 
         <form onSubmit={handleSubmit} className={`mt-8 ${CARD}`}>
           <section>
@@ -866,88 +954,60 @@ export default function PostJobContent() {
             </div>
           </section>
 
-          <hr className="my-8 border-[#f1ece6]" />
+          {audience ? (
+            <>
+              <hr className="my-8 border-[#f1ece6]" />
 
-          <section>
-            <SectionHeading>{t("postJob.sectionListing")}</SectionHeading>
-            <fieldset>
-              <legend className="mb-2 block text-[13px] font-semibold text-[#3a3530]">
-                {t("postJob.visibilityLabel")}
-              </legend>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                {(["public", "private"] as const).map((value) => {
-                  const selected = visibility === value;
-                  return (
-                    <label
-                      key={value}
-                      className={`flex cursor-pointer items-start gap-3 rounded-2xl border px-4 py-3.5 text-[13px] leading-snug transition-colors ${
-                        selected
-                          ? "border-brand/40 bg-brand/8 text-[#141414]"
-                          : "border-[#ece7e1] bg-surface text-[#555] hover:border-[#ddd6ce]"
-                      }`}
+              <section>
+                <SectionHeading>{t("postJob.sectionListing")}</SectionHeading>
+
+                {visibility === "private" ? (
+                  <div className="mt-4">
+                    <Field
+                      label={t("postJob.influencersLabel")}
+                      hint={t("postJob.influencersHint")}
+                      htmlFor={influencerInputId}
                     >
-                      <input
-                        type="radio"
-                        name="visibility"
-                        value={value}
-                        checked={selected}
-                        onChange={() => setVisibility(value)}
-                        className="mt-0.5 accent-brand"
+                      <InfluencerAutocomplete
+                        selected={invitees}
+                        onChange={setInvitees}
+                        inputId={influencerInputId}
+                        placeholder={t("postJob.influencersPlaceholder")}
+                        emptyLabel={t("postJob.influencersEmpty")}
+                        loadingLabel={t("postJob.influencersLoading")}
+                        removeLabel={t("postJob.removeSelected")}
+                        selectedHeading={t("postJob.influencersSelected")}
                       />
-                      <span>
-                        {value === "public"
-                          ? t("postJob.visibilityPublic")
-                          : t("postJob.visibilityPrivate")}
+                    </Field>
+                  </div>
+                ) : null}
+
+                {audience === "open" ? (
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={promoted}
+                    aria-labelledby={promoteLabelId}
+                    onClick={() => setPromoted((value) => !value)}
+                    className={`mt-4 flex w-full items-center justify-between gap-4 rounded-2xl border border-[#ece7e1] bg-surface px-4 py-3.5 text-left transition-colors hover:border-[#ddd6ce] ${FOCUS_RING}`}
+                  >
+                    <span>
+                      <span
+                        id={promoteLabelId}
+                        className="block text-[14px] font-semibold text-[#141414]"
+                      >
+                        {t("postJob.promoteLabel")}
                       </span>
-                    </label>
-                  );
-                })}
-              </div>
-            </fieldset>
-
-            {visibility === "private" ? (
-              <div className="mt-4">
-                <Field
-                  label={t("postJob.influencersLabel")}
-                  hint={t("postJob.influencersHint")}
-                  htmlFor={influencerInputId}
-                >
-                  <InfluencerAutocomplete
-                    selected={invitees}
-                    onChange={setInvitees}
-                    inputId={influencerInputId}
-                    placeholder={t("postJob.influencersPlaceholder")}
-                    emptyLabel={t("postJob.influencersEmpty")}
-                    loadingLabel={t("postJob.influencersLoading")}
-                    removeLabel={t("postJob.removeSelected")}
-                    selectedHeading={t("postJob.influencersSelected")}
-                  />
-                </Field>
-              </div>
-            ) : null}
-
-            <button
-              type="button"
-              role="switch"
-              aria-checked={promoted}
-              aria-labelledby={promoteLabelId}
-              onClick={() => setPromoted((value) => !value)}
-              className={`mt-4 flex w-full items-center justify-between gap-4 rounded-2xl border border-[#ece7e1] bg-surface px-4 py-3.5 text-left transition-colors hover:border-[#ddd6ce] ${FOCUS_RING}`}
-            >
-              <span>
-                <span
-                  id={promoteLabelId}
-                  className="block text-[14px] font-semibold text-[#141414]"
-                >
-                  {t("postJob.promoteLabel")}
-                </span>
-                <span className="mt-0.5 block text-[12px] leading-snug text-[#8a8580]">
-                  {t("postJob.promoteHint")}
-                </span>
-              </span>
-              <PromoteSwitch checked={promoted} />
-            </button>
-          </section>
+                      <span className="mt-0.5 block text-[12px] leading-snug text-[#8a8580]">
+                        {t("postJob.promoteHint")}
+                      </span>
+                    </span>
+                    <PromoteSwitch checked={promoted} />
+                  </button>
+                ) : null}
+              </section>
+            </>
+          ) : null}
 
           {error && <p className="mt-5 text-[13px] text-red-600">{error}</p>}
 
@@ -1058,9 +1118,9 @@ export default function PostJobContent() {
                   />
                 </p>
                 <p className="text-[11px] font-medium text-[#8a8580]">
-                  {visibility === "public"
-                    ? t("postJob.visibilityPublic")
-                    : t("postJob.visibilityPrivate")}
+                  {audience === "specific"
+                    ? t("postJob.audienceSpecific")
+                    : t("postJob.audienceOpen")}
                 </p>
               </div>
             </article>
@@ -1135,6 +1195,12 @@ export default function PostJobContent() {
           </div>
         </div>
       ) : null}
+
+      <JobAudienceModal
+        open={showAudiencePicker}
+        onSelect={selectAudience}
+        onDismiss={dismissAudiencePicker}
+      />
     </div>
   );
 }

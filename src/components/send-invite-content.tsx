@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FlowCard, FlowPage, fieldClass, primaryBtn } from "@/components/flow-page-shell";
+import JobAudienceModal, { jobCreateHref } from "@/components/job-audience-modal";
 import { useAuth } from "@/hooks/use-auth";
 import { useFlowchart } from "@/hooks/use-flowchart";
 import { useLanguage } from "@/i18n/language-provider";
@@ -32,6 +33,7 @@ export default function SendInviteContent() {
   const [jobId, setJobId] = useState(jobs[0]?.id ?? "");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [audienceOpen, setAudienceOpen] = useState(false);
 
   if (!user) return null;
 
@@ -82,9 +84,13 @@ export default function SendInviteContent() {
       {jobs.length === 0 ? (
         <FlowCard>
           <p className="text-[14px] text-[#555]">{t("flow.inviteNeedJob")}</p>
-          <a href="/jobs/new" className={`${primaryBtn} mt-4`}>
+          <button
+            type="button"
+            onClick={() => setAudienceOpen(true)}
+            className={`${primaryBtn} mt-4`}
+          >
             {t("hero.postJobCta")}
-          </a>
+          </button>
         </FlowCard>
       ) : (
         <FlowCard>
@@ -112,6 +118,14 @@ export default function SendInviteContent() {
       )}
       {message && <p className="text-[13px] text-[#0f7b34]">{message}</p>}
       {error && <p className="text-[13px] text-[#c0392b]">{error}</p>}
+      <JobAudienceModal
+        open={audienceOpen}
+        onSelect={(audience) => {
+          setAudienceOpen(false);
+          router.push(jobCreateHref(audience));
+        }}
+        onDismiss={() => setAudienceOpen(false)}
+      />
     </FlowPage>
   );
 }
