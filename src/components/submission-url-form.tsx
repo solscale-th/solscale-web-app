@@ -11,7 +11,7 @@ import {
 } from "@/lib/submission-urls";
 
 const FIELD =
-  "w-full rounded-xl border border-[#eee] bg-[#fafafa] px-4 py-2.5 text-[13px] text-[#333] outline-none placeholder:text-[#bbb] focus:border-brand/40 focus:ring-2 focus:ring-brand/10";
+  "w-full rounded-xl border border-[#eee] bg-surface px-4 py-2.5 text-[13px] text-[#333] outline-none placeholder:text-[#bbb] focus:border-brand/40 focus:ring-2 focus:ring-brand/10";
 
 export function SubmittedUrls({ note }: { note: string }) {
   const parsed = parseSubmissionNote(note);

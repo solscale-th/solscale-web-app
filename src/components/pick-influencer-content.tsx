@@ -76,7 +76,7 @@ export default function PickInfluencerContent() {
 
   if (user && user.role !== "entrepreneur") {
     return (
-      <div className="flex min-h-screen flex-col bg-surface">
+      <div className="flex min-h-screen flex-col bg-paper">
         <MainHeader />
         <main className="mx-auto flex-1 max-w-2xl px-4 py-16 text-center">
           <p className="text-[15px] text-[#555]">{t("postJob.notEntrepreneur")}</p>
@@ -97,7 +97,7 @@ export default function PickInfluencerContent() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-surface">
+    <div className="flex min-h-screen flex-col bg-paper">
       <MainHeader />
       <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 py-10 sm:py-14">
         <button
@@ -243,7 +243,7 @@ export default function PickInfluencerContent() {
           )}
         </div>
 
-        <div className="sticky bottom-0 mt-6 bg-surface pb-2 pt-3">
+        <div className="sticky bottom-0 mt-6 bg-paper pb-2 pt-3">
           <button
             type="button"
             disabled={selected.length === 0}

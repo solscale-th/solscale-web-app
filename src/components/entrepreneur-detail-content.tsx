@@ -107,7 +107,7 @@ export default function EntrepreneurDetailContent({
   return (
     <div
       ref={pageRef}
-      className="relative flex min-h-screen flex-col bg-[#f5f5f3]"
+      className="relative flex min-h-screen flex-col bg-paper"
     >
       <div
         aria-hidden
@@ -201,7 +201,7 @@ export default function EntrepreneurDetailContent({
                 </SectionHeading>
 
                 {campaigns.length === 0 ? (
-                  <p className="rounded-xl bg-[#f5f5f3] px-4 py-8 text-center text-[14px] text-[#888]">
+                  <p className="rounded-xl bg-surface px-4 py-8 text-center text-[14px] text-[#888]">
                     {t("entrepreneurDetail.emptyCampaigns")}
                   </p>
                 ) : (
@@ -225,7 +225,7 @@ export default function EntrepreneurDetailContent({
                         >
                           <Link
                             href={`/jobs/${campaign.id}`}
-                            className="group flex items-center gap-4 rounded-2xl border border-[#eee] bg-[#fafafa] p-4 transition-all hover:border-brand/25 hover:bg-white hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)]"
+                            className="group flex items-center gap-4 rounded-2xl border border-[#eee] bg-surface p-4 transition-all hover:border-brand/25 hover:bg-white hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)]"
                           >
                             <div
                               className={`grid h-14 w-14 shrink-0 place-items-center rounded-xl text-[18px] font-bold text-brand ${

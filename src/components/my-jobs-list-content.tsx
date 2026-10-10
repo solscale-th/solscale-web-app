@@ -158,7 +158,7 @@ function EngagementCard({
             <button
               type="button"
               onClick={() => navigate("ask")}
-              className="rounded-xl border border-[#ccc] px-2 py-1.5 text-[11px] font-medium text-[#555] transition-colors hover:bg-[#fafafa]"
+              className="rounded-xl border border-[#ccc] px-2 py-1.5 text-[11px] font-medium text-[#555] transition-colors hover:bg-surface"
             >
               {t("myJob.askQuestion")}
             </button>
@@ -205,7 +205,7 @@ function SortDropdown({
               key={opt.key}
               type="button"
               onClick={() => { onChange(opt.key); setOpen(false); }}
-              className={`block w-full px-4 py-2.5 text-left text-[13px] transition-colors hover:bg-[#fafafa] ${value === opt.key ? "font-semibold text-brand" : "text-[#333]"}`}
+              className={`block w-full px-4 py-2.5 text-left text-[13px] transition-colors hover:bg-surface ${value === opt.key ? "font-semibold text-brand" : "text-[#333]"}`}
             >
               {opt.label}
             </button>

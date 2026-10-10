@@ -171,7 +171,7 @@ function FilterOption({
       role="option"
       aria-selected={active}
       onClick={onClick}
-      className={`flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left text-[13px] transition-colors hover:bg-[#f5f2f8] ${
+      className={`flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left text-[13px] transition-colors hover:bg-surface ${
         active ? "bg-brand/8 font-semibold text-brand" : "text-[#3a3530]"
       }`}
     >
@@ -201,7 +201,7 @@ function ActiveFilterChip({
   removeAria: string;
 }) {
   return (
-    <span className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-[#e0dae8] bg-[#f7f4fa] px-2.5 py-1 text-[12px] font-medium text-[#4a4450]">
+    <span className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-[#e0dae8] bg-surface px-2.5 py-1 text-[12px] font-medium text-[#4a4450]">
       <span className="truncate">{label}</span>
       <button
         type="button"
@@ -669,7 +669,7 @@ export default function HomePageContent() {
       <div className="flex-1">
       {/* Hero */}
       <section
-        className="relative flex min-h-[88dvh] flex-col justify-center overflow-hidden bg-surface pb-20 pt-14 text-[#1a1218] sm:min-h-screen sm:pb-28 sm:pt-20"
+        className="relative flex min-h-[88dvh] flex-col justify-center overflow-hidden bg-paper pb-20 pt-14 text-[#1a1218] sm:min-h-screen sm:pb-28 sm:pt-20"
         onPointerMove={handleHeroPointerMove}
         onPointerLeave={handleHeroPointerLeave}
       >
@@ -998,7 +998,7 @@ export default function HomePageContent() {
 
       {/* Jobs section — shown to logged-in influencers */}
       {isInfluencer ? (
-        <section className="bg-surface px-4 pb-20 pt-12 sm:px-8 sm:pt-14">
+        <section className="bg-paper px-4 pb-20 pt-12 sm:px-8 sm:pt-14">
           <div className="mx-auto max-w-7xl">
             <motion.div
               {...sectionReveal}
@@ -1090,7 +1090,7 @@ export default function HomePageContent() {
         </section>
       ) : (
       /* Influencers section */
-      <section className="bg-surface px-4 pb-20 pt-12 sm:px-8 sm:pt-14">
+      <section className="bg-paper px-4 pb-20 pt-12 sm:px-8 sm:pt-14">
         <div className="mx-auto max-w-7xl">
           <motion.div
             {...sectionReveal}

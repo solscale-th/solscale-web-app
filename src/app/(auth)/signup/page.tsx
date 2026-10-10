@@ -102,7 +102,7 @@ function RoleSelector({
   entrepreneurLabel: string;
 }) {
   return (
-    <div className="relative flex rounded-xl bg-[#e3dfd7] p-1">
+    <div className="relative flex rounded-xl bg-surface p-1">
       {role && (
         <motion.div
           className="absolute inset-y-1 w-[calc(50%-4px)] rounded-lg bg-brand shadow-sm"

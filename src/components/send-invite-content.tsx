@@ -286,7 +286,7 @@ function ProductAutocomplete({
                     role="option"
                     aria-selected={active}
                     className={`flex w-full px-3.5 py-2.5 text-left text-[13px] ${
-                      active ? "bg-brand/8 text-[#141414]" : "text-[#333] hover:bg-[#fafafa]"
+                      active ? "bg-brand/8 text-[#141414]" : "text-[#333] hover:bg-surface"
                     }`}
                     onMouseEnter={() => setActiveIndex(index)}
                     onClick={() => choose(product)}
@@ -561,7 +561,7 @@ export default function SendInviteContent() {
               const file = jobFiles[item.key];
               const error = fileErrors[item.key];
               return (
-                <div key={item.key} className="rounded-xl border border-[#ebebeb] bg-[#fafafa] p-4">
+                <div key={item.key} className="rounded-xl border border-[#ebebeb] bg-surface p-4">
                   <p className="text-[14px] font-bold text-[#111]">
                     {t(`flow.${item.titleKey}`)}
                     {item.required && <RequiredMark />}
@@ -683,7 +683,7 @@ export default function SendInviteContent() {
                       className={`flex cursor-pointer items-center gap-2 rounded-xl border px-3.5 py-2.5 text-[13px] font-medium ${
                         checked
                           ? "border-brand bg-brand/5 text-brand"
-                          : "border-[#ebebeb] bg-[#fafafa] text-[#333]"
+                          : "border-[#ebebeb] bg-surface text-[#333]"
                       }`}
                     >
                       <input

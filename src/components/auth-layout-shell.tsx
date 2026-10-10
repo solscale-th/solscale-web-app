@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useLanguage } from "@/i18n/language-provider";
 import LanguageSwitcher from "./language-switcher";
+import SiteLogo from "./site-logo";
 
 export default function AuthLayoutShell({
   children,
@@ -12,15 +13,10 @@ export default function AuthLayoutShell({
   const { t } = useLanguage();
 
   return (
-    <div className="flex min-h-screen flex-col bg-surface-auth">
+    <div className="flex min-h-screen flex-col bg-paper">
       <header className="flex w-full items-center justify-between px-4 sm:px-10 py-4 sm:py-5">
-        <Link href="/" className="inline-flex items-center gap-2.5">
-          <div className="grid h-8 w-8 place-items-center rounded-lg bg-accent text-sm font-black text-brand-mark">
-            ⬢
-          </div>
-          <span className="text-[20px] sm:text-[22px] font-black tracking-tight text-[#111]">
-            Solscale
-          </span>
+        <Link href="/" className="inline-flex">
+          <SiteLogo priority />
         </Link>
         <LanguageSwitcher variant="dark" />
       </header>

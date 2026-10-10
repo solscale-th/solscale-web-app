@@ -97,7 +97,7 @@ function WorkPanel({
         )}
 
         {submissionNote && workStatus !== "not_submitted" && (
-          <div className="mb-4 rounded-xl bg-[#fafafa] p-3.5">
+          <div className="mb-4 rounded-xl bg-surface p-3.5">
             <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-[#888]">
               Your submission
             </p>
@@ -134,7 +134,7 @@ function WorkPanel({
 
       {workStatus === "submitted" && submissionNote && (
         <>
-          <div className="mb-4 rounded-xl bg-[#fafafa] p-3.5">
+          <div className="mb-4 rounded-xl bg-surface p-3.5">
             <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-[#888]">
               Influencer&apos;s submission
             </p>
@@ -165,7 +165,7 @@ function WorkPanel({
                 onChange={(e) => setRevisionText(e.target.value)}
                 placeholder={t("myJob.detailRevisionPlaceholder")}
                 rows={3}
-                className="w-full resize-none rounded-xl border border-[#eee] bg-[#fafafa] px-4 py-3 text-[13px] text-[#333] outline-none placeholder:text-[#bbb] focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                className="w-full resize-none rounded-xl border border-[#eee] bg-surface px-4 py-3 text-[13px] text-[#333] outline-none placeholder:text-[#bbb] focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
               />
               <button
                 type="button"

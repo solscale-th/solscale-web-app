@@ -1,31 +1,35 @@
 @import "tailwindcss";
 
 /*
-  Product palette. Change these hex values to restyle the app.
-  Tailwind utilities: bg-brand, text-accent, ring-brand/25, shadow-brand, etc.
+  Product palette.
+  Primary #EA5C1A, Secondary #FFD152, Tint #F1ECDF, Ink #262626, Paper #FFFFFF.
+  Darker brand and accent steps are the same hues, used for hover, header, and depth.
+  Tailwind utilities: bg-brand, text-accent, bg-paper, ring-brand/25, shadow-brand, etc.
 */
 @theme {
-  --color-brand: #9d003b;
-  --color-brand-hover: #850030;
-  --color-brand-header: #8f0035;
-  --color-brand-mark: #840031;
-  --color-brand-deep: #6d0028;
-  --color-brand-darkest: #48001a;
-  --color-brand-tint: #fce8ee;
+  --color-brand: #ea5c1a;
+  --color-brand-hover: #ce5117;
+  --color-brand-header: #c04b15;
+  --color-brand-mark: #b04514;
+  --color-brand-deep: #8c3710;
+  --color-brand-darkest: #59230a;
+  --color-brand-tint: #f1ecdf;
 
-  --color-accent: #d7ff2f;
-  --color-accent-hover: #c8f020;
-  --color-accent-soft: #d6ee3a;
+  --color-accent: #ffd152;
+  --color-accent-hover: #ebc04b;
+  --color-accent-soft: #ffe08a;
 
-  --color-surface: #faf8f6;
-  --color-surface-auth: #eeebe3;
-  --color-footer: #121417;
+  /* Paper is the page. Tint is for tabs, reading boxes, and secondary data. */
+  --color-surface: #f1ecdf;
+  --color-surface-auth: #ffffff;
+  --color-paper: #ffffff;
+  --color-footer: #262626;
 
-  --color-ink-strong: #171117;
-  --color-on-accent: #2a1018;
+  --color-ink-strong: #262626;
+  --color-on-accent: #262626;
 
-  --color-background: var(--color-surface);
-  --color-foreground: #111111;
+  --color-background: var(--color-paper);
+  --color-foreground: #262626;
 
   --shadow-brand: 0 4px 14px color-mix(in srgb, var(--color-brand) 35%, transparent);
   --shadow-accent: 0 6px 20px color-mix(in srgb, var(--color-accent) 40%, transparent);
@@ -33,18 +37,20 @@
   --shadow-panel: 0 1px 2px rgba(40, 20, 10, 0.04), 0 18px 36px -26px color-mix(in srgb, var(--color-brand-darkest) 45%, transparent);
   --shadow-panel-dock: 0 -8px 24px color-mix(in srgb, var(--color-brand-darkest) 12%, transparent);
 
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-ibm-plex-sans-thai);
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  /* Soften bold weights across the app */
-  --font-weight-semibold: 400;
-  --font-weight-bold: 500;
-  --font-weight-extrabold: 600;
+  /* 400 information, 500 label, 700 headline and action */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 500;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 700;
   --font-weight-black: 700;
 }
 
 :root {
-  --background: var(--color-surface);
+  --background: var(--color-paper);
   --foreground: var(--color-foreground);
 }
 
@@ -53,21 +59,26 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  font-weight: 400;
 }
 
-/*
-  Thai locale: reassign --font-sans to Noto Serif Thai.
-  Because @theme (non-inline) publishes --font-sans as a real CSS variable,
-  overriding it here cascades into body, all utility classes, and every
-  descendant automatically — no wildcard selector needed.
-*/
-html[lang="th"] {
-  --font-sans: var(--font-kanit);
-  /* Kanit reads heavier than Geist at the same numeric weight */
-  --font-weight-semibold: 400;
-  --font-weight-bold: 500;
-  --font-weight-extrabold: 500;
-  --font-weight-black: 600;
+h1,
+h2,
+h3,
+.hero-title {
+  font-weight: 700;
+}
+
+a.bg-brand,
+button.bg-brand,
+a.bg-accent,
+button.bg-accent,
+:is(a, button)[class*="h-11"],
+:is(a, button)[class*="h-[44px]"],
+:is(a, button)[class*="h-[48px]"],
+:is(a, button)[class*="rounded-full"][class*="px-6"],
+:is(a, button)[class*="rounded-full"][class*="px-7"] {
+  font-weight: 700;
 }
 
 /* Thai glyphs need room for vowel/tone marks; tight tracking clips them */
@@ -197,7 +208,7 @@ html[lang="th"] .tracking-widest {
   display: inline-flex;
   align-items: center;
   gap: 0.65rem;
-  font-family: var(--font-geist-sans), var(--font-kanit), Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.16em;
@@ -216,9 +227,9 @@ html[lang="th"] .tracking-widest {
 
 .hero-title {
   margin-top: 1.15rem;
-  font-family: var(--font-geist-sans), var(--font-kanit), Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
   font-size: clamp(2.35rem, 4.4vw + 0.7rem, 4.75rem);
-  font-weight: 500;
+  font-weight: 700;
   line-height: 1.08;
   letter-spacing: -0.045em;
   color: var(--color-ink-strong);

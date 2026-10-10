@@ -287,7 +287,7 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className="flex min-h-screen flex-col bg-surface">
+      <div className="flex min-h-screen flex-col bg-paper">
         <MainHeader />
 
         {/* ── Colored hero band ── */}

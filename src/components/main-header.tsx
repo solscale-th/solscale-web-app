@@ -17,8 +17,7 @@ import { getSeenDirectIds, SEEN_DIRECT_EVENT } from "@/lib/seen-direct";
 import { getSeenSubmissionIds, SEEN_SUBMISSION_EVENT } from "@/lib/seen-submissions";
 import { getSeenMyJobIds, SEEN_MY_JOBS_EVENT } from "@/lib/seen-my-jobs";
 import LanguageSwitcher from "./language-switcher";
-import { useLogoPreview } from "@/hooks/use-logo-preview";
-import { LOGO_SURFACES, LogoLockup, type LogoColors } from "@/components/logo-marks";
+import SiteLogo from "./site-logo";
 
 function UserAvatar({ name }: { name: string }) {
   return (
@@ -34,7 +33,7 @@ function AuthLinks({ compact = false }: { compact?: boolean }) {
     <>
       <Link
         href="/login"
-        className={`flex h-9 items-center rounded-lg text-sm font-medium whitespace-nowrap transition-colors hover:bg-white/10 ${
+        className={`flex h-9 items-center rounded-lg text-sm font-medium whitespace-nowrap transition-colors hover:bg-black/5 ${
           compact ? "px-2.5" : "px-4"
         }`}
       >
@@ -57,8 +56,6 @@ export default function MainHeader() {
   const { t } = useLanguage();
   const { user, isLoggedIn, logout } = useAuth();
   const { state } = useFlowchart();
-  const { choice: logoChoice } = useLogoPreview();
-  const brand = LOGO_SURFACES.brand.colors as LogoColors;
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -140,24 +137,13 @@ export default function MainHeader() {
   }
 
   return (
-    <header className="sticky top-0 z-50 bg-brand-header text-white shadow-md">
+    <header className="sticky top-0 z-50 border-b border-black/5 bg-paper text-ink-strong">
       {/* ── Main bar ── */}
       <div className="mx-auto grid h-16 max-w-7xl grid-cols-[1fr_auto_1fr] items-center px-4 sm:px-8">
 
         {/* Logo – left column */}
-        <Link href="/" className="flex items-center gap-2 shrink-0 col-start-1">
-          {logoChoice === "current" ? (
-            <>
-              <div className="grid h-7 w-7 place-items-center rounded-lg bg-accent text-xs font-black text-brand-mark">
-                ⬢
-              </div>
-              <span className="text-xl font-black tracking-tight max-[380px]:hidden">
-                Solscale
-              </span>
-            </>
-          ) : (
-            <LogoLockup id={logoChoice} size="sm" colors={brand} />
-          )}
+        <Link href="/" className="col-start-1 shrink-0">
+          <SiteLogo priority />
         </Link>
 
         {/* Desktop nav – centre column (logged-in only) */}
@@ -167,7 +153,7 @@ export default function MainHeader() {
               <a
                 key={item.label}
                 href={item.href}
-                className="relative flex items-center gap-2 rounded-lg px-4 py-2 transition-colors hover:bg-white/10"
+                className="relative flex items-center gap-2 rounded-lg px-4 py-2 transition-colors hover:bg-black/5"
               >
                 {item.label}
                 {item.badge > 0 && (
@@ -182,7 +168,7 @@ export default function MainHeader() {
 
         {/* Desktop right actions – right column */}
         <div className="hidden md:flex col-start-3 items-center gap-2 justify-self-end">
-          <LanguageSwitcher variant="light" />
+          <LanguageSwitcher variant="dark" />
 
           {isLoggedIn && user ? (
             /* ── User avatar + dropdown ── */
@@ -190,7 +176,7 @@ export default function MainHeader() {
               <button
                 type="button"
                 onClick={() => setUserMenuOpen((v) => !v)}
-                className="flex items-center gap-2 rounded-xl px-2 py-1.5 transition-colors hover:bg-white/10"
+                className="flex items-center gap-2 rounded-xl px-2 py-1.5 transition-colors hover:bg-black/5"
                 aria-label="User menu"
                 aria-expanded={userMenuOpen}
               >
@@ -226,7 +212,7 @@ export default function MainHeader() {
                     <Link
                       href="/profile"
                       onClick={() => setUserMenuOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2.5 text-[13px] text-[#333] transition-colors hover:bg-[#fafafa]"
+                      className="flex items-center gap-3 px-4 py-2.5 text-[13px] text-[#333] transition-colors hover:bg-surface"
                     >
                       <svg width="15" height="15" viewBox="0 0 15 15" fill="none" className="text-[#888]">
                         <circle cx="7.5" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.4" />
@@ -259,13 +245,13 @@ export default function MainHeader() {
 
         {/* Mobile right: lang + auth CTAs, or lang + hamburger when logged in */}
         <div className="flex md:hidden col-start-3 items-center gap-1.5 justify-self-end">
-          <LanguageSwitcher variant="light" />
+          <LanguageSwitcher variant="dark" />
           {isLoggedIn ? (
             <button
               type="button"
               aria-label="Toggle menu"
               onClick={() => setMobileMenuOpen((v) => !v)}
-              className="grid h-9 w-9 place-items-center rounded-lg transition-colors hover:bg-white/10"
+              className="grid h-9 w-9 place-items-center rounded-lg transition-colors hover:bg-black/5"
             >
               {mobileMenuOpen ? (
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -285,14 +271,14 @@ export default function MainHeader() {
 
       {/* ── Mobile dropdown menu (logged-in only) ── */}
       {isLoggedIn && user && mobileMenuOpen && (
-        <div className="md:hidden border-t border-white/10 bg-brand-header px-4 pb-4 pt-2">
+        <div className="md:hidden border-t border-black/5 bg-paper px-4 pb-4 pt-2">
           <nav className="flex flex-col gap-1">
             {navItems.map((item) => (
               <a
                 key={item.label}
                 href={item.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-white/10"
+                className="flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-black/5"
               >
                 {item.label}
                 {item.badge > 0 && (
@@ -304,20 +290,20 @@ export default function MainHeader() {
             ))}
           </nav>
 
-          <div className="mt-3 border-t border-white/10 pt-3">
+          <div className="mt-3 border-t border-black/5 pt-3">
             <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-3 rounded-xl bg-white/10 px-3 py-2.5 mb-1">
+              <div className="mb-1 flex items-center gap-3 rounded-xl bg-surface px-3 py-2.5">
                 <UserAvatar name={user.name} />
                 <div className="min-w-0">
                   <p className="truncate text-[13px] font-semibold">{user.name}</p>
-                  <p className="truncate text-[11px] text-white/60">{user.email}</p>
+                  <p className="truncate text-[11px] text-[#888]">{user.email}</p>
                 </div>
               </div>
 
               <Link
                 href="/profile"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-white/10"
+                className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-black/5"
               >
                 <svg width="15" height="15" viewBox="0 0 15 15" fill="none" className="opacity-70">
                   <circle cx="7.5" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.4" />
@@ -329,9 +315,9 @@ export default function MainHeader() {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-[#ffaaaa] transition-colors hover:bg-white/10"
+                className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-[#d00] transition-colors hover:bg-black/5"
               >
-                <svg width="15" height="15" viewBox="0 0 15 15" fill="none" className="text-[#ffaaaa]">
+                <svg width="15" height="15" viewBox="0 0 15 15" fill="none" className="text-[#d00]">
                   <path d="M5.5 13H3a1 1 0 01-1-1V3a1 1 0 011-1h2.5M10 10.5L13.5 7.5 10 4.5M5.5 7.5h8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
                 {t("common.logOut")}

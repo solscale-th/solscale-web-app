@@ -47,7 +47,7 @@ function CountryCodePicker({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex h-full items-center gap-1.5 rounded-l-lg border border-[#e0e0e0] bg-[#fafafa] px-3 py-2 text-[14px] font-medium text-[#333] transition-colors hover:bg-[#f0f0f0] focus:outline-none"
+        className="flex h-full items-center gap-1.5 rounded-l-lg border border-[#e0e0e0] bg-surface px-3 py-2 text-[14px] font-medium text-[#333] transition-colors hover:bg-surface focus:outline-none"
       >
         <span>{selected.flag}</span>
         <span>{selected.code}</span>
@@ -63,7 +63,7 @@ function CountryCodePicker({
               key={c.code}
               type="button"
               onClick={() => { onChange(c.code); setOpen(false); }}
-              className={`flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-[13px] transition-colors hover:bg-[#fafafa] ${value === c.code ? "font-semibold text-brand" : "text-[#333]"}`}
+              className={`flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-[13px] transition-colors hover:bg-surface ${value === c.code ? "font-semibold text-brand" : "text-[#333]"}`}
             >
               <span className="text-base">{c.flag}</span>
               <span className="flex-1">{c.name}</span>
@@ -100,7 +100,7 @@ function PhoneEditField({
           type="tel"
           value={phone}
           onChange={(e) => onPhoneChange(e.target.value)}
-          className="min-w-0 flex-1 rounded-r-lg border border-l-0 border-[#e0e0e0] bg-[#fafafa] px-3 py-2 text-[14px] font-medium text-[#111] outline-none transition-colors focus:border-brand focus:bg-white"
+          className="min-w-0 flex-1 rounded-r-lg border border-l-0 border-[#e0e0e0] bg-surface px-3 py-2 text-[14px] font-medium text-[#111] outline-none transition-colors focus:border-brand focus:bg-white"
         />
       </div>
     </div>
@@ -165,7 +165,7 @@ function EditField({
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="rounded-lg border border-[#e0e0e0] bg-[#fafafa] px-3 py-2 text-[14px] font-medium text-[#111] outline-none transition-colors focus:border-brand focus:bg-white"
+        className="rounded-lg border border-[#e0e0e0] bg-surface px-3 py-2 text-[14px] font-medium text-[#111] outline-none transition-colors focus:border-brand focus:bg-white"
       />
     </div>
   );
@@ -312,7 +312,7 @@ export default function ProfileContent() {
     user.role === "influencer" ? apiInfluencer?.avatarUrl : apiEntrepreneur?.logoUrl;
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#f5f5f3]">
+    <div className="flex min-h-screen flex-col bg-paper">
       <MainHeader />
 
       <main className="flex-1 px-4 py-10 sm:px-8">

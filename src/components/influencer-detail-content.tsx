@@ -212,7 +212,7 @@ export default function InfluencerDetailContent({ influencer }: Props) {
   return (
     <div
       ref={pageRef}
-      className="relative flex min-h-screen flex-col bg-[#f5f5f3]"
+      className="relative flex min-h-screen flex-col bg-paper"
     >
       <div
         aria-hidden
@@ -316,7 +316,7 @@ export default function InfluencerDetailContent({ influencer }: Props) {
                 <div
                   role="tablist"
                   aria-label={influencer.name}
-                  className="flex border-b border-[#f0f0f0]"
+                  className="flex border-b border-[#f0f0f0] bg-surface"
                 >
                   {PROFILE_TABS.map((key) => {
                     const selected = tab === key;
@@ -334,7 +334,7 @@ export default function InfluencerDetailContent({ influencer }: Props) {
                         onKeyDown={onTabKeyDown}
                         className={`flex min-w-0 flex-1 items-center justify-center gap-1.5 px-3 py-3.5 text-[13px] sm:text-[14px] font-semibold transition-colors ${
                           selected
-                            ? "border-b-2 border-brand text-brand"
+                            ? "border-b-2 border-brand bg-paper text-brand"
                             : "border-b-2 border-transparent text-[#777] hover:text-[#333]"
                         }`}
                       >
@@ -342,7 +342,7 @@ export default function InfluencerDetailContent({ influencer }: Props) {
                         {count > 0 && (
                           <span
                             className={`rounded-full px-1.5 py-0.5 text-[11px] font-bold leading-none ${
-                              selected ? "bg-brand/10 text-brand" : "bg-[#f3f1ee] text-[#888]"
+                              selected ? "bg-brand/10 text-brand" : "bg-surface text-[#888]"
                             }`}
                           >
                             {count}
@@ -383,7 +383,7 @@ export default function InfluencerDetailContent({ influencer }: Props) {
                                   className={`w-full rounded-xl border px-4 py-3.5 text-left transition-colors ${
                                     selected
                                       ? "border-brand bg-brand/5 ring-1 ring-brand"
-                                      : "border-[#ebebeb] bg-[#fafafa] hover:border-brand/40"
+                                      : "border-[#ebebeb] bg-surface hover:border-brand/40"
                                   }`}
                                 >
                                   <div className="flex items-start justify-between gap-3">
@@ -431,7 +431,7 @@ export default function InfluencerDetailContent({ influencer }: Props) {
                                         className={`flex cursor-pointer items-start gap-3 rounded-xl border px-4 py-3 ${
                                           checked
                                             ? "border-brand bg-brand/5"
-                                            : "border-[#ebebeb] bg-[#fafafa]"
+                                            : "border-[#ebebeb] bg-surface"
                                         }`}
                                       >
                                         <input
@@ -481,11 +481,11 @@ export default function InfluencerDetailContent({ influencer }: Props) {
                               {influencer.portfolio.map((item) => (
                                 <li
                                   key={item.id}
-                                  className="overflow-hidden rounded-xl border border-[#ebebeb] bg-[#fafafa]"
+                                  className="overflow-hidden rounded-xl border border-[#ebebeb] bg-surface"
                                 >
                                   {item.imageUrl ? (
                                     <div
-                                      className="aspect-[16/9] bg-[#f5f5f3] bg-cover bg-center"
+                                      className="aspect-[16/9] bg-surface bg-cover bg-center"
                                       style={{ backgroundImage: `url(${item.imageUrl})` }}
                                       role="img"
                                       aria-label={item.title}
@@ -520,7 +520,7 @@ export default function InfluencerDetailContent({ influencer }: Props) {
                                 {influencer.otherPhotos.map((photo, index) => (
                                   <div
                                     key={`${photo}-${index}`}
-                                    className="aspect-square overflow-hidden rounded-xl bg-[#f5f5f3] bg-cover bg-center"
+                                    className="aspect-square overflow-hidden rounded-xl bg-surface bg-cover bg-center"
                                     style={{ backgroundImage: `url(${photo})` }}
                                     role="img"
                                     aria-label={`${influencer.name} photo ${index + 1}`}
@@ -546,7 +546,7 @@ export default function InfluencerDetailContent({ influencer }: Props) {
                       ) : (
                         <div className="space-y-3">
                           {hasRating && (
-                            <div className="flex items-center gap-2 rounded-xl bg-[#fafafa] px-4 py-3">
+                            <div className="flex items-center gap-2 rounded-xl bg-surface px-4 py-3">
                               <StarRow
                                 rating={influencer.averageRating}
                                 label={t("influencerDetail.reviewSummary", {
@@ -618,7 +618,7 @@ export default function InfluencerDetailContent({ influencer }: Props) {
                           initial={{ opacity: 0, x: -8 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: 0.28 + i * 0.05 }}
-                          className="flex items-center gap-3 rounded-xl bg-[#f5f5f3] px-3.5 py-3"
+                          className="flex items-center gap-3 rounded-xl bg-surface px-3.5 py-3"
                         >
                           <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-brand/10 text-[12px] font-bold text-brand">
                             {i + 1}
@@ -650,7 +650,7 @@ export default function InfluencerDetailContent({ influencer }: Props) {
                       {influencer.languages.map((lang) => (
                         <span
                           key={lang}
-                          className="rounded-xl bg-[#f5f5f3] px-3.5 py-2 text-[13px] font-semibold text-[#333]"
+                          className="rounded-xl bg-surface px-3.5 py-2 text-[13px] font-semibold text-[#333]"
                         >
                           {lang}
                         </span>
