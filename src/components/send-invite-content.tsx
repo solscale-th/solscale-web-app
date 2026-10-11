@@ -8,6 +8,7 @@ import { useLanguage } from "@/i18n/language-provider";
 import { createJob } from "@/lib/jobs";
 import { PLATFORM_COLORS, type Platform } from "@/lib/mock-jobs";
 import { getInfluencerById } from "@/lib/mock-influencers";
+import { forgetRequirementFile, rememberRequirementFile } from "@/lib/requirement-files";
 
 type AddonLine = { name: string; price: number };
 
@@ -393,9 +394,15 @@ export default function SendInviteContent() {
 
   function setJobFile(key: JobFileKey, file: File | undefined) {
     setJobFiles((current) => {
+      const previous = current[key];
+      if (previous && previous.name !== file?.name) forgetRequirementFile(previous.name);
       const next = { ...current };
-      if (file) next[key] = file;
-      else delete next[key];
+      if (file) {
+        next[key] = file;
+        rememberRequirementFile(file);
+      } else {
+        delete next[key];
+      }
       return next;
     });
   }

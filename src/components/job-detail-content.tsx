@@ -27,7 +27,6 @@ import {
   isReadyToSubmitJob,
   isRevisionJob,
   isSeededPrivateJob,
-  releaseDayForJob,
 } from "@/lib/mock-hire-request";
 import { useFlowchart } from "@/hooks/use-flowchart";
 import { buildApplication, buildEngagement } from "@/lib/flowchart/builders";
@@ -38,6 +37,13 @@ import JobWorkspaceSection from "@/components/job-workspace-section";
 import { jobDetailHref } from "@/lib/job-detail-href";
 import { acceptInvite, declineInvite, parseApiId } from "@/lib/applications";
 import { markMyJobSeen } from "@/lib/seen-my-jobs";
+import {
+  isRequirementFileLine,
+  isRequirementImage,
+  parseRequirementFiles,
+  requirementPreviewUrl,
+  type RequirementFileKey,
+} from "@/lib/requirement-files";
 import type { FlowEngagement } from "@/lib/flowchart/types";
 
 const PANEL =
@@ -94,6 +100,50 @@ function ListRow({ tone, children }: { tone: Tone; children: React.ReactNode }) 
       <CheckIcon className={`mt-[3px] shrink-0 ${TONES[tone].mark}`} />
       <span className="text-[14px] leading-snug text-[#3a3530]">{children}</span>
     </li>
+  );
+}
+
+const REQUIREMENT_FILE_LABEL: Record<RequirementFileKey, string> = {
+  storyboard: "myJob.reviewReqStoryboard",
+  voiceOver: "myJob.reviewReqVoiceOver",
+  super: "myJob.reviewReqSuper",
+  other: "myJob.reviewReqOther",
+};
+
+function RequirementFileList({ files }: { files: ReturnType<typeof parseRequirementFiles> }) {
+  const { t } = useLanguage();
+  if (files.length === 0) return null;
+
+  return (
+    <ul className="mt-4 space-y-3">
+      {files.map((file) => {
+        const url = requirementPreviewUrl(file.filename);
+        const image = isRequirementImage(file.filename);
+        return (
+          <li key={file.key} className="rounded-xl border border-[#e7e1d8] bg-white p-3.5">
+            <p className="text-[14px] font-semibold text-[#141414]">{t(REQUIREMENT_FILE_LABEL[file.key])}</p>
+            {file.note && <p className="mt-1 text-[13px] leading-relaxed text-[#5a5550]">{file.note}</p>}
+            <p className="mt-1 truncate text-[12px] text-[#8a8580]">{file.filename}</p>
+            {url && image && (
+              <img src={url} alt={file.filename} className="mt-3 max-h-56 w-full rounded-lg object-contain bg-surface" />
+            )}
+            {url && !image && (
+              <iframe title={file.filename} src={url} className="mt-3 h-64 w-full rounded-lg border border-[#ece7e1] bg-white" />
+            )}
+            {url && (
+              <a
+                href={url}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-2 inline-flex text-[13px] font-semibold text-brand hover:underline"
+              >
+                {t("jobDetail.viewFile")}
+              </a>
+            )}
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
@@ -247,6 +297,8 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
     !isDeclinedOffer &&
     !isAcceptedOffer;
 
+  const liveRequirements =
+    state.postedJobs.find((item) => item.id === job.id)?.requirements ?? job.requirements;
   const platformStyle = PLATFORM_COLORS[job.platform];
   const budget = isPrivateOffer
     ? formatOfferPrice(job.budgetMin, job.budgetMax)
@@ -548,7 +600,6 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
                     submitted={delivered}
                     passed={workPassed}
                     submissionNote={engagementForJob?.submissionNote}
-                    releaseDay={releaseDayForJob(job.id)}
                     feedbackNote={
                       !workPassed &&
                       (engagementForJob?.workStatus === "revision_requested" || delivered)
@@ -569,7 +620,6 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
                     <DeliverWorkPanel
                       passed
                       submissionNote={engagementForJob.submissionNote}
-                      releaseDay={releaseDayForJob(job.id)}
                       onSubmit={() => {}}
                     />
                   </div>
@@ -623,7 +673,7 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
                 </motion.section>
 
                 {/* Deliverables + Requirements */}
-                <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <div className="mt-5 flex flex-col gap-5">
                   <motion.section
                     initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -667,12 +717,17 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
                       {t("jobDetail.requirements")}
                     </PanelHeading>
                     <ul className="space-y-2.5">
-                      {job.requirements.map((req) => (
+                      {liveRequirements
+                        .filter((req) => !(isInfluencer && isPrivateOffer && isRequirementFileLine(req)))
+                        .map((req) => (
                         <ListRow key={req} tone="green">
                           {req}
                         </ListRow>
                       ))}
                     </ul>
+                    {isInfluencer && isPrivateOffer && (
+                      <RequirementFileList files={parseRequirementFiles(liveRequirements)} />
+                    )}
                   </motion.section>
                 </div>
 
@@ -800,12 +855,20 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
                           ) : null}
                         </div>
                         {brandPays && (
-                          <Link
-                            href={`/jobs/${job.id}/pay?engagement=${encodeURIComponent(engagementForJob.id)}`}
-                            className={`flex h-12 w-full items-center justify-center rounded-xl bg-brand text-[15px] font-semibold text-white shadow-brand transition-colors hover:bg-brand-hover ${FOCUS_RING}`}
-                          >
-                            {t("jobDetail.startPayment")}
-                          </Link>
+                          <>
+                            <button
+                              type="button"
+                              className={`flex h-12 w-full items-center justify-center rounded-xl border border-brand bg-white text-[15px] font-semibold text-brand transition-colors hover:bg-brand/5 ${FOCUS_RING}`}
+                            >
+                              {t("jobDetail.viewQuote")}
+                            </button>
+                            <Link
+                              href={`/jobs/${job.id}/pay?engagement=${encodeURIComponent(engagementForJob.id)}`}
+                              className={`flex h-12 w-full items-center justify-center rounded-xl bg-brand text-[15px] font-semibold text-white shadow-brand transition-colors hover:bg-brand-hover ${FOCUS_RING}`}
+                            >
+                              {t("jobDetail.startPayment")}
+                            </Link>
+                          </>
                         )}
                       </>
                     ) : isDeclinedOffer ? (
@@ -851,8 +914,14 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
         {/* Mobile action bar — the sidebar CTA sits below the fold on small screens */}
         {brandPays && engagementForJob && (
           <>
-            <div aria-hidden className="h-20 lg:hidden" />
-            <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#ece7e1] bg-white/95 px-4 py-3 shadow-panel-dock backdrop-blur lg:hidden">
+            <div aria-hidden className="h-36 lg:hidden" />
+            <div className="fixed inset-x-0 bottom-0 z-40 space-y-2 border-t border-[#ece7e1] bg-white/95 px-4 py-3 shadow-panel-dock backdrop-blur lg:hidden">
+              <button
+                type="button"
+                className={`flex h-12 w-full items-center justify-center rounded-xl border border-brand bg-white text-[15px] font-semibold text-brand transition-colors hover:bg-brand/5 ${FOCUS_RING}`}
+              >
+                {t("jobDetail.viewQuote")}
+              </button>
               <Link
                 href={`/jobs/${job.id}/pay?engagement=${encodeURIComponent(engagementForJob.id)}`}
                 className={`flex h-12 w-full items-center justify-center rounded-xl bg-brand text-[15px] font-semibold text-white shadow-brand transition-colors hover:bg-brand-hover ${FOCUS_RING}`}

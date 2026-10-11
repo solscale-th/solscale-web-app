@@ -93,9 +93,55 @@ function isPhotoOrPdf(file: File): boolean {
   return isImageFile(file) || file.type === "application/pdf" || /\.pdf$/i.test(file.name);
 }
 
-function ReleaseScreen({ day }: { day: number }) {
+function ReleaseCalendar() {
+  const { locale } = useLanguage();
+  const today = new Date();
+  const first = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+  const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 2, 0).getDate();
+  const leading = first.getDay();
+  const intlLocale = locale === "th" ? "th-TH-u-ca-gregory" : "en-US";
+  const monthLabel = new Intl.DateTimeFormat(intlLocale, { month: "long", year: "numeric" }).format(first);
+  const weekdays = Array.from({ length: 7 }, (_, index) =>
+    new Intl.DateTimeFormat(intlLocale, { weekday: "narrow" }).format(new Date(2026, 0, 4 + index))
+  );
+  const cells: Array<number | null> = [
+    ...Array.from({ length: leading }, () => null),
+    ...Array.from({ length: daysInMonth }, (_, index) => index + 1),
+  ];
+
+  return (
+    <div className="mx-auto mt-8 max-w-sm text-center">
+      <p className="text-[15px] font-semibold text-[#141414]">{monthLabel}</p>
+      <div className="mt-3 grid grid-cols-7 gap-1.5">
+        {weekdays.map((label, index) => (
+          <div key={`${label}-${index}`} className="py-1 text-[11px] font-semibold text-[#8a8580]">
+            {label}
+          </div>
+        ))}
+        {cells.map((day, index) => {
+          const release = day === 10;
+          return (
+            <div
+              key={index}
+              className={`grid h-9 place-items-center rounded-lg text-[13px] font-semibold tabular-nums ${
+                release
+                  ? "bg-brand text-white ring-2 ring-brand ring-offset-1"
+                  : day
+                    ? "bg-surface text-[#3a3530]"
+                    : ""
+              }`}
+            >
+              {day ?? ""}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function ReleaseScreen() {
   const { t } = useLanguage();
-  const current = Math.min(30, Math.max(1, day));
 
   return (
     <section className="rounded-[1.25rem] border border-[#ece7e1] bg-white px-5 py-10 text-center shadow-panel sm:px-8">
@@ -106,33 +152,10 @@ function ReleaseScreen({ day }: { day: number }) {
         </svg>
       </div>
       <p className="mt-6 text-[18px] font-semibold text-[#141414]">{t("myJob.releaseAuto")}</p>
-      <p className="mt-2 text-[32px] font-bold tracking-[-0.03em] text-brand sm:text-[40px]">
+      <p className="mt-2 text-[28px] font-bold leading-tight tracking-[-0.03em] text-brand sm:text-[36px]">
         {t("myJob.releaseWithin")}
       </p>
-      <p className="mx-auto mt-3 max-w-sm text-[14px] leading-relaxed text-[#5a5550]">
-        {t("myJob.releaseFrom")}
-      </p>
-      <p className="mt-8 text-[13px] font-semibold text-[#141414]">{t("myJob.releaseDay", { day: current })}</p>
-      <ol className="mx-auto mt-3 grid max-w-md grid-cols-10 gap-1.5">
-        {Array.from({ length: 30 }, (_, index) => index + 1).map((item) => {
-          const reached = item <= current;
-          const active = item === current;
-          return (
-            <li
-              key={item}
-              className={`grid h-7 place-items-center rounded-md text-[11px] font-semibold tabular-nums ${
-                active
-                  ? "bg-brand text-white ring-2 ring-brand ring-offset-1"
-                  : reached
-                    ? "bg-brand/15 text-brand"
-                    : "bg-surface text-[#b0aaa4]"
-              }`}
-            >
-              {item}
-            </li>
-          );
-        })}
-      </ol>
+      <ReleaseCalendar />
     </section>
   );
 }
@@ -142,14 +165,12 @@ export default function DeliverWorkPanel({
   feedbackNote = "",
   passed = false,
   submissionNote = "",
-  releaseDay = 1,
   onSubmit,
 }: {
   submitted?: boolean;
   feedbackNote?: string;
   passed?: boolean;
   submissionNote?: string;
-  releaseDay?: number;
   onSubmit: (payload: { files: string[]; links: string[] }) => void;
 }) {
   const { t } = useLanguage();
@@ -198,7 +219,7 @@ export default function DeliverWorkPanel({
   }
 
   if (passed && releaseOpen) {
-    return <ReleaseScreen day={releaseDay} />;
+    return <ReleaseScreen />;
   }
 
   function handleSend() {

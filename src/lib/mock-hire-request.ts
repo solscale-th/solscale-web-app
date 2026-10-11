@@ -32,7 +32,9 @@ export const HIRE_REQUEST_POSTED_JOB: FlowPostedJob = {
     "Language: Thai",
     "Subtitle: Glow in 30 seconds",
     "Storyboard: storyboard.pdf — concept, content, and camera angles",
+    "Voice over: voiceover.pdf — script and narration tone",
     "Super (on-screen text): super.png — on-screen text, key message, and logo",
+    "Other detail: other.pdf — mood, tone, and references",
     "Required message: Mention the 30ml size and that it is fragrance-free.",
     "Restricted message: Do not claim it cures acne overnight.",
   ],
@@ -107,7 +109,9 @@ const EXTRA_OFFERS: ExtraOffer[] = [
     tags: ["Home", "Furniture"],
     location: "Bangkok, TH",
     storyboard: "storyboard-oak.pdf — concept, content, and camera angles",
+    voiceOver: "voiceover-oak.pdf — script and narration tone",
     superFile: "super-oak.png — on-screen text, key message, and logo",
+    otherDetail: "other-oak.pdf — mood, tone, and references",
     requiredMessage: "Mention the solid oak frame and the linen cushion.",
     restrictedMessage: "Do not claim it is handmade in Thailand.",
     acceptedBy: { id: "inf18", name: "Bua Home", handle: "@bua.athome" },
@@ -131,7 +135,9 @@ const EXTRA_OFFERS: ExtraOffer[] = [
     tags: ["Fitness", "Nutrition"],
     location: "Bangkok, TH",
     storyboard: "storyboard-whey.pdf — concept, content, and camera angles",
+    voiceOver: "voiceover-whey.pdf — script and narration tone",
     superFile: "super-whey.png — on-screen text, key message, and logo",
+    otherDetail: "other-whey.pdf — mood, tone, and references",
     requiredMessage: "Mention the 1kg size and 25g protein per serving.",
     restrictedMessage: "Do not claim it replaces a meal or cures injury.",
     acceptedBy: { id: "inf4", name: "Maya Fit", handle: "@maya.moves" },
@@ -155,7 +161,9 @@ const EXTRA_OFFERS: ExtraOffer[] = [
     tags: ["Food", "Street food"],
     location: "Bangkok, TH",
     storyboard: "storyboard-mango.pdf — concept, content, and camera angles",
+    voiceOver: "voiceover-mango.pdf — script and narration tone",
     superFile: "super-mango.png — on-screen text, key message, and logo",
+    otherDetail: "other-mango.pdf — mood, tone, and references",
     requiredMessage: "Mention the kit serves two and takes ten minutes.",
     restrictedMessage: "Do not say it is a restaurant secret recipe.",
     acceptedBy: { id: "inf2", name: "Tom Foodie", handle: "@tom.eats.th" },
@@ -179,7 +187,9 @@ const EXTRA_OFFERS: ExtraOffer[] = [
     tags: ["Travel", "Hotel"],
     location: "Phuket, TH",
     storyboard: "storyboard-andaman.pdf — concept, content, and camera angles",
+    voiceOver: "voiceover-andaman.pdf — script and narration tone",
     superFile: "super-andaman.png — on-screen text, key message, and logo",
+    otherDetail: "other-andaman.pdf — mood, tone, and references",
     requiredMessage: "Mention the three-night stay and breakfast included.",
     restrictedMessage: "Do not promise a private beach or a fixed room view.",
     acceptedBy: { id: "inf6", name: "Ploy Travels", handle: "@ploy.wanders" },
@@ -588,23 +598,12 @@ const PASSED: ExtraOffer[] = [
   },
 ];
 
-const PASS_DAYS: Record<string, number> = {
-  "job-pass-serum": 4,
-  "job-pass-coffee": 12,
-  "job-pass-hat": 19,
-  "job-pass-candle": 28,
-};
-
 const PASS_SUBMISSIONS = [
   "https://www.instagram.com/p/vitamin-c\nFile: serum-reel.mp4",
   "https://www.tiktok.com/@morning.rail/video/pour\nFile: coffee-pour.mp4",
   "https://www.instagram.com/p/linen-cap\nFile: hat-street.mp4",
   "https://www.tiktok.com/@room.quiet/video/fig\nFile: candle-desk.mp4",
 ];
-
-export function releaseDayForJob(id: string): number {
-  return PASS_DAYS[id] ?? 1;
-}
 
 export function findSeededPrivateJob(id: string): FlowPostedJob | undefined {
   const ready = READY_TO_SUBMIT.find((offer) => offer.id === id);
@@ -663,6 +662,7 @@ export function ensureHireRequestInvite(user: MockUser): void {
 
   for (const job of SEEDED_PRIVATE_JOBS) {
     publishIfMissing(job);
+    syncPostedJob(job);
     const alreadyInvited = loadFlowchartState().invites.some(
       (invite) => invite.jobId === job.id && invite.influencerId === user.id
     );
