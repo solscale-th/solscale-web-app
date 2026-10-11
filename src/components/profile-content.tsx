@@ -8,7 +8,9 @@ import { useAuth } from "@/hooks/use-auth";
 import { setStoredUser } from "@/lib/auth";
 import { fetchEntrepreneurByEmail, type ApiEntrepreneur } from "@/lib/entrepreneurs";
 import { fetchInfluencerByEmail, type ApiInfluencer } from "@/lib/influencers";
-import type { MockUser } from "@/lib/mock-users";
+import { PLATFORM_COLORS } from "@/lib/mock-jobs";
+import { INFLUENCER_CATEGORY_KEYS } from "@/lib/mock-influencers";
+import { emptyJobProfile, type JobProfile, type MockUser } from "@/lib/mock-users";
 
 // ─── Country data ─────────────────────────────────────────────────────────────
 
@@ -152,19 +154,113 @@ function EditField({
   value,
   onChange,
   type = "text",
+  required = false,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   type?: string;
+  required?: boolean;
 }) {
   return (
     <div className="flex flex-col gap-1 py-3 [&:not(:last-child)]:border-b [&:not(:last-child)]:border-[#f5f5f5]">
-      <span className="text-[11px] font-medium text-[#aaa]">{label}</span>
+      <span className="text-[11px] font-medium text-[#aaa]">
+        {label}
+        {required ? <RequiredMark /> : null}
+      </span>
       <input
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        className="rounded-lg border border-[#e0e0e0] bg-surface px-3 py-2 text-[14px] font-medium text-[#111] outline-none transition-colors focus:border-brand focus:bg-white"
+      />
+    </div>
+  );
+}
+
+const PROFILE_LANGUAGES = [
+  { id: "th", labelKey: "languageThai" },
+  { id: "en", labelKey: "languageEnglish" },
+] as const;
+
+const PROFILE_PLATFORMS = Object.keys(PLATFORM_COLORS);
+
+function RequiredMark() {
+  return <span className="text-brand"> *</span>;
+}
+
+function ChoiceGroup({
+  label,
+  required,
+  options,
+  selected,
+  onChange,
+}: {
+  label: string;
+  required?: boolean;
+  options: { id: string; label: string }[];
+  selected: string[];
+  onChange: (next: string[]) => void;
+}) {
+  function toggle(id: string) {
+    onChange(selected.includes(id) ? selected.filter((item) => item !== id) : [...selected, id]);
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5 py-3 [&:not(:last-child)]:border-b [&:not(:last-child)]:border-[#f5f5f5]">
+      <span className="text-[11px] font-medium text-[#aaa]">
+        {label}
+        {required ? <RequiredMark /> : null}
+      </span>
+      <div className="flex flex-wrap gap-2">
+        {options.map((option) => {
+          const checked = selected.includes(option.id);
+          return (
+            <label
+              key={option.id}
+              className={`cursor-pointer rounded-full border px-3 py-1 text-[12px] font-medium ${
+                checked ? "border-brand bg-brand/10 text-brand" : "border-[#e0e0e0] text-[#555]"
+              }`}
+            >
+              <input
+                type="checkbox"
+                className="sr-only"
+                checked={checked}
+                onChange={() => toggle(option.id)}
+              />
+              {option.label}
+            </label>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function TextAreaField({
+  label,
+  required,
+  value,
+  placeholder,
+  onChange,
+}: {
+  label: string;
+  required?: boolean;
+  value: string;
+  placeholder: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-1 py-3 [&:not(:last-child)]:border-b [&:not(:last-child)]:border-[#f5f5f5]">
+      <span className="text-[11px] font-medium text-[#aaa]">
+        {label}
+        {required ? <RequiredMark /> : null}
+      </span>
+      <textarea
+        value={value}
+        placeholder={placeholder}
+        rows={3}
+        onChange={(event) => onChange(event.target.value)}
         className="rounded-lg border border-[#e0e0e0] bg-surface px-3 py-2 text-[14px] font-medium text-[#111] outline-none transition-colors focus:border-brand focus:bg-white"
       />
     </div>
@@ -197,6 +293,7 @@ export default function ProfileContent() {
     bankName: string;
     accountNumber: string;
     accountHolder: string;
+    job: JobProfile;
   } | null>(null);
 
   const [apiInfluencer, setApiInfluencer] = useState<ApiInfluencer | null>(null);
@@ -241,6 +338,23 @@ export default function ProfileContent() {
 
   if (!user) return null;
 
+  const savedJob = user.jobProfile;
+  const jobDefaults: JobProfile = {
+    ...emptyJobProfile(),
+    ...(savedJob ?? {}),
+    companyName: savedJob ? savedJob.companyName : (apiEntrepreneur?.companyName ?? ""),
+    brandDescription: savedJob ? savedJob.brandDescription : (apiEntrepreneur?.brandDescription ?? ""),
+    stageName: savedJob ? savedJob.stageName : (apiInfluencer?.stageName || user.name || ""),
+    platforms: savedJob ? savedJob.platforms : (apiInfluencer?.platforms ?? []),
+    languages: (savedJob ? savedJob.languages : (apiInfluencer?.languages ?? [])).map((item) => {
+      const key = item.trim().toLowerCase();
+      if (key === "th" || key === "thai" || key === "ไทย") return "th";
+      if (key === "en" || key === "english" || key === "อังกฤษ") return "en";
+      return item;
+    }),
+    categories: savedJob ? savedJob.categories : (apiInfluencer?.contentCategories ?? []),
+  };
+
   const currentForm = form ?? {
     name:          user.name              ?? "",
     email:         user.email             ?? "",
@@ -249,6 +363,7 @@ export default function ProfileContent() {
     bankName:      user.paymentAccount?.bankName       ?? "",
     accountNumber: user.paymentAccount?.accountNumber  ?? "",
     accountHolder: user.paymentAccount?.accountHolder  ?? "",
+    job: jobDefaults,
   };
 
   function handleEdit() {
@@ -275,8 +390,10 @@ export default function ProfileContent() {
         accountNumber: form.accountNumber,
         accountHolder: form.accountHolder,
       },
+      jobProfile: form.job,
     };
     setStoredUser(updated);
+    setForm(null);
     setEditing(false);
   }
 
@@ -289,8 +406,26 @@ export default function ProfileContent() {
     setStoredUser(updated);
   }
 
-  const set = (key: keyof typeof currentForm) => (v: string) =>
+  const set = (key: "name" | "email" | "countryCode" | "phone" | "bankName" | "accountNumber" | "accountHolder") => (v: string) =>
     setForm((prev) => ({ ...(prev ?? currentForm), [key]: v }));
+
+  function setJob<K extends keyof JobProfile>(key: K, value: JobProfile[K]) {
+    setForm((prev) => {
+      const base = prev ?? currentForm;
+      return { ...base, job: { ...base.job, [key]: value } };
+    });
+  }
+
+  const languageOptions = PROFILE_LANGUAGES.map((item) => ({
+    id: item.id,
+    label: t(`profile.${item.labelKey}`),
+  }));
+  const platformOptions = PROFILE_PLATFORMS.map((item) => ({ id: item, label: item }));
+  const categoryOptions = INFLUENCER_CATEGORY_KEYS.map((item) => ({
+    id: item,
+    label: t(`categories.${item}`),
+  }));
+  const shownJob = editing ? currentForm.job : jobDefaults;
 
   const roleLabel =
     user.role === "influencer"
@@ -437,6 +572,324 @@ export default function ProfileContent() {
                 )}
               </Section>
 
+              <Section title={t("profile.sectionJob")}>
+                <p className="pb-2 text-[13px] text-[#888]">{t("profile.jobHint")}</p>
+                {user.role === "entrepreneur" ? (
+                  editing ? (
+                    <>
+                      <EditField label={t("profile.labelCompanyName")} required value={currentForm.job.companyName} onChange={(value) => setJob("companyName", value)} />
+                      <EditField label={t("profile.labelLocation")} value={currentForm.job.location} onChange={(value) => setJob("location", value)} />
+                      <TextAreaField
+                        label={t("profile.labelBrandDescription")}
+                        required
+                        value={currentForm.job.brandDescription}
+                        placeholder=""
+                        onChange={(value) => setJob("brandDescription", value)}
+                      />
+                      <ChoiceGroup
+                        label={t("profile.labelLanguages")}
+                        required
+                        options={languageOptions}
+                        selected={currentForm.job.languages}
+                        onChange={(value) => setJob("languages", value)}
+                      />
+                      <div className="flex flex-col gap-3 py-3">
+                        <span className="text-[11px] font-medium text-[#aaa]">
+                          {t("profile.labelProduct")}
+                          <RequiredMark />
+                        </span>
+                        {currentForm.job.products.map((product, index) => (
+                          <div key={index} className="rounded-xl border border-[#eee] p-3">
+                          <input
+                            value={product.name}
+                            placeholder={t("profile.productPlaceholder")}
+                            onChange={(event) => {
+                              const name = event.target.value;
+                              setForm((prev) => {
+                                const base = prev ?? currentForm;
+                                const products = base.job.products.map((item, itemIndex) =>
+                                  itemIndex === index ? { ...item, name } : item
+                                );
+                                return { ...base, job: { ...base.job, products } };
+                              });
+                            }}
+                              className="w-full rounded-lg border border-[#e0e0e0] bg-surface px-3 py-2 text-[14px] font-medium text-[#111] outline-none focus:border-brand focus:bg-white"
+                            />
+                            <textarea
+                              value={product.description}
+                              rows={2}
+                              placeholder={t("profile.productDescriptionPlaceholder")}
+                            onChange={(event) => {
+                              const description = event.target.value;
+                              setForm((prev) => {
+                                const base = prev ?? currentForm;
+                                const products = base.job.products.map((item, itemIndex) =>
+                                  itemIndex === index ? { ...item, description } : item
+                                );
+                                return { ...base, job: { ...base.job, products } };
+                              });
+                            }}
+                              className="mt-2 w-full rounded-lg border border-[#e0e0e0] bg-surface px-3 py-2 text-[14px] font-medium text-[#111] outline-none focus:border-brand focus:bg-white"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setJob("products", currentForm.job.products.filter((_, itemIndex) => itemIndex !== index))}
+                              className="mt-2 text-[12px] font-semibold text-[#c0392b]"
+                            >
+                              {t("profile.removeItem")}
+                            </button>
+                          </div>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => setJob("products", [...currentForm.job.products, { name: "", description: "" }])}
+                          className="self-start rounded-lg border border-brand px-3 py-1.5 text-[12px] font-semibold text-brand"
+                        >
+                          {t("profile.addProduct")}
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <Field label={t("profile.labelCompanyName")} value={shownJob.companyName} />
+                      <Field label={t("profile.labelLocation")} value={shownJob.location} />
+                      <Field label={t("profile.labelBrandDescription")} value={shownJob.brandDescription} />
+                      <ChipsField
+                        label={t("profile.labelLanguages")}
+                        values={shownJob.languages.map((item) => languageOptions.find((option) => option.id === item)?.label ?? item)}
+                      />
+                      <div className="flex flex-col gap-2 py-3 [&:not(:last-child)]:border-b [&:not(:last-child)]:border-[#f5f5f5]">
+                        <span className="text-[11px] font-medium text-[#aaa]">{t("profile.labelProduct")}</span>
+                        {shownJob.products.length === 0 ? (
+                          <span className="text-[14px] font-medium text-[#ccc]">—</span>
+                        ) : (
+                          shownJob.products.map((product) => (
+                            <div key={`${product.name}-${product.description}`}>
+                              <p className="text-[14px] font-medium text-[#111]">{product.name || "—"}</p>
+                              {product.description ? (
+                                <p className="text-[13px] text-[#666]">{product.description}</p>
+                              ) : null}
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </>
+                  )
+                ) : editing ? (
+                  <>
+                    <EditField label={t("profile.labelStageName")} required value={currentForm.job.stageName} onChange={(value) => setJob("stageName", value)} />
+                    <ChoiceGroup
+                      label={t("profile.labelPlatforms")}
+                      required
+                      options={platformOptions}
+                      selected={currentForm.job.platforms}
+                      onChange={(value) => setJob("platforms", value)}
+                    />
+                    <ChoiceGroup
+                      label={t("profile.labelLanguages")}
+                      required
+                      options={languageOptions}
+                      selected={currentForm.job.languages}
+                      onChange={(value) => setJob("languages", value)}
+                    />
+                    <ChoiceGroup
+                      label={t("profile.labelCategories")}
+                      options={categoryOptions}
+                      selected={currentForm.job.categories}
+                      onChange={(value) => setJob("categories", value)}
+                    />
+                    <div className="flex flex-col gap-3 py-3">
+                      <span className="text-[11px] font-medium text-[#aaa]">
+                        {t("profile.labelPackage")}
+                        <RequiredMark />
+                      </span>
+                      {currentForm.job.packages.map((item, index) => (
+                        <div key={index} className="rounded-xl border border-[#eee] p-3">
+                          <input
+                            value={item.name}
+                            placeholder={t("profile.packageNamePlaceholder")}
+                            onChange={(event) => {
+                              const name = event.target.value;
+                              setForm((prev) => {
+                                const base = prev ?? currentForm;
+                                const packages = base.job.packages.map((pkg, itemIndex) =>
+                                  itemIndex === index ? { ...pkg, name } : pkg
+                                );
+                                return { ...base, job: { ...base.job, packages } };
+                              });
+                            }}
+                            className="w-full rounded-lg border border-[#e0e0e0] bg-surface px-3 py-2 text-[14px] font-medium text-[#111] outline-none focus:border-brand focus:bg-white"
+                          />
+                          <input
+                            value={item.price}
+                            inputMode="decimal"
+                            placeholder={t("profile.labelPackagePrice")}
+                            onChange={(event) => {
+                              const price = event.target.value;
+                              setForm((prev) => {
+                                const base = prev ?? currentForm;
+                                const packages = base.job.packages.map((pkg, itemIndex) =>
+                                  itemIndex === index ? { ...pkg, price } : pkg
+                                );
+                                return { ...base, job: { ...base.job, packages } };
+                              });
+                            }}
+                            className="mt-2 w-full rounded-lg border border-[#e0e0e0] bg-surface px-3 py-2 text-[14px] font-medium text-[#111] outline-none focus:border-brand focus:bg-white"
+                          />
+                          <textarea
+                            value={item.detail}
+                            rows={2}
+                            placeholder={t("profile.packageDetailPlaceholder")}
+                            onChange={(event) => {
+                              const detail = event.target.value;
+                              setForm((prev) => {
+                                const base = prev ?? currentForm;
+                                const packages = base.job.packages.map((pkg, itemIndex) =>
+                                  itemIndex === index ? { ...pkg, detail } : pkg
+                                );
+                                return { ...base, job: { ...base.job, packages } };
+                              });
+                            }}
+                            className="mt-2 w-full rounded-lg border border-[#e0e0e0] bg-surface px-3 py-2 text-[14px] font-medium text-[#111] outline-none focus:border-brand focus:bg-white"
+                          />
+                          <div className="mt-2">
+                            <ChoiceGroup
+                              label={t("profile.labelPlatforms")}
+                              options={platformOptions}
+                              selected={item.platform ? [item.platform] : []}
+                              onChange={(value) => {
+                                const platform = value.find((entry) => entry !== item.platform) ?? "";
+                                setForm((prev) => {
+                                  const base = prev ?? currentForm;
+                                  const packages = base.job.packages.map((pkg, itemIndex) =>
+                                    itemIndex === index ? { ...pkg, platform } : pkg
+                                  );
+                                  return { ...base, job: { ...base.job, packages } };
+                                });
+                              }}
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setJob("packages", currentForm.job.packages.filter((_, itemIndex) => itemIndex !== index))}
+                            className="text-[12px] font-semibold text-[#c0392b]"
+                          >
+                            {t("profile.removeItem")}
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setJob("packages", [
+                            ...currentForm.job.packages,
+                            { name: "", price: "", detail: "", platform: "" },
+                          ])
+                        }
+                        className="self-start rounded-lg border border-brand px-3 py-1.5 text-[12px] font-semibold text-brand"
+                      >
+                        {t("profile.addPackage")}
+                      </button>
+                    </div>
+                    <div className="flex flex-col gap-3 py-3">
+                      <span className="text-[11px] font-medium text-[#aaa]">{t("profile.labelAddon")}</span>
+                      {currentForm.job.addons.map((item, index) => (
+                        <div key={index} className="rounded-xl border border-[#eee] p-3">
+                          <input
+                            value={item.name}
+                            placeholder={t("profile.addonNamePlaceholder")}
+                            onChange={(event) => {
+                              const name = event.target.value;
+                              setForm((prev) => {
+                                const base = prev ?? currentForm;
+                                const addons = base.job.addons.map((addon, itemIndex) =>
+                                  itemIndex === index ? { ...addon, name } : addon
+                                );
+                                return { ...base, job: { ...base.job, addons } };
+                              });
+                            }}
+                            className="w-full rounded-lg border border-[#e0e0e0] bg-surface px-3 py-2 text-[14px] font-medium text-[#111] outline-none focus:border-brand focus:bg-white"
+                          />
+                          <input
+                            value={item.price}
+                            inputMode="decimal"
+                            placeholder={t("profile.labelPackagePrice")}
+                            onChange={(event) => {
+                              const price = event.target.value;
+                              setForm((prev) => {
+                                const base = prev ?? currentForm;
+                                const addons = base.job.addons.map((addon, itemIndex) =>
+                                  itemIndex === index ? { ...addon, price } : addon
+                                );
+                                return { ...base, job: { ...base.job, addons } };
+                              });
+                            }}
+                            className="mt-2 w-full rounded-lg border border-[#e0e0e0] bg-surface px-3 py-2 text-[14px] font-medium text-[#111] outline-none focus:border-brand focus:bg-white"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setJob("addons", currentForm.job.addons.filter((_, itemIndex) => itemIndex !== index))}
+                            className="mt-2 text-[12px] font-semibold text-[#c0392b]"
+                          >
+                            {t("profile.removeItem")}
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => setJob("addons", [...currentForm.job.addons, { name: "", price: "" }])}
+                        className="self-start rounded-lg border border-brand px-3 py-1.5 text-[12px] font-semibold text-brand"
+                      >
+                        {t("profile.addAddon")}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <Field label={t("profile.labelStageName")} value={shownJob.stageName} />
+                    <ChipsField label={t("profile.labelPlatforms")} values={shownJob.platforms} />
+                    <ChipsField
+                      label={t("profile.labelLanguages")}
+                      values={shownJob.languages.map((item) => languageOptions.find((option) => option.id === item)?.label ?? item)}
+                    />
+                    <ChipsField
+                      label={t("profile.labelCategories")}
+                      values={shownJob.categories.map((item) => categoryOptions.find((option) => option.id === item)?.label ?? item)}
+                    />
+                    <div className="flex flex-col gap-2 py-3">
+                      <span className="text-[11px] font-medium text-[#aaa]">{t("profile.labelPackage")}</span>
+                      {shownJob.packages.length === 0 ? (
+                        <span className="text-[14px] font-medium text-[#ccc]">—</span>
+                      ) : (
+                        shownJob.packages.map((item) => (
+                          <div key={`${item.name}-${item.price}`}>
+                            <p className="text-[14px] font-medium text-[#111]">
+                              {item.name || "—"}
+                              {item.price ? ` · ฿${item.price}` : ""}
+                              {item.platform ? ` · ${item.platform}` : ""}
+                            </p>
+                            {item.detail ? <p className="text-[13px] text-[#666]">{item.detail}</p> : null}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-2 py-3">
+                      <span className="text-[11px] font-medium text-[#aaa]">{t("profile.labelAddon")}</span>
+                      {shownJob.addons.length === 0 ? (
+                        <span className="text-[14px] font-medium text-[#ccc]">—</span>
+                      ) : (
+                        shownJob.addons.map((item) => (
+                          <p key={`${item.name}-${item.price}`} className="text-[14px] font-medium text-[#111]">
+                            {item.name || "—"}
+                            {item.price ? ` · ฿${item.price}` : ""}
+                          </p>
+                        ))
+                      )}
+                    </div>
+                  </>
+                )}
+              </Section>
+
               {/* Extra details from the marketplace API (read-only) */}
               {user.role === "influencer" ? (
                 <Section title={t("profile.sectionCreator")}>
@@ -448,16 +901,12 @@ export default function ProfileContent() {
                     <p className="py-3 text-[13px] text-[#888]">{t("profile.detailEmpty")}</p>
                   ) : (
                     <>
-                      <Field label={t("profile.labelStageName")} value={apiInfluencer.stageName} />
                       <Field label={t("profile.labelFirstName")} value={apiInfluencer.firstName} />
                       <Field label={t("profile.labelLastName")} value={apiInfluencer.lastName} />
                       <Field
                         label={t("profile.labelAge")}
                         value={apiInfluencer.age != null ? String(apiInfluencer.age) : undefined}
                       />
-                      <ChipsField label={t("profile.labelPlatforms")} values={apiInfluencer.platforms ?? []} />
-                      <ChipsField label={t("profile.labelCategories")} values={apiInfluencer.contentCategories ?? []} />
-                      <ChipsField label={t("profile.labelLanguages")} values={apiInfluencer.languages ?? []} />
                       <Field
                         label={t("profile.labelRating")}
                         value={t("profile.ratingValue", {
@@ -484,22 +933,7 @@ export default function ProfileContent() {
                     </>
                   )}
                 </Section>
-              ) : (
-                <Section title={t("profile.sectionBusiness")}>
-                  {detailLoading ? (
-                    <p className="py-3 text-[13px] text-[#888]">{t("profile.detailLoading")}</p>
-                  ) : detailError ? (
-                    <p className="py-3 text-[13px] text-[#c0392b]">{t("profile.detailError")}</p>
-                  ) : !apiEntrepreneur ? (
-                    <p className="py-3 text-[13px] text-[#888]">{t("profile.detailEmpty")}</p>
-                  ) : (
-                    <>
-                      <Field label={t("profile.labelCompanyName")} value={apiEntrepreneur.companyName} />
-                      <Field label={t("profile.labelBrandDescription")} value={apiEntrepreneur.brandDescription} />
-                    </>
-                  )}
-                </Section>
-              )}
+              ) : null}
             </div>
 
           </div>

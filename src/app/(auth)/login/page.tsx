@@ -440,14 +440,9 @@ function LoginForm() {
                 </div>
 
                 <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-[14px] font-medium text-[#333]">
-                      {t("auth.login.password")}
-                    </label>
-                    <Link href="/forgot-password" className="text-[13px] font-medium text-brand hover:underline">
-                      {t("auth.login.forgotPassword")}
-                    </Link>
-                  </div>
+                  <label className="block text-[14px] font-medium text-[#333] mb-1.5">
+                    {t("auth.login.password")}
+                  </label>
                   <div className="flex items-center gap-2.5 rounded-xl border border-[#ddd] bg-white px-3.5 py-3 focus-within:border-brand focus-within:ring-1 focus-within:ring-brand">
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0 text-[#aaa]">
                       <rect x="4" y="6" width="8" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
@@ -477,6 +472,11 @@ function LoginForm() {
                         </svg>
                       )}
                     </button>
+                  </div>
+                  <div className="mt-1.5 flex justify-end">
+                    <Link href="/forgot-password" className="text-[13px] font-medium text-brand hover:underline">
+                      {t("auth.login.forgotPassword")}
+                    </Link>
                   </div>
                 </div>
 

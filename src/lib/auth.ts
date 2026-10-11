@@ -1,4 +1,4 @@
-import type { MockUser } from "./mock-users";
+import { parseJobProfile, type MockUser } from "./mock-users";
 
 export const USER_STORAGE_KEY = "solscale_user";
 export const TOKEN_STORAGE_KEY = "solscale_token";
@@ -21,6 +21,7 @@ export function normalizeStoredUser(value: unknown): MockUser | null {
     raw.paymentAccount && typeof raw.paymentAccount === "object"
       ? (raw.paymentAccount as Record<string, unknown>)
       : {};
+  const jobProfile = parseJobProfile(raw.jobProfile);
 
   return {
     id: String(raw.id),
@@ -36,6 +37,7 @@ export function normalizeStoredUser(value: unknown): MockUser | null {
       accountHolder:
         typeof payment.accountHolder === "string" ? payment.accountHolder : "",
     },
+    ...(jobProfile ? { jobProfile } : {}),
   };
 }
 
