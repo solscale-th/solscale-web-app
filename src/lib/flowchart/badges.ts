@@ -35,7 +35,15 @@ export function liveDirectBadgeCount(
       role === "influencer"
         ? invite.influencerId === userId
         : invite.entrepreneurId === userId;
-    return mine && invite.status === "pending" && !seenIds.has(invite.id);
+    if (!mine) return false;
+    if (invite.status === "pending") return !seenIds.has(invite.id);
+    if (role !== "entrepreneur" || invite.status !== "accepted") return false;
+    return state.engagements.some(
+      (engagement) =>
+        engagement.sourceId === invite.id &&
+        engagement.paymentStatus === "escrowed" &&
+        !engagement.checkoutPaid
+    );
   }).length;
 }
 
@@ -50,7 +58,10 @@ export function liveMyJobBadgeCount(
       role === "influencer"
         ? eng.influencerId === userId
         : eng.entrepreneurId === userId;
-    const hasUpdate = eng.workStatus === "submitted";
+    const hasUpdate =
+      role === "influencer"
+        ? eng.workStatus === "submitted" || eng.workStatus === "revision_requested"
+        : eng.workStatus === "submitted";
     return mine && hasUpdate && !seenIds.has(eng.id);
   }).length;
 }

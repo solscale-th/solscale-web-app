@@ -39,6 +39,9 @@ export type JobEngagement = {
   messages: ChatMessage[];
   /** true = there is an update the viewer hasn't seen yet */
   hasUpdate: boolean;
+  /** Brand has paid, so the influencer can upload finished work. */
+  checkoutPaid?: boolean;
+  source?: "invite" | "application";
 };
 
 // ─── Mock data ────────────────────────────────────────────────────────────────

@@ -10,14 +10,30 @@ import { useLanguage } from "@/i18n/language-provider";
 import { useAuth } from "@/hooks/use-auth";
 import {
   formatBudgetRange,
+  formatOfferPrice,
   formatPosted,
   PLATFORM_COLORS,
+  postingDateLabel,
   type Job,
 } from "@/lib/mock-jobs";
 import type { DirectOfferStatus } from "@/lib/mock-direct";
+import {
+  ensureHireRequestInvite,
+  ensurePassedJobs,
+  ensureReadyToSubmitJobs,
+  ensureRevisionJobs,
+  ensureSubmittedReviews,
+  isPassedJob,
+  isReadyToSubmitJob,
+  isRevisionJob,
+  isSeededPrivateJob,
+  releaseDayForJob,
+} from "@/lib/mock-hire-request";
 import { useFlowchart } from "@/hooks/use-flowchart";
 import { buildApplication, buildEngagement } from "@/lib/flowchart/builders";
 import { escrowAmountForJob } from "@/lib/flowchart/jobs";
+import DeliverWorkPanel from "@/components/deliver-work-panel";
+import ReviewWorkPanel from "@/components/review-work-panel";
 import JobWorkspaceSection from "@/components/job-workspace-section";
 import { jobDetailHref } from "@/lib/job-detail-href";
 import { acceptInvite, declineInvite, parseApiId } from "@/lib/applications";
@@ -26,8 +42,6 @@ import type { FlowEngagement } from "@/lib/flowchart/types";
 
 const PANEL =
   "rounded-[1.25rem] border border-[#ece7e1] bg-white shadow-panel";
-const FIELD =
-  "w-full rounded-lg border border-[#e0dbd5] bg-surface px-4 py-3 text-[14px] text-[#2a2622] placeholder-[#b3aca4] outline-none transition-[border-color,background-color,box-shadow] focus:border-brand focus:bg-white focus:ring-2 focus:ring-brand/25";
 const FOCUS_RING =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2 focus-visible:ring-offset-surface";
 const FOCUS_RING_ON_DARK =
@@ -106,9 +120,25 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
 
   const [applyStatus, setApplyStatus] = useState<"idle" | "submitting" | "done">("idle");
   const [acceptStatus, setAcceptStatus] = useState<"idle" | "submitting">("idle");
+  const [deliverTab, setDeliverTab] = useState<"details" | "upload">(
+    searchParams.get("tab") === "upload" || searchParams.get("tab") === "review"
+      ? "upload"
+      : "details"
+  );
+  const [delivered, setDelivered] = useState(false);
+  const [reviewResult, setReviewResult] = useState<"accepted" | "sent" | null>(null);
 
-  const [question, setQuestion] = useState("");
-  const [askStatus, setAskStatus] = useState<"idle" | "sending" | "done">("idle");
+  useEffect(() => {
+    if (!user) return;
+    if (user.role === "influencer") {
+      if (isPassedJob(job.id)) ensurePassedJobs(user);
+      else if (isRevisionJob(job.id)) ensureRevisionJobs(user);
+      else if (isReadyToSubmitJob(job.id)) ensureReadyToSubmitJobs(user);
+      else if (isSeededPrivateJob(job.id)) ensureHireRequestInvite(user);
+    } else if (isReadyToSubmitJob(job.id)) {
+      ensureSubmittedReviews(user);
+    }
+  }, [user, job.id]);
 
   const liveInvite = user
     ? state.invites.find(
@@ -166,6 +196,38 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
   const isInfluencer = user?.role === "influencer";
   const hasEngagement = Boolean(engagementForJob && user);
 
+  const workPassed =
+    isInfluencer &&
+    engagementForJob?.checkoutPaid === true &&
+    engagementForJob.workStatus === "approved";
+  const readyToDeliver =
+    isInfluencer &&
+    engagementForJob?.checkoutPaid === true &&
+    (engagementForJob.workStatus === "not_submitted" ||
+      engagementForJob.workStatus === "revision_requested");
+  const showDeliverTabs = readyToDeliver || delivered;
+  const awaitingReview =
+    !isInfluencer &&
+    engagementForJob?.checkoutPaid === true &&
+    engagementForJob.workStatus === "submitted";
+  const showReviewTabs = awaitingReview || reviewResult !== null;
+  const showWorkTabs = showDeliverTabs || showReviewTabs;
+  const isPrivateOffer =
+    isInfluencer &&
+    (liveInvite?.isPrivate === true ||
+      isSeededPrivateJob(job.id) ||
+      engagementForJob?.checkoutPaid === true);
+  const brandPays =
+    !isInfluencer &&
+    engagementForJob?.source === "invite" &&
+    engagementForJob.paymentStatus === "escrowed" &&
+    !engagementForJob.checkoutPaid;
+  const influencerWaitsForPay =
+    isInfluencer &&
+    engagementForJob?.source === "invite" &&
+    engagementForJob.checkoutPaid !== true;
+  const hideApplicants =
+    isPrivateOffer || (!isInfluencer && engagementForJob?.source === "invite");
   const isPendingOffer = offerStatus === "pending" && !hasEngagement;
   const isDeclinedOffer = offerStatus === "declined";
   const isAcceptedOffer = offerStatus === "accepted" || hasEngagement;
@@ -186,7 +248,10 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
     !isAcceptedOffer;
 
   const platformStyle = PLATFORM_COLORS[job.platform];
-  const budget = formatBudgetRange(job.budgetMin, job.budgetMax);
+  const budget = isPrivateOffer
+    ? formatOfferPrice(job.budgetMin, job.budgetMax)
+    : formatBudgetRange(job.budgetMin, job.budgetMax);
+  const postDate = postingDateLabel(job);
   const applyDone = hasApplied || applyStatus === "done";
   const showMobileApplyBar = canApply && !applyDone;
 
@@ -236,7 +301,7 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
     });
     dispatch({ type: "ACCEPT_INVITE", inviteId, engagement: eng });
     setAcceptStatus("idle");
-    router.push(jobDetailHref(job.id, eng.id, "workspace"));
+    router.push(jobDetailHref(job.id, eng.id));
   }
 
   async function handleDeclineOffer() {
@@ -254,6 +319,47 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
       type: "DECLINE_INVITE",
       inviteId,
     });
+  }
+
+  function handleReview(action: "accept" | "feedback", note: string) {
+    if (!engagementForJob || reviewResult) return;
+    try {
+      if (action === "accept") {
+        dispatch({
+          type: "APPROVE_WORK",
+          engagementId: engagementForJob.id,
+          note,
+        });
+        setReviewResult("accepted");
+      } else {
+        dispatch({
+          type: "REQUEST_REVISION",
+          engagementId: engagementForJob.id,
+          note,
+        });
+        setReviewResult("sent");
+      }
+    } catch {
+      // The submission is no longer open for review.
+    }
+  }
+
+  function handleDeliver(payload: { files: string[]; links: string[] }) {
+    if (!engagementForJob || delivered) return;
+    const note = [
+      ...payload.links,
+      ...payload.files.map((name) => `File: ${name}`),
+    ].join("\n");
+    try {
+      dispatch({
+        type: "SUBMIT_WORK",
+        engagementId: engagementForJob.id,
+        note,
+      });
+      setDelivered(true);
+    } catch {
+      // The engagement is no longer open for submission.
+    }
   }
 
   function handleWorkUpdate(next: {
@@ -277,12 +383,6 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
     } else if (next.workStatus === "approved") {
       dispatch({ type: "APPROVE_WORK", engagementId: engagementForJob.id });
     }
-  }
-
-  function handleAsk(e: React.FormEvent) {
-    e.preventDefault();
-    setAskStatus("sending");
-    setTimeout(() => setAskStatus("done"), 1000);
   }
 
   return (
@@ -363,14 +463,37 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
 
               <dl className="mt-9 grid grid-cols-2 gap-y-6 border-t border-white/15 pt-7 sm:flex sm:flex-wrap sm:items-end sm:gap-x-7">
                 <div className="col-span-2 sm:pr-1">
-                  <dt className="text-[12px] text-white/55">{t("jobDetail.budgetRange")}</dt>
-                  <dd className="mt-1 text-[26px] font-semibold tracking-[-0.035em] tabular-nums text-accent sm:text-[30px]">
+                  <dt className="text-[13px] font-medium text-white/70">
+                    {isPrivateOffer ? t("jobDetail.price") : t("jobDetail.budgetRange")}
+                  </dt>
+                  <dd
+                    className={`mt-1 font-semibold tracking-[-0.04em] tabular-nums text-accent ${
+                      isPrivateOffer
+                        ? "text-[2.4rem] leading-none sm:text-[3rem]"
+                        : "text-[26px] sm:text-[30px]"
+                    }`}
+                  >
                     {budget}
                   </dd>
                 </div>
-                <BandStat label={t("jobDetail.workPeriod")} value={job.duration} />
-                <BandStat label={t("jobDetail.applicants")} value={String(job.applied)} />
-                <BandStat label={t("jobDetail.posted")} value={formatPosted(job.postedDaysAgo)} />
+                {isPrivateOffer ? (
+                  <div className="col-span-2 sm:border-l sm:border-white/15 sm:pl-7">
+                    <dt className="text-[13px] font-medium text-white/70">
+                      {t("flow.hirePostingTime")}
+                    </dt>
+                    <dd className="mt-1 text-[2rem] font-semibold leading-none tracking-[-0.04em] text-white sm:text-[2.4rem]">
+                      {postDate}
+                    </dd>
+                  </div>
+                ) : (
+                  <>
+                    <BandStat label={t("jobDetail.workPeriod")} value={job.duration} />
+                    {!hideApplicants && (
+                      <BandStat label={t("jobDetail.applicants")} value={String(job.applied)} />
+                    )}
+                    <BandStat label={t("jobDetail.posted")} value={formatPosted(job.postedDaysAgo)} />
+                  </>
+                )}
               </dl>
             </motion.div>
           </div>
@@ -379,9 +502,92 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
         {/* ── Content, lifted over the band ── */}
         <div className="relative z-10 -mt-20 flex-1">
           <div className="mx-auto max-w-7xl px-4 pb-12 sm:px-8 sm:pb-16">
+            {showWorkTabs && (
+              <div
+                role="tablist"
+                aria-label={job.title}
+                className="mb-5 flex rounded-2xl border border-[#ece7e1] bg-white p-1 shadow-panel"
+              >
+                {(["details", "upload"] as const).map((key) => {
+                  const selected = deliverTab === key;
+                  const label =
+                    key === "details"
+                      ? t("myJob.deliverTabDetails")
+                      : showReviewTabs
+                        ? t("myJob.reviewTab")
+                        : t("myJob.deliverTabUpload");
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      role="tab"
+                      aria-selected={selected}
+                      onClick={() => setDeliverTab(key)}
+                      className={`flex-1 rounded-xl px-3 py-2.5 text-[14px] font-semibold transition-colors ${
+                        selected ? "bg-brand text-white" : "text-[#666] hover:text-[#141414]"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            {showWorkTabs && (
+              <div className={deliverTab === "upload" ? "mx-auto max-w-3xl" : "hidden"}>
+                {showReviewTabs && engagementForJob ? (
+                  <ReviewWorkPanel
+                    submissionNote={engagementForJob.submissionNote}
+                    requirements={job.requirements}
+                    done={reviewResult}
+                    onAccept={(note) => handleReview("accept", note)}
+                    onFeedback={(note) => handleReview("feedback", note)}
+                  />
+                ) : (
+                  <DeliverWorkPanel
+                    submitted={delivered}
+                    passed={workPassed}
+                    submissionNote={engagementForJob?.submissionNote}
+                    releaseDay={releaseDayForJob(job.id)}
+                    feedbackNote={
+                      !workPassed &&
+                      (engagementForJob?.workStatus === "revision_requested" || delivered)
+                        ? engagementForJob?.reviewNote
+                        : ""
+                    }
+                    onSubmit={handleDeliver}
+                  />
+                )}
+              </div>
+            )}
+            {!(showWorkTabs && deliverTab === "upload") && (
             <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-8">
               {/* ── Main column ── */}
               <div className="min-w-0">
+                {workPassed && engagementForJob && (
+                  <div className="mb-5">
+                    <DeliverWorkPanel
+                      passed
+                      submissionNote={engagementForJob.submissionNote}
+                      releaseDay={releaseDayForJob(job.id)}
+                      onSubmit={() => {}}
+                    />
+                  </div>
+                )}
+                {isInfluencer &&
+                hasEngagement &&
+                !showDeliverTabs &&
+                !workPassed &&
+                engagementForJob?.source === "invite" ? (
+                  <div className="mb-5 rounded-[1.25rem] border border-[#b7ebc9] bg-[#ecfdf5] px-5 py-4">
+                    <p className="text-[13px] font-semibold text-[#0f7b34]">
+                      {t("jobDetail.offerAcceptedTitle")}
+                    </p>
+                    <p className="mt-1 text-[18px] font-semibold tracking-[-0.02em] text-[#141414]">
+                      {t("jobDetail.offerAcceptedBody")}
+                    </p>
+                  </div>
+                ) : null}
                 {/* Brief */}
                 <motion.section
                   initial={{ opacity: 0, y: 16 }}
@@ -470,109 +676,12 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
                   </motion.section>
                 </div>
 
-                {/* Ask for more information */}
-                <div className="mt-10 grid grid-cols-1 gap-5">
-                  <motion.section
-                    id="job-ask"
-                    initial={{ opacity: 0, y: 16 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, margin: "-60px" }}
-                    transition={{ duration: 0.4 }}
-                    className={`p-5 sm:p-6 ${PANEL}`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <span className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#f4f0eb] text-[#6a6560]">
-                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden>
-                          <path
-                            d="M3 4H15V12H9L5 15.5V12H3V4Z"
-                            stroke="currentColor"
-                            strokeWidth="1.4"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                      </span>
-                      <div>
-                        <h3 className="text-[16px] font-semibold text-[#141414]">
-                          {dictionary.jobDetail.askSection.title}
-                        </h3>
-                        <p className="mt-0.5 text-[13px] text-[#8a8580]">
-                          {dictionary.jobDetail.askSection.subtitle}
-                        </p>
-                      </div>
-                    </div>
-
-                    {askStatus === "done" ? (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.97 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="mt-5 flex flex-col items-center gap-2 rounded-xl bg-surface py-7 text-center"
-                      >
-                        <span className="grid h-10 w-10 place-items-center rounded-full bg-brand/10 text-brand">
-                          <CheckIcon />
-                        </span>
-                        <p className="text-[14px] font-semibold text-brand">
-                          {dictionary.jobDetail.askSection.successTitle}
-                        </p>
-                        <p className="max-w-xs text-[13px] text-[#5a5550]">
-                          {dictionary.jobDetail.askSection.successBody}
-                        </p>
-                      </motion.div>
-                    ) : (
-                      <form onSubmit={handleAsk} className="mt-5 space-y-4">
-                        <div>
-                          <label
-                            htmlFor="job-question"
-                            className="mb-1.5 block text-[13px] font-semibold text-[#3a3530]"
-                          >
-                            {dictionary.jobDetail.askSection.questionLabel}
-                            <span className="ml-1 text-brand">*</span>
-                          </label>
-                          <textarea
-                            id="job-question"
-                            required
-                            rows={4}
-                            value={question}
-                            onChange={(e) => setQuestion(e.target.value)}
-                            placeholder={dictionary.jobDetail.askSection.questionPlaceholder}
-                            className={`resize-none ${FIELD}`}
-                          />
-                        </div>
-                        <motion.button
-                          type="submit"
-                          disabled={askStatus === "sending" || !question.trim()}
-                          whileHover={question.trim() && askStatus !== "sending" ? { y: -1 } : undefined}
-                          whileTap={question.trim() && askStatus !== "sending" ? { scale: 0.99 } : undefined}
-                          className={`flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#dcd6cf] bg-white text-[14px] font-semibold text-[#3a3530] transition-colors hover:border-[#b9b1a8] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-[#dcd6cf] ${FOCUS_RING}`}
-                        >
-                          {askStatus === "sending" ? (
-                            <>
-                              <svg className="animate-spin" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
-                                <circle
-                                  cx="8"
-                                  cy="8"
-                                  r="6"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeDasharray="28"
-                                  strokeDashoffset="10"
-                                />
-                              </svg>
-                              {dictionary.jobDetail.askSection.sending}
-                            </>
-                          ) : (
-                            dictionary.jobDetail.askSection.send
-                          )}
-                        </motion.button>
-                      </form>
-                    )}
-                  </motion.section>
-                </div>
-
-                {hasEngagement && engagementForJob && user && (
+                {hasEngagement && engagementForJob && user && !showWorkTabs && !workPassed && !(isInfluencer && influencerWaitsForPay) && (
                   <JobWorkspaceSection
                     engagement={engagementForJob}
                     jobId={job.id}
                     isInfluencer={isInfluencer}
+                    hideSubmission={brandPays || showWorkTabs || influencerWaitsForPay}
                     onWorkUpdate={handleWorkUpdate}
                   />
                 )}
@@ -664,22 +773,41 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
                         </button>
                       </>
                     ) : hasEngagement && engagementForJob ? (
-                      <div className="rounded-xl bg-surface px-3.5 py-4">
-                        <p className="text-[13px] font-semibold text-[#3a3530]">
-                          {t("flow.jobActive")}
-                        </p>
-                        <p className="mt-1 text-[12px] leading-relaxed text-[#7a7570]">
-                          {engagementForJob.workStatus === "submitted" && !isInfluencer
-                            ? t("myJob.detailWorkSection")
-                            : t("jobDetail.viewActiveJob")}
-                        </p>
-                        <a
-                          href="#job-workspace"
-                          className={`mt-3 flex h-11 w-full items-center justify-center rounded-xl bg-accent text-[14px] font-semibold text-on-accent ${FOCUS_RING}`}
-                        >
-                          {t("jobDetail.viewActiveJob")}
-                        </a>
-                      </div>
+                      <>
+                        <div className="rounded-xl bg-surface px-3.5 py-4">
+                          <p className="text-[13px] font-semibold text-[#3a3530]">
+                            {isInfluencer && engagementForJob.source === "invite"
+                              ? t("jobDetail.offerAcceptedTitle")
+                              : t("flow.jobActive")}
+                          </p>
+                          {isInfluencer && engagementForJob.source === "invite" && !showDeliverTabs && !workPassed ? (
+                            <p className="mt-1 text-[15px] font-semibold leading-relaxed text-[#141414]">
+                              {t("jobDetail.offerAcceptedBody")}
+                            </p>
+                          ) : brandPays || showWorkTabs ? null : engagementForJob.workStatus === "submitted" && !isInfluencer ? (
+                            <p className="mt-1 text-[12px] leading-relaxed text-[#7a7570]">
+                              {t("myJob.detailWorkSection")}
+                            </p>
+                          ) : null}
+                          {showWorkTabs ? (
+                            <button
+                              type="button"
+                              onClick={() => setDeliverTab("upload")}
+                              className={`mt-3 flex h-12 w-full items-center justify-center rounded-xl bg-brand text-[15px] font-semibold text-white shadow-brand transition-colors hover:bg-brand-hover ${FOCUS_RING}`}
+                            >
+                              {showReviewTabs ? t("myJob.reviewTab") : t("myJob.deliverTabUpload")}
+                            </button>
+                          ) : null}
+                        </div>
+                        {brandPays && (
+                          <Link
+                            href={`/jobs/${job.id}/pay?engagement=${encodeURIComponent(engagementForJob.id)}`}
+                            className={`flex h-12 w-full items-center justify-center rounded-xl bg-brand text-[15px] font-semibold text-white shadow-brand transition-colors hover:bg-brand-hover ${FOCUS_RING}`}
+                          >
+                            {t("jobDetail.startPayment")}
+                          </Link>
+                        )}
+                      </>
                     ) : isDeclinedOffer ? (
                       <div className="rounded-xl bg-surface px-3.5 py-4 text-center">
                         <p className="text-[13px] font-semibold text-[#3a3530]">
@@ -716,10 +844,25 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
                 </motion.div>
               </aside>
             </div>
+            )}
           </div>
         </div>
 
         {/* Mobile action bar — the sidebar CTA sits below the fold on small screens */}
+        {brandPays && engagementForJob && (
+          <>
+            <div aria-hidden className="h-20 lg:hidden" />
+            <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#ece7e1] bg-white/95 px-4 py-3 shadow-panel-dock backdrop-blur lg:hidden">
+              <Link
+                href={`/jobs/${job.id}/pay?engagement=${encodeURIComponent(engagementForJob.id)}`}
+                className={`flex h-12 w-full items-center justify-center rounded-xl bg-brand text-[15px] font-semibold text-white shadow-brand transition-colors hover:bg-brand-hover ${FOCUS_RING}`}
+              >
+                {t("jobDetail.startPayment")}
+              </Link>
+            </div>
+          </>
+        )}
+
         {showMobileApplyBar && (
           <>
             <div aria-hidden className="h-20 lg:hidden" />

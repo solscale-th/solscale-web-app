@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { FlowCard, FlowPage, fieldClass, primaryBtn, secondaryBtn } from "@/components/flow-page-shell";
 import { useAuth } from "@/hooks/use-auth";
 import { useLanguage } from "@/i18n/language-provider";
+import { createJob } from "@/lib/jobs";
 import { PLATFORM_COLORS, type Platform } from "@/lib/mock-jobs";
 import { getInfluencerById } from "@/lib/mock-influencers";
 
@@ -334,6 +335,8 @@ export default function SendInviteContent() {
   const [requiredMessage, setRequiredMessage] = useState("");
   const [forbiddenMessage, setForbiddenMessage] = useState("");
   const [requestSent, setRequestSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   const earliest = useMemo(() => minPostingValue(), []);
   const briefReady = Boolean(product) && description.trim().length > 0 && languages.length > 0;
   const requirementsReady =
@@ -395,6 +398,67 @@ export default function SendInviteContent() {
       else delete next[key];
       return next;
     });
+  }
+
+  async function handleSendRequest(event: React.FormEvent) {
+    event.preventDefault();
+    if (sending) return;
+    setSubmitError("");
+    setSending(true);
+    try {
+      const postingLabel = formatPosting(confirmedPosting || postingAt);
+      const languageLabel = languages
+        .map((id) => {
+          const option = LANGUAGE_OPTIONS.find((item) => item.id === id);
+          return option ? t(`flow.${option.labelKey}`) : id;
+        })
+        .join(", ");
+      const deliverables = [
+        [packageName, packageDetail, hasPackagePrice ? formatBaht(packagePrice) : ""]
+          .filter(Boolean)
+          .join(" — "),
+        ...addons.map((item) => `${item.name} — ${formatBaht(item.price)}`),
+      ].filter(Boolean);
+      const requirements = [
+        `${t("flow.hirePostingTime")}: ${postingLabel}`,
+        `${t("flow.hireProduct")}: ${product}`,
+        `${t("flow.hireLanguages")}: ${languageLabel}`,
+        subtitle.trim() ? `${t("flow.hireCaption")}: ${subtitle.trim()}` : "",
+        ...JOB_FILES.flatMap((item) => {
+          const file = jobFiles[item.key];
+          return file ? [`${t(`flow.${item.titleKey}`)}: ${file.name}`] : [];
+        }),
+        `${t("flow.hireRequiredMessage")}: ${requiredMessage.trim()}`,
+        `${t("flow.hireForbiddenMessage")}: ${forbiddenMessage.trim()}`,
+      ].filter(Boolean);
+
+      await createJob({
+        title: `${product} — ${packageName}`,
+        description: description.trim(),
+        brief: [
+          `${t("flow.hireSubtitle", { name: influencerName })}`,
+          ...deliverables,
+          `${t("flow.hirePostingTime")}: ${postingLabel}`,
+          `${t("flow.hireLanguages")}: ${languageLabel}`,
+          subtitle.trim() ? `${t("flow.hireCaption")}: ${subtitle.trim()}` : "",
+          `${t("flow.hireRequiredMessage")}: ${requiredMessage.trim()}`,
+          `${t("flow.hireForbiddenMessage")}: ${forbiddenMessage.trim()}`,
+        ]
+          .filter(Boolean)
+          .join("\n"),
+        platform: platform ?? "Instagram",
+        deliverables,
+        requirements,
+        duration: postingLabel,
+        budgetMin: Math.round(total),
+        budgetMax: Math.round(total),
+      });
+      setRequestSent(true);
+    } catch (err) {
+      setSubmitError(err instanceof Error && err.message ? err.message : t("flow.hireSubmitFailed"));
+    } finally {
+      setSending(false);
+    }
   }
 
   function onJobFile(key: JobFileKey, list: FileList | null) {
@@ -526,22 +590,22 @@ export default function SendInviteContent() {
               {t("flow.hireSent", { name: influencerName })}
             </p>
           ) : (
-            <form
-              className="mt-5 space-y-3"
-              onSubmit={(event) => {
-                event.preventDefault();
-                setRequestSent(true);
-              }}
-            >
+            <form className="mt-5 space-y-3" onSubmit={handleSendRequest}>
               <p className="rounded-xl border border-[#f0d3a8] bg-[#fff6e8] px-3.5 py-3 text-[13px] leading-relaxed text-[#7a4e12]">
                 {t("flow.hireLockWarning")}
               </p>
+              {submitError && <p className="text-[13px] text-[#c0392b]">{submitError}</p>}
               <div className="flex flex-col-reverse gap-2.5 sm:flex-row">
-                <button type="button" onClick={() => setStep(3)} className={`${secondaryBtn} sm:flex-1`}>
+                <button
+                  type="button"
+                  onClick={() => setStep(3)}
+                  className={`${secondaryBtn} sm:flex-1`}
+                  disabled={sending}
+                >
                   {t("flow.hireBack")}
                 </button>
-                <button type="submit" className={`${primaryBtn} sm:flex-1`}>
-                  {t("flow.hireSubmit")}
+                <button type="submit" className={`${primaryBtn} sm:flex-1`} disabled={sending}>
+                  {sending ? t("flow.hireSending") : t("flow.hireSubmit")}
                 </button>
               </div>
             </form>

@@ -44,6 +44,19 @@ export function reduceFlowchart(
       };
     }
 
+    case "SYNC_POSTED_JOB": {
+      const exists = state.postedJobs.some((job) => job.id === action.job.id);
+      if (!exists) {
+        return { ...state, postedJobs: [...state.postedJobs, action.job] };
+      }
+      return {
+        ...state,
+        postedJobs: state.postedJobs.map((job) =>
+          job.id === action.job.id ? action.job : job
+        ),
+      };
+    }
+
     case "APPLY_TO_JOB": {
       const duplicate = state.applications.some(
         (item) =>
@@ -175,7 +188,19 @@ export function reduceFlowchart(
       return replaceEngagement(state, {
         ...engagement,
         workStatus: "approved",
-        reviewNote: "Work has been approved.",
+        reviewNote: action.note?.trim() ? action.note : "Work has been approved.",
+      });
+    }
+
+    case "PAY_JOB": {
+      const engagement = requireEngagement(state, action.engagementId);
+      if (engagement.checkoutPaid) return state;
+      if (engagement.paymentStatus !== "escrowed") {
+        throw new FlowchartError("PAYMENT_NOT_ESCROWED");
+      }
+      return replaceEngagement(state, {
+        ...engagement,
+        checkoutPaid: true,
       });
     }
 

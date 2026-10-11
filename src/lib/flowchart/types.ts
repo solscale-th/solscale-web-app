@@ -84,6 +84,8 @@ export type FlowEngagement = {
   influencerAvatarBg: string;
   workStatus: WorkStatus;
   paymentStatus: PaymentStatus;
+  /** Brand has paid the checkout that starts the job. */
+  checkoutPaid?: boolean;
   escrowAmount: number;
   submissionNote: string;
   reviewNote: string;
@@ -166,7 +168,9 @@ export type FlowAction =
   | { type: "REJECT_APPLICATION"; applicationId: string }
   | { type: "SUBMIT_WORK"; engagementId: string; note: string }
   | { type: "REQUEST_REVISION"; engagementId: string; note: string }
-  | { type: "APPROVE_WORK"; engagementId: string }
+  | { type: "APPROVE_WORK"; engagementId: string; note?: string }
+  | { type: "SYNC_POSTED_JOB"; job: FlowPostedJob }
+  | { type: "PAY_JOB"; engagementId: string }
   | { type: "RELEASE_PAYMENT"; engagementId: string }
   | { type: "RAISE_DISPUTE"; dispute: FlowDispute }
   | { type: "LEAVE_RATING"; rating: FlowRating };

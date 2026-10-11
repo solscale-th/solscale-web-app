@@ -10,11 +10,15 @@ import {
   formatSent,
   type DirectOffer,
 } from "@/lib/mock-direct";
-import { MOCK_JOBS } from "@/lib/mock-jobs";
+import { formatOfferPrice, MOCK_JOBS, postingDateLabel } from "@/lib/mock-jobs";
 import { getSeenDirectIds, markDirectSeen, SEEN_DIRECT_EVENT } from "@/lib/seen-direct";
 import { useFlowchart } from "@/hooks/use-flowchart";
 import { findJobById } from "@/lib/flowchart/jobs";
 import { logJobList } from "@/lib/jobs";
+import {
+  ensureAcceptedPrivateOffers,
+  ensureHireRequestInvite,
+} from "@/lib/mock-hire-request";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -35,15 +39,17 @@ function UpdateDot() {
 function DirectOfferCard({
   offer,
   seen,
+  emphasize,
 }: {
   offer: DirectOffer;
   seen: boolean;
+  emphasize?: boolean;
 }) {
   const { t } = useLanguage();
   const job = findJobById(offer.jobId) ?? MOCK_JOBS.find((j) => j.id === offer.jobId);
   if (!job) return null;
 
-  const showDot = offer.hasUpdate && !seen;
+  const showDot = Boolean(offer.needsPayment) || (offer.hasUpdate && !seen);
 
   return (
     <div className="relative flex flex-col rounded-2xl border border-[#f0f0f0] bg-white shadow-[0_2px_10px_rgba(0,0,0,0.07)] transition-shadow hover:shadow-[0_4px_18px_rgba(0,0,0,0.12)]">
@@ -61,9 +67,23 @@ function DirectOfferCard({
       <div className="flex flex-1 flex-col gap-2 p-3.5">
         <h3 className="line-clamp-2 text-[14px] font-bold leading-snug text-[#111]">{job.title}</h3>
         <p className="text-[12px] text-[#888]">{offer.fromCompany}</p>
-        <p className="text-[11px] text-[#999]">
-          {t("direct.offeredLabel")}: {formatSent(offer.sentDaysAgo)}
-        </p>
+        {emphasize ? (
+          <>
+            <p className="text-[20px] font-semibold tabular-nums tracking-[-0.03em] text-brand">
+              {formatOfferPrice(job.budgetMin, job.budgetMax)}
+            </p>
+            <p className="text-[13px] font-semibold text-[#141414]">
+              {t("flow.hirePostingTime")}: {postingDateLabel(job)}
+            </p>
+          </>
+        ) : (
+          <p className="text-[11px] text-[#999]">
+            {t("direct.offeredLabel")}: {formatSent(offer.sentDaysAgo)}
+          </p>
+        )}
+        {offer.needsPayment ? (
+          <p className="text-[12px] font-semibold text-[#ff2d55]">{t("direct.paymentDue")}</p>
+        ) : null}
 
         <div className="mt-auto pt-1">
           <Link
@@ -142,6 +162,12 @@ export default function DirectListContent() {
     return () => window.removeEventListener(SEEN_DIRECT_EVENT, sync);
   }, []);
 
+  useEffect(() => {
+    if (!user) return;
+    if (user.role === "influencer") ensureHireRequestInvite(user);
+    else ensureAcceptedPrivateOffers(user);
+  }, [user]);
+
   if (!user) return null;
 
   const isInfluencer = user.role === "influencer";
@@ -166,7 +192,12 @@ export default function DirectListContent() {
   /* ── Influencer: private invites (seed + live) ── */
   const liveOffers = isInfluencer
     ? state.invites
-        .filter((inv) => inv.influencerId === user.id)
+        .filter((inv) => {
+          if (inv.influencerId !== user.id) return false;
+          return !state.engagements.some(
+            (engagement) => engagement.sourceId === inv.id && engagement.checkoutPaid
+          );
+        })
         .map((inv) => ({
           id: inv.id,
           jobId: inv.jobId,
@@ -197,7 +228,13 @@ export default function DirectListContent() {
   const sentOffers = isInfluencer
     ? []
     : state.invites
-        .filter((inv) => inv.entrepreneurId === user.id)
+        .filter((inv) => {
+          if (inv.entrepreneurId !== user.id) return false;
+          const engagement = state.engagements.find(
+            (item) => item.source === "invite" && item.sourceId === inv.id
+          );
+          return !engagement || engagement.workStatus === "not_submitted";
+        })
         .map((inv) => ({
           id: inv.id,
           jobId: inv.jobId,
@@ -207,6 +244,13 @@ export default function DirectListContent() {
           isPrivate: inv.isPrivate,
           status: inv.status,
           hasUpdate: inv.status === "pending",
+          needsPayment: state.engagements.some(
+            (engagement) =>
+              engagement.source === "invite" &&
+              engagement.sourceId === inv.id &&
+              engagement.paymentStatus === "escrowed" &&
+              !engagement.checkoutPaid
+          ),
         }));
   const isEmpty = isInfluencer ? sortedOffers.length === 0 : sentOffers.length === 0;
 
@@ -250,13 +294,23 @@ export default function DirectListContent() {
           ) : isInfluencer ? (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {sortedOffers.map((offer) => (
-                <DirectOfferCard key={offer.id} offer={offer} seen={seenIds.has(offer.id)} />
+                <DirectOfferCard
+                  key={offer.id}
+                  offer={offer}
+                  seen={seenIds.has(offer.id)}
+                  emphasize={offer.isPrivate}
+                />
               ))}
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {sentOffers.map((offer) => (
-                <DirectOfferCard key={offer.id} offer={offer} seen={seenIds.has(offer.id)} />
+                <DirectOfferCard
+                  key={offer.id}
+                  offer={offer}
+                  seen={seenIds.has(offer.id)}
+                  emphasize={offer.isPrivate}
+                />
               ))}
             </div>
           )}

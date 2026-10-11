@@ -1,11 +1,10 @@
 import type { FlowEngagement } from "@/lib/flowchart/types";
 
 /** Hash targets on the job detail page. */
-export type JobDetailSection = "submit-work" | "ask" | "workspace";
+export type JobDetailSection = "submit-work" | "workspace";
 
 const SECTION_HASH: Record<JobDetailSection, string> = {
   "submit-work": "job-submit-work",
-  ask: "job-ask",
   workspace: "job-workspace",
 };
 

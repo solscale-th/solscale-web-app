@@ -24,6 +24,8 @@ export type DirectOffer = {
   status: DirectOfferStatus;
   /** true = status changed since the influencer last viewed this card */
   hasUpdate: boolean;
+  /** Brand still needs to pay. The card keeps its dot until payment is released. */
+  needsPayment?: boolean;
 };
 
 /** Keyed by influencer userId */

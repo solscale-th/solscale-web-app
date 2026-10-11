@@ -798,25 +798,6 @@ export default function InfluencerDetailContent({ influencer }: Props) {
                         {t("influencerDetail.selectPackageHint")}
                       </p>
                     )}
-                    {influencer.email ? (
-                      <motion.a
-                        href={`mailto:${influencer.email}`}
-                        whileHover={{ scale: 1.01 }}
-                        whileTap={{ scale: 0.99 }}
-                        className="flex h-11 w-full items-center justify-center rounded-xl border border-brand/20 bg-white/60 text-[14px] font-medium text-[#555] hover:border-brand hover:text-brand transition-colors"
-                      >
-                        {t("influencerDetail.sendMessage")}
-                      </motion.a>
-                    ) : (
-                      <motion.button
-                        type="button"
-                        whileHover={{ scale: 1.01 }}
-                        whileTap={{ scale: 0.99 }}
-                        className="flex h-11 w-full items-center justify-center rounded-xl border border-brand/20 bg-white/60 text-[14px] font-medium text-[#555] hover:border-brand hover:text-brand transition-colors"
-                      >
-                        {t("influencerDetail.sendMessage")}
-                      </motion.button>
-                    )}
                   </div>
                 </motion.div>
               </motion.div>

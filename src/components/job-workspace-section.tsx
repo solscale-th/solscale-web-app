@@ -204,6 +204,7 @@ export type JobWorkspaceSectionProps = {
   engagement: FlowEngagement;
   jobId: string;
   isInfluencer: boolean;
+  hideSubmission?: boolean;
   onWorkUpdate: (next: {
     workStatus?: WorkStatus;
     submissionNote?: string;
@@ -215,6 +216,7 @@ export default function JobWorkspaceSection({
   engagement,
   jobId,
   isInfluencer,
+  hideSubmission = false,
   onWorkUpdate,
 }: JobWorkspaceSectionProps) {
   const { t } = useLanguage();
@@ -255,15 +257,17 @@ export default function JobWorkspaceSection({
         </div>
       )}
 
-      <div id="job-submit-work">
-        <WorkPanel
-          engagement={engagement}
-          isInfluencer={isInfluencer}
-          onUpdate={onWorkUpdate}
-        />
-      </div>
+      {!hideSubmission && (
+        <div id="job-submit-work">
+          <WorkPanel
+            engagement={engagement}
+            isInfluencer={isInfluencer}
+            onUpdate={onWorkUpdate}
+          />
+        </div>
+      )}
 
-      {!isInfluencer &&
+      {!hideSubmission && !isInfluencer &&
         engagement.workStatus === "approved" &&
         engagement.paymentStatus === "escrowed" && (
           <Link

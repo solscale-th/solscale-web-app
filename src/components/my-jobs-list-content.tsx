@@ -15,11 +15,17 @@ import { MOCK_JOBS } from "@/lib/mock-jobs";
 import { getSeenMyJobIds, markMyJobSeen, SEEN_MY_JOBS_EVENT } from "@/lib/seen-my-jobs";
 import { useFlowchart } from "@/hooks/use-flowchart";
 import { findJobById } from "@/lib/flowchart/jobs";
+import {
+  ensurePassedJobs,
+  ensureReadyToSubmitJobs,
+  ensureRevisionJobs,
+  ensureSubmittedReviews,
+} from "@/lib/mock-hire-request";
 import { jobDetailHref, type JobDetailSection } from "@/lib/job-detail-href";
 import type { FlowEngagement } from "@/lib/flowchart/types";
 import { SendUrlsDialog } from "@/components/submission-url-form";
 
-function flowToEngagement(eng: FlowEngagement): JobEngagement {
+function flowToEngagement(eng: FlowEngagement, isInfluencer: boolean): JobEngagement {
   return {
     id: eng.id,
     jobId: eng.jobId,
@@ -32,7 +38,11 @@ function flowToEngagement(eng: FlowEngagement): JobEngagement {
     submissionNote: eng.submissionNote,
     reviewNote: eng.reviewNote,
     messages: [],
-    hasUpdate: eng.workStatus === "submitted",
+    hasUpdate: isInfluencer
+      ? eng.workStatus === "submitted" || eng.workStatus === "revision_requested"
+      : eng.workStatus === "submitted",
+    checkoutPaid: eng.checkoutPaid === true,
+    source: eng.source,
   };
 }
 
@@ -77,6 +87,14 @@ function EngagementCard({
 
   const showDot = engagement.hasUpdate && !seen;
   const statusInfo = WORK_STATUS_LABELS[engagement.workStatus];
+  const readyToDeliver =
+    isInfluencer &&
+    engagement.checkoutPaid === true &&
+    canSubmitWork(engagement.workStatus);
+  const workPassed = isInfluencer && engagement.workStatus === "approved";
+  const waitingForPay =
+    isInfluencer && engagement.source === "invite" && engagement.checkoutPaid !== true;
+  const readyToReview = !isInfluencer && engagement.workStatus === "submitted";
 
   const initials = engagement.influencerName
     .split(" ")
@@ -88,6 +106,16 @@ function EngagementCard({
   function navigate(section?: JobDetailSection) {
     if (engagement.hasUpdate) markMyJobSeen(engagement.id);
     router.push(jobDetailHref(engagement.jobId, engagement.id, section));
+  }
+
+  function openUpload() {
+    if (engagement.hasUpdate) markMyJobSeen(engagement.id);
+    router.push(`${jobDetailHref(engagement.jobId, engagement.id)}&tab=upload`);
+  }
+
+  function openReview() {
+    if (engagement.hasUpdate) markMyJobSeen(engagement.id);
+    router.push(`${jobDetailHref(engagement.jobId, engagement.id)}&tab=review`);
   }
 
   const primaryLabel = isInfluencer ? t("myJob.submitWork") : t("myJob.reviewWork");
@@ -127,7 +155,11 @@ function EngagementCard({
 
         {/* Action buttons */}
         <div className="mt-auto flex flex-col gap-1.5 pt-1">
-          {isInfluencer && canSubmitWork(engagement.workStatus) && onSendUrls && (
+          {isInfluencer &&
+            canSubmitWork(engagement.workStatus) &&
+            onSendUrls &&
+            !readyToDeliver &&
+            engagement.source !== "invite" && (
             <button
               type="button"
               onClick={onSendUrls}
@@ -136,33 +168,24 @@ function EngagementCard({
               {t("myJob.sendUrls")}
             </button>
           )}
+          {!workPassed && !waitingForPay && (
           <button
             type="button"
-            onClick={() => navigate("submit-work")}
-            className={`block w-full rounded-xl px-3.5 py-2 text-center text-[12px] font-semibold transition-colors ${
-              isInfluencer && canSubmitWork(engagement.workStatus)
-                ? "border border-brand text-brand hover:bg-brand/5"
-                : "bg-brand text-white hover:bg-brand-hover"
-            }`}
+            onClick={() =>
+              readyToDeliver ? openUpload() : readyToReview ? openReview() : navigate("submit-work")
+            }
+            className="block w-full rounded-xl bg-brand px-3.5 py-2 text-center text-[12px] font-semibold text-white transition-colors hover:bg-brand-hover"
           >
             {primaryLabel}
           </button>
-          <div className="grid grid-cols-2 gap-1.5">
-            <button
-              type="button"
-              onClick={() => navigate()}
-              className="rounded-xl border border-brand px-2 py-1.5 text-[11px] font-semibold text-brand transition-colors hover:bg-brand/5"
-            >
-              {t("myJob.viewDetails")}
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate("ask")}
-              className="rounded-xl border border-[#ccc] px-2 py-1.5 text-[11px] font-medium text-[#555] transition-colors hover:bg-surface"
-            >
-              {t("myJob.askQuestion")}
-            </button>
-          </div>
+          )}
+          <button
+            type="button"
+            onClick={() => navigate()}
+            className="rounded-xl border border-brand px-2 py-1.5 text-[11px] font-semibold text-brand transition-colors hover:bg-brand/5"
+          >
+            {t("myJob.viewDetails")}
+          </button>
         </div>
       </div>
     </div>
@@ -233,6 +256,15 @@ export default function MyJobsListContent() {
   }, []);
 
   useEffect(() => {
+    if (user?.role === "influencer") {
+      ensureReadyToSubmitJobs(user);
+      ensureRevisionJobs(user);
+      ensurePassedJobs(user);
+    }
+    else if (user?.role === "entrepreneur") ensureSubmittedReviews(user);
+  }, [user]);
+
+  useEffect(() => {
     const sync = () => setSeenIds(new Set(getSeenMyJobIds()));
     sync();
     window.addEventListener(SEEN_MY_JOBS_EVENT, sync);
@@ -266,7 +298,7 @@ export default function MyJobsListContent() {
       }
       return eng.entrepreneurId === user.id;
     })
-    .map(flowToEngagement);
+    .map((eng) => flowToEngagement(eng, isInfluencer));
   const sortedList = [...liveList].sort((a, b) => {
     if (sortKey === "dateAdded") {
       const n = notifFirst(a.hasUpdate, a.id, b.hasUpdate, b.id);

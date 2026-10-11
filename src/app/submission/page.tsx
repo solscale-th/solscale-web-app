@@ -1,10 +1,5 @@
-import RequireAuth from "@/components/require-auth";
-import SubmissionListContent from "@/components/submission-list-content";
+import { redirect } from "next/navigation";
 
 export default function SubmissionPage() {
-  return (
-    <RequireAuth returnTo="/submission">
-      <SubmissionListContent />
-    </RequireAuth>
-  );
+  redirect("/my-jobs");
 }

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useLanguage } from "@/i18n/language-provider";
 import { useAuth } from "@/hooks/use-auth";
 import { useFlowchart } from "@/hooks/use-flowchart";
@@ -10,11 +10,9 @@ import {
   liveApplicationBadgeCount,
   liveDirectBadgeCount,
   liveMyJobBadgeCount,
-  liveSubmissionBadgeCount,
 } from "@/lib/flowchart/badges";
 import { getSeenIds, SEEN_CHANGE_EVENT } from "@/lib/seen-applications";
 import { getSeenDirectIds, SEEN_DIRECT_EVENT } from "@/lib/seen-direct";
-import { getSeenSubmissionIds, SEEN_SUBMISSION_EVENT } from "@/lib/seen-submissions";
 import { getSeenMyJobIds, SEEN_MY_JOBS_EVENT } from "@/lib/seen-my-jobs";
 import LanguageSwitcher from "./language-switcher";
 import SiteLogo from "./site-logo";
@@ -51,8 +49,13 @@ function AuthLinks({ compact = false }: { compact?: boolean }) {
   );
 }
 
+function isCurrentTab(pathname: string, href: string) {
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
 export default function MainHeader() {
   const router = useRouter();
+  const pathname = usePathname();
   const { t } = useLanguage();
   const { user, isLoggedIn, logout } = useAuth();
   const { state } = useFlowchart();
@@ -61,7 +64,6 @@ export default function MainHeader() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
   const [seenDirectIds, setSeenDirectIds] = useState<Set<string>>(new Set());
-  const [seenSubmissionIds, setSeenSubmissionIds] = useState<Set<string>>(new Set());
   const [seenMyJobIds, setSeenMyJobIds] = useState<Set<string>>(new Set());
 
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -80,14 +82,6 @@ export default function MainHeader() {
     sync();
     window.addEventListener(SEEN_DIRECT_EVENT, sync);
     return () => window.removeEventListener(SEEN_DIRECT_EVENT, sync);
-  }, []);
-
-  // Sync submission seen IDs
-  useEffect(() => {
-    const sync = () => setSeenSubmissionIds(new Set(getSeenSubmissionIds()));
-    sync();
-    window.addEventListener(SEEN_SUBMISSION_EVENT, sync);
-    return () => window.removeEventListener(SEEN_SUBMISSION_EVENT, sync);
   }, []);
 
   // Sync my-jobs seen IDs
@@ -118,15 +112,11 @@ export default function MainHeader() {
   const myJobBadge = user
     ? liveMyJobBadgeCount(state, user.id, user.role, seenMyJobIds)
     : 0;
-  const submissionBadge = user
-    ? liveSubmissionBadgeCount(state, user.id, user.role, seenSubmissionIds)
-    : 0;
 
   const navItems = [
     { label: t("nav.application"), href: "/applications", badge: applicationBadge },
     { label: t("nav.direct"),      href: "/direct",       badge: directBadge      },
     { label: t("nav.myJob"),       href: "/my-jobs",      badge: myJobBadge       },
-    { label: t("nav.submission"),  href: "/submission",   badge: submissionBadge  },
   ];
 
   function handleLogout() {
@@ -148,13 +138,21 @@ export default function MainHeader() {
 
         {/* Desktop nav – centre column (logged-in only) */}
         {isLoggedIn && (
-          <nav className="hidden md:flex col-start-2 items-center gap-2 text-sm font-medium">
-            {navItems.map((item) => (
+          <nav className="hidden md:flex col-start-2 h-16 items-stretch gap-1 text-sm font-medium">
+            {navItems.map((item) => {
+              const current = isCurrentTab(pathname, item.href);
+              return (
               <a
                 key={item.label}
                 href={item.href}
-                className="relative flex items-center gap-2 rounded-lg px-4 py-2 transition-colors hover:bg-black/5"
+                aria-current={current ? "page" : undefined}
+                className={`relative flex items-center gap-2 px-4 transition-colors ${
+                  current ? "font-semibold text-brand" : "rounded-lg hover:bg-black/5"
+                }`}
               >
+                {current && (
+                  <span aria-hidden className="absolute inset-x-3 bottom-0 h-[3px] rounded-full bg-brand" />
+                )}
                 {item.label}
                 {item.badge > 0 && (
                   <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1.5 text-[11px] font-black leading-none text-brand-mark">
@@ -162,7 +160,8 @@ export default function MainHeader() {
                   </span>
                 )}
               </a>
-            ))}
+              );
+            })}
           </nav>
         )}
 
@@ -273,12 +272,19 @@ export default function MainHeader() {
       {isLoggedIn && user && mobileMenuOpen && (
         <div className="md:hidden border-t border-black/5 bg-paper px-4 pb-4 pt-2">
           <nav className="flex flex-col gap-1">
-            {navItems.map((item) => (
+            {navItems.map((item) => {
+              const current = isCurrentTab(pathname, item.href);
+              return (
               <a
                 key={item.label}
                 href={item.href}
+                aria-current={current ? "page" : undefined}
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-black/5"
+                className={`flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                  current
+                    ? "border-l-[3px] border-brand bg-brand/10 font-semibold text-brand"
+                    : "border-l-[3px] border-transparent hover:bg-black/5"
+                }`}
               >
                 {item.label}
                 {item.badge > 0 && (
@@ -287,7 +293,8 @@ export default function MainHeader() {
                   </span>
                 )}
               </a>
-            ))}
+              );
+            })}
           </nav>
 
           <div className="mt-3 border-t border-black/5 pt-3">

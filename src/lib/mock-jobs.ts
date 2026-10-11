@@ -251,6 +251,22 @@ export function formatBudgetRange(min: number, max: number): string {
   return `฿${min.toLocaleString()} – ฿${max.toLocaleString()}`;
 }
 
+/** A fixed private offer shows one price. Open jobs keep the range. */
+export function formatOfferPrice(min: number, max: number): string {
+  if (min === max) return `฿${min.toLocaleString()}`;
+  return formatBudgetRange(min, max);
+}
+
+/** Posting day from the hire brief. Falls back to the job duration. */
+export function postingDateLabel(job: {
+  duration: string;
+  requirements: string[];
+}): string {
+  const line = job.requirements.find((req) => /^posting date:/i.test(req));
+  if (line) return line.replace(/^[^:]+:\s*/, "");
+  return job.duration.replace(/^post on\s+/i, "");
+}
+
 export function formatPosted(daysAgo: number): string {
   if (daysAgo === 0) return "Today";
   if (daysAgo === 1) return "Yesterday";

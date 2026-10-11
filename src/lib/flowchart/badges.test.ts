@@ -76,6 +76,46 @@ describe("live nav badges", () => {
     expect(liveMyJobBadgeCount(state, "10", "influencer", seen)).toBe(1);
   });
 
+  it("keeps a payment dot for the brand after a private offer is accepted", () => {
+    const state = {
+      ...createEmptyFlowchartState(),
+      invites: [invite({ status: "accepted" })],
+      engagements: [engagement({ paymentStatus: "escrowed", sourceId: "inv-1" })],
+    };
+
+    expect(liveDirectBadgeCount(state, "2", "entrepreneur", new Set(["inv-1"]))).toBe(1);
+  });
+
+  it("drops the payment dot once the brand has paid the checkout", () => {
+    const state = {
+      ...createEmptyFlowchartState(),
+      invites: [invite({ status: "accepted" })],
+      engagements: [engagement({ paymentStatus: "escrowed", checkoutPaid: true, sourceId: "inv-1" })],
+    };
+
+    expect(liveDirectBadgeCount(state, "2", "entrepreneur", new Set())).toBe(0);
+  });
+
+  it("drops the payment dot once the brand has paid", () => {
+    const state = {
+      ...createEmptyFlowchartState(),
+      invites: [invite({ status: "accepted" })],
+      engagements: [engagement({ paymentStatus: "released", sourceId: "inv-1" })],
+    };
+
+    expect(liveDirectBadgeCount(state, "2", "entrepreneur", new Set())).toBe(0);
+  });
+
+  it("counts a revision request on Current Job for the influencer", () => {
+    const state = {
+      ...createEmptyFlowchartState(),
+      engagements: [engagement({ workStatus: "revision_requested" })],
+    };
+
+    expect(liveMyJobBadgeCount(state, "10", "influencer", new Set())).toBe(1);
+    expect(liveMyJobBadgeCount(state, "2", "entrepreneur", new Set())).toBe(0);
+  });
+
   it("does not badge a pending application as an update for the influencer", () => {
     const state = {
       ...createEmptyFlowchartState(),
