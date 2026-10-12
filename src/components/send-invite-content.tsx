@@ -112,7 +112,7 @@ function SummaryField({ label, value }: { label: string; value: string }) {
   );
 }
 
-function HireSteps({ step }: { step: number }) {
+export function HireSteps({ step }: { step: number }) {
   const { t } = useLanguage();
   const labels = HIRE_STEPS.map((key) => t(`flow.${key}`));
   const progress = ((step - 1) / (labels.length - 1)) * 75;
@@ -176,7 +176,7 @@ function HireSteps({ step }: { step: number }) {
   );
 }
 
-function ProductAutocomplete({
+export function ProductAutocomplete({
   value,
   onChange,
   placeholder,

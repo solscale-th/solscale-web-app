@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   motion,
   useMotionValue,
@@ -12,7 +11,6 @@ import {
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { HeroScene } from "@/components/hero-scene";
-import JobAudienceModal, { jobCreateHref } from "@/components/job-audience-modal";
 import MainHeader from "@/components/main-header";
 import SiteFooter from "@/components/site-footer";
 import { useAuth } from "@/hooks/use-auth";
@@ -222,7 +220,6 @@ const SCROLL_VIEWPORT = { once: true, amount: 0.2, margin: "0px 0px -56px 0px" }
 const HERO_TILT_SPRING = { stiffness: 120, damping: 26, mass: 0.6 } as const;
 
 export default function HomePageContent() {
-  const router = useRouter();
   const { t, dictionary } = useLanguage();
   const { user } = useAuth();
   const prefersReducedMotion = useReducedMotion();
@@ -238,7 +235,6 @@ export default function HomePageContent() {
   const isEntrepreneur = user?.role === "entrepreneur";
   const showFollowerRange = !isInfluencer;
   const showPriceRange = !isEntrepreneur;
-  const [audienceOpen, setAudienceOpen] = useState(false);
 
   const sectionReveal = prefersReducedMotion
     ? { initial: false as const }
@@ -970,16 +966,15 @@ export default function HomePageContent() {
           {!isInfluencer && (
             <div className="hero-rise hero-rise-delay-3 mt-6 sm:mt-7">
               {isEntrepreneur ? (
-                <button
-                  type="button"
-                  onClick={() => setAudienceOpen(true)}
+                <Link
+                  href="/jobs/new?audience=open"
                   className="inline-flex items-center gap-2 rounded-full bg-accent px-6 py-3 text-[13px] font-semibold text-on-accent transition-colors hover:bg-accent-hover sm:text-[14px]"
                 >
                   <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden>
                     <path d="M6 2.5V9.5M2.5 6H9.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
                   </svg>
                   {t("hero.postJobCta")}
-                </button>
+                </Link>
               ) : (
                 <Link
                   href="/signup"
@@ -1301,15 +1296,6 @@ export default function HomePageContent() {
       </div>
 
       <SiteFooter />
-
-      <JobAudienceModal
-        open={audienceOpen}
-        onSelect={(audience) => {
-          setAudienceOpen(false);
-          router.push(jobCreateHref(audience));
-        }}
-        onDismiss={() => setAudienceOpen(false)}
-      />
     </div>
   );
 }

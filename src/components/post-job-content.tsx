@@ -9,6 +9,7 @@ import {
   type KeyboardEvent,
 } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import PublicJobFlow from "@/components/public-job-flow";
 import JobAudienceModal, {
   jobCreateHref,
   parseJobAudience,
@@ -679,6 +680,10 @@ export default function PostJobContent() {
         <SiteFooter />
       </div>
     );
+  }
+
+  if (user?.role === "entrepreneur" && audience === "open") {
+    return <PublicJobFlow />;
   }
 
   const canSubmit =
