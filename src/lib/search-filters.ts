@@ -1,4 +1,4 @@
-import { PLATFORM_COLORS, type Platform } from "./mock-jobs";
+import { PLATFORM_COLORS, type Platform } from "./job";
 
 export const FILTER_PLATFORMS = Object.keys(PLATFORM_COLORS) as Platform[];
 

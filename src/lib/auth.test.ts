@@ -9,9 +9,9 @@ import {
   setAuthToken,
   setStoredUser,
 } from "./auth";
-import type { MockUser } from "./mock-users";
+import type { AuthUser } from "./user";
 
-const user: MockUser = {
+const user: AuthUser = {
   id: "1",
   name: "Influ One",
   email: "user@example.com",
@@ -76,7 +76,7 @@ describe("session storage", () => {
     setStoredUser({
       ...user,
       password: "Password123",
-    } as MockUser & { password: string });
+    } as AuthUser & { password: string });
 
     const stored = JSON.parse(localStorage.getItem(USER_STORAGE_KEY) ?? "{}");
     expect(stored.password).toBeUndefined();

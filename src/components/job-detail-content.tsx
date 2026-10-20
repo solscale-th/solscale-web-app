@@ -15,8 +15,8 @@ import {
   PLATFORM_COLORS,
   postingDateLabel,
   type Job,
-} from "@/lib/mock-jobs";
-import type { DirectOfferStatus } from "@/lib/mock-direct";
+} from "@/lib/job";
+import type { DirectOfferStatus } from "@/lib/direct";
 import { useFlowchart } from "@/hooks/use-flowchart";
 import { buildApplication, buildEngagement } from "@/lib/flowchart/builders";
 import { escrowAmountForJob } from "@/lib/flowchart/jobs";

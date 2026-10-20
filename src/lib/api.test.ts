@@ -7,9 +7,9 @@ import {
   setAuthToken,
   setStoredUser,
 } from "./auth";
-import type { MockUser } from "./mock-users";
+import type { AuthUser } from "./user";
 
-const user: MockUser = {
+const user: AuthUser = {
   id: "1",
   name: "Influ One",
   email: "user@example.com",

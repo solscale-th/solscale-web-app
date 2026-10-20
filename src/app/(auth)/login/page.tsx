@@ -16,7 +16,7 @@ import {
   updateEntrepreneurProfile,
   updateInfluencerProfile,
 } from "@/lib/auth-api";
-import type { MockUser } from "@/lib/mock-users";
+import type { AuthUser } from "@/lib/user";
 import {
   buildLineAuthorizeUrl,
   LINE_OAUTH_ROLE_KEY,
@@ -163,7 +163,7 @@ function LoginForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const [pendingUser, setPendingUser] = useState<MockUser | null>(null);
+  const [pendingUser, setPendingUser] = useState<AuthUser | null>(null);
   const [profileGaps, setProfileGaps] = useState({
     needsEmail: false,
     needsCompanyName: false,

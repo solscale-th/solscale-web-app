@@ -5,7 +5,7 @@ import JobDetailContent from "@/components/job-detail-content";
 import MainHeader from "@/components/main-header";
 import { findJobById } from "@/lib/flowchart/jobs";
 import { fetchJobById, mapApiJobToJob } from "@/lib/jobs";
-import { type Job } from "@/lib/mock-jobs";
+import { type Job } from "@/lib/job";
 
 export default function JobDetailGate({ jobId }: { jobId: string }) {
   const [job, setJob] = useState<Job | undefined>(undefined);

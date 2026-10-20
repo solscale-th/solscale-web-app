@@ -20,10 +20,13 @@ import {
   mapApiWorkStatus,
   type ApiEngagement,
 } from "@/lib/engagements";
-import { canSubmitWork, WORK_STATUS_LABELS } from "@/lib/mock-my-jobs";
-import { formatOfferPrice } from "@/lib/mock-jobs";
+import {
+  canSubmitWork,
+  WORK_STATUS_LABELS,
+  type WorkStatus,
+} from "@/lib/engagements";
+import { formatOfferPrice } from "@/lib/job";
 import { jobDetailHref } from "@/lib/job-detail-href";
-import type { WorkStatus } from "@/lib/flowchart/types";
 
 type SortKey = "dateAdded" | "name" | "updatedDate";
 

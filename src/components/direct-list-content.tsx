@@ -6,8 +6,8 @@ import MainHeader from "@/components/main-header";
 import SiteFooter from "@/components/site-footer";
 import { useLanguage } from "@/i18n/language-provider";
 import { useAuth } from "@/hooks/use-auth";
-import { formatSent } from "@/lib/mock-direct";
-import { formatOfferPrice, postingDateLabel } from "@/lib/mock-jobs";
+import { formatSent } from "@/lib/direct";
+import { formatOfferPrice, postingDateLabel } from "@/lib/job";
 import { markDirectSeen } from "@/lib/seen-direct";
 import {
   fetchMyRequestedJobs,

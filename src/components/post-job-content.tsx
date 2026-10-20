@@ -23,7 +23,7 @@ import {
   formatBudgetRange,
   PLATFORM_COLORS,
   type Platform,
-} from "@/lib/mock-jobs";
+} from "@/lib/job";
 import { useFlowchart } from "@/hooks/use-flowchart";
 import { buildInvite, buildPostedJob } from "@/lib/flowchart/builders";
 import type { JobVisibility } from "@/lib/flowchart/types";

@@ -1,5 +1,13 @@
 import { graphqlRequest } from "./api";
 
+export type ApplicationStatus = "pending" | "accepted" | "rejected";
+
+export function formatApplied(daysAgo: number): string {
+  if (daysAgo === 0) return "Today";
+  if (daysAgo === 1) return "Yesterday";
+  return `${daysAgo}d ago`;
+}
+
 export type ApiApplicationJob = {
   id: number;
   title: string;

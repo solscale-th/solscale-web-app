@@ -16,7 +16,7 @@ import {
 import {
   INFLUENCER_CATEGORY_KEYS,
   type InfluencerCategoryKey,
-} from "@/lib/mock-influencers";
+} from "@/lib/influencers";
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (

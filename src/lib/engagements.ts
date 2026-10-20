@@ -3,6 +3,19 @@ import type { FlowEngagement, WorkStatus } from "./flowchart/types";
 import type { ApiJob } from "./jobs";
 import { mapApiJobToJob } from "./jobs";
 
+export type { WorkStatus };
+
+export const WORK_STATUS_LABELS: Record<WorkStatus, { en: string; className: string }> = {
+  not_submitted: { en: "Not Submitted", className: "bg-gray-100 text-gray-500" },
+  submitted: { en: "Submitted", className: "bg-blue-100 text-blue-600" },
+  revision_requested: { en: "Revision Requested", className: "bg-amber-100 text-amber-700" },
+  approved: { en: "Approved", className: "bg-green-100 text-green-700" },
+};
+
+export function canSubmitWork(workStatus: WorkStatus): boolean {
+  return workStatus === "not_submitted" || workStatus === "revision_requested";
+}
+
 export type ApiSubmission = {
   id: number;
   engagementId: number;

@@ -15,17 +15,18 @@ import MainHeader from "@/components/main-header";
 import SiteFooter from "@/components/site-footer";
 import { useAuth } from "@/hooks/use-auth";
 import { useLanguage } from "@/i18n/language-provider";
-import { fetchInfluencers, type InfluencerListItem } from "@/lib/influencers";
 import {
+  fetchInfluencers,
   INFLUENCER_CATEGORY_KEYS,
   type InfluencerCategoryKey,
-} from "@/lib/mock-influencers";
+  type InfluencerListItem,
+} from "@/lib/influencers";
 import {
   formatBudgetRange,
   PLATFORM_COLORS,
   type Job,
   type Platform,
-} from "@/lib/mock-jobs";
+} from "@/lib/job";
 import { fetchMarketplaceJobs, logJobList } from "@/lib/jobs";
 import {
   FILTER_COUNTRIES,

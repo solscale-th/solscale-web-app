@@ -10,7 +10,7 @@ import type {
   EntrepreneurCampaign,
   EntrepreneurProfile,
 } from "@/lib/entrepreneurs";
-import { formatBudgetRange, formatPosted } from "@/lib/mock-jobs";
+import { formatBudgetRange, formatPosted } from "@/lib/job";
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (

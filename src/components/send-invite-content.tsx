@@ -6,7 +6,7 @@ import { FlowCard, FlowPage, fieldClass, primaryBtn, secondaryBtn } from "@/comp
 import { useAuth } from "@/hooks/use-auth";
 import { useLanguage } from "@/i18n/language-provider";
 import { createJob, type JobRequirementFileInput } from "@/lib/jobs";
-import { PLATFORM_COLORS, type Platform } from "@/lib/mock-jobs";
+import { PLATFORM_COLORS, type Platform } from "@/lib/job";
 import { forgetRequirementFile, rememberRequirementFile } from "@/lib/requirement-files";
 
 type AddonLine = { name: string; price: number };

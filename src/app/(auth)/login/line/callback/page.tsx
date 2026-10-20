@@ -17,7 +17,7 @@ import {
   LINE_OAUTH_RETURN_TO_KEY,
   LINE_OAUTH_STATE_KEY,
 } from "@/lib/line-auth";
-import type { MockUser } from "@/lib/mock-users";
+import type { AuthUser } from "@/lib/user";
 
 function LineCallback() {
   const router = useRouter();
@@ -27,7 +27,7 @@ function LineCallback() {
 
   const [error, setError] = useState("");
   const [returnTo, setReturnTo] = useState("/");
-  const [pendingUser, setPendingUser] = useState<MockUser | null>(null);
+  const [pendingUser, setPendingUser] = useState<AuthUser | null>(null);
   const [profileGaps, setProfileGaps] = useState({
     needsEmail: false,
     needsCompanyName: false,

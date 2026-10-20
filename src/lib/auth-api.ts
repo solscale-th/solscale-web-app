@@ -1,5 +1,5 @@
 import { graphqlRequest } from "./api";
-import type { MockUser } from "./mock-users";
+import type { AuthUser } from "./user";
 
 type ApiInfluencerAccount = {
   id: number;
@@ -21,7 +21,7 @@ type ApiEntrepreneurAccount = {
   bankAccountNumber?: string | null;
 };
 
-type LoginResult = { token: string; user: MockUser };
+type LoginResult = { token: string; user: AuthUser };
 type GoogleEntrepreneurLoginResult = LoginResult & { needsCompanyName: boolean };
 type LineInfluencerLoginResult = LoginResult & { needsEmail: boolean };
 type LineEntrepreneurLoginResult = LoginResult & { needsEmail: boolean; needsCompanyName: boolean };
@@ -352,7 +352,7 @@ export async function loginInfluencer(
     influencer.email ||
     "";
 
-  const user: MockUser = {
+  const user: AuthUser = {
     id: String(influencer.id),
     name,
     email: influencer.email ?? "",
@@ -383,7 +383,7 @@ export async function loginEntrepreneur(
 
   const { token, entrepreneur } = data;
 
-  const user: MockUser = {
+  const user: AuthUser = {
     id: String(entrepreneur.id),
     name: entrepreneur.companyName?.trim() || entrepreneur.email || "",
     email: entrepreneur.email ?? "",
@@ -420,7 +420,7 @@ export async function loginInfluencerWithGoogle(
     influencer.email ||
     "";
 
-  const user: MockUser = {
+  const user: AuthUser = {
     id: String(influencer.id),
     name,
     email: influencer.email ?? "",
@@ -450,7 +450,7 @@ export async function loginEntrepreneurWithGoogle(
 
   const { token, entrepreneur } = data;
 
-  const user: MockUser = {
+  const user: AuthUser = {
     id: String(entrepreneur.id),
     name: entrepreneur.companyName?.trim() || entrepreneur.email || "",
     email: entrepreneur.email ?? "",
@@ -488,7 +488,7 @@ export async function loginInfluencerWithLine(
     influencer.email ||
     "";
 
-  const user: MockUser = {
+  const user: AuthUser = {
     id: String(influencer.id),
     name,
     email: influencer.email ?? "",
@@ -519,7 +519,7 @@ export async function loginEntrepreneurWithLine(
 
   const { token, entrepreneur } = data;
 
-  const user: MockUser = {
+  const user: AuthUser = {
     id: String(entrepreneur.id),
     name: entrepreneur.companyName?.trim() || entrepreneur.email || "",
     email: entrepreneur.email ?? "",

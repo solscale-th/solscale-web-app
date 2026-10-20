@@ -1,4 +1,6 @@
-import { parseJobProfile, type MockUser } from "./mock-users";
+import { parseJobProfile, type AuthUser } from "./user";
+
+export type { AuthUser };
 
 export const USER_STORAGE_KEY = "solscale_user";
 export const TOKEN_STORAGE_KEY = "solscale_token";
@@ -10,7 +12,7 @@ function readToken(): string | null {
   return token?.trim() ? token : null;
 }
 
-export function normalizeStoredUser(value: unknown): MockUser | null {
+export function normalizeStoredUser(value: unknown): AuthUser | null {
   if (!value || typeof value !== "object") return null;
 
   const raw = value as Record<string, unknown>;
@@ -51,7 +53,7 @@ export function setAuthToken(token: string): void {
   localStorage.setItem(TOKEN_STORAGE_KEY, token);
 }
 
-export function getStoredUser(): MockUser | null {
+export function getStoredUser(): AuthUser | null {
   if (typeof window === "undefined") return null;
 
   try {
@@ -87,7 +89,7 @@ export function buildLoginUrl(returnTo: string): string {
   return `/login?returnTo=${encodeURIComponent(returnTo)}`;
 }
 
-export function setStoredUser(user: MockUser): void {
+export function setStoredUser(user: AuthUser): void {
   if (typeof window === "undefined") return;
   const normalized = normalizeStoredUser(user);
   if (!normalized) return;

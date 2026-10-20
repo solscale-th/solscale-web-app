@@ -112,7 +112,7 @@ export function parseJobProfile(value: unknown): JobProfile | undefined {
   };
 }
 
-export type MockUser = {
+export type AuthUser = {
   id: string;
   name: string;
   email: string;

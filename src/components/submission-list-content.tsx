@@ -11,7 +11,7 @@ import {
   formatSubmitted,
   type Submission,
   type ReceivedSubmission,
-} from "@/lib/mock-submissions";
+} from "@/lib/submissions";
 import { findJobById } from "@/lib/flowchart/jobs";
 import { logJobList } from "@/lib/jobs";
 import { getSeenSubmissionIds, markSubmissionSeen, SEEN_SUBMISSION_EVENT } from "@/lib/seen-submissions";

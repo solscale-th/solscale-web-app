@@ -1,4 +1,4 @@
-import { PLATFORM_COLORS, type Job, type Platform } from "@/lib/mock-jobs";
+import { PLATFORM_COLORS, type Job, type Platform } from "@/lib/job";
 import { loadFlowchartState } from "./store";
 import type { FlowPostedJob, FlowchartState } from "./types";
 

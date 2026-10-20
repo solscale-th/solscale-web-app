@@ -1,5 +1,15 @@
 import { graphqlRequest } from "./api";
-import { PLATFORM_COLORS, type Job, type Platform } from "./mock-jobs";
+import { PLATFORM_COLORS, type Job, type Platform } from "./job";
+
+export type { Job, Platform } from "./job";
+export {
+  formatBudget,
+  formatBudgetRange,
+  formatOfferPrice,
+  formatPosted,
+  postingDateLabel,
+  PLATFORM_COLORS,
+} from "./job";
 
 export type ApiJobEntrepreneur = {
   id: number;

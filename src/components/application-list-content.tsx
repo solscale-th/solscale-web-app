@@ -12,11 +12,11 @@ import {
   type ApiApplication,
 } from "@/lib/applications";
 import { logJobList, mapApiJobToJob } from "@/lib/jobs";
-import { formatBudgetRange, formatPosted, type Job } from "@/lib/mock-jobs";
+import { formatBudgetRange, formatPosted, type Job } from "@/lib/job";
 import {
   formatApplied,
   type ApplicationStatus,
-} from "@/lib/mock-applications";
+} from "@/lib/applications";
 
 type SortKey = "dateAdded" | "name" | "updatedDate";
 

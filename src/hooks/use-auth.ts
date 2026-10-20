@@ -7,10 +7,10 @@ import {
   getStoredUser,
   isLoggedIn,
 } from "@/lib/auth";
-import type { MockUser } from "@/lib/mock-users";
+import type { AuthUser } from "@/lib/user";
 
 export function useAuth() {
-  const [user, setUser] = useState<MockUser | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
 
   useEffect(() => {
     const syncUser = () => {

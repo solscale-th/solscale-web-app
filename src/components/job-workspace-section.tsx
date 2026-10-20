@@ -7,7 +7,7 @@ import {
   canSubmitWork,
   WORK_STATUS_LABELS,
   type WorkStatus,
-} from "@/lib/mock-my-jobs";
+} from "@/lib/engagements";
 import type { FlowEngagement } from "@/lib/flowchart/types";
 import { SubmissionUrlForm, SubmittedUrls } from "@/components/submission-url-form";
 

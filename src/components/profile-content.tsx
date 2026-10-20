@@ -13,15 +13,15 @@ import {
   fetchInfluencerByEmail,
   type ApiInfluencer,
 } from "@/lib/influencers";
-import { PLATFORM_COLORS } from "@/lib/mock-jobs";
-import { INFLUENCER_CATEGORY_KEYS } from "@/lib/mock-influencers";
+import { PLATFORM_COLORS } from "@/lib/job";
+import { INFLUENCER_CATEGORY_KEYS } from "@/lib/influencers";
 import {
   emptyJobProfile,
   type JobProfile,
-  type MockUser,
+  type AuthUser,
   type ProfileAddon,
   type ProfilePackage,
-} from "@/lib/mock-users";
+} from "@/lib/user";
 
 function packagesFromApi(influencer: ApiInfluencer): ProfilePackage[] {
   return (influencer.packages ?? []).map((item) => ({
@@ -502,7 +502,7 @@ export default function ProfileContent() {
         }
       }
 
-      const updated: MockUser = {
+      const updated: AuthUser = {
         id: user.id,
         role: user.role,
         name:
@@ -531,7 +531,7 @@ export default function ProfileContent() {
 
   function handleSwitchRole() {
     if (!user) return;
-    const updated: MockUser = {
+    const updated: AuthUser = {
       ...user,
       role: user.role === "influencer" ? "entrepreneur" : "influencer",
     };

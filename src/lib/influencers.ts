@@ -1,9 +1,20 @@
 import { graphqlRequest } from "./api";
-import {
-  INFLUENCER_CATEGORY_KEYS,
-  type InfluencerCategoryKey,
-} from "./mock-influencers";
-import { PLATFORM_COLORS, type Platform } from "./mock-jobs";
+import { PLATFORM_COLORS, type Platform } from "./job";
+
+export const INFLUENCER_CATEGORY_KEYS = [
+  "beauty",
+  "fashion",
+  "food",
+  "tech",
+  "fitness",
+  "travel",
+  "finance",
+  "gaming",
+  "parenting",
+  "home",
+] as const;
+
+export type InfluencerCategoryKey = (typeof INFLUENCER_CATEGORY_KEYS)[number];
 
 export type ApiInfluencerPackage = {
   id: number;
