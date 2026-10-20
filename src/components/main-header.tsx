@@ -5,12 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useLanguage } from "@/i18n/language-provider";
 import { useAuth } from "@/hooks/use-auth";
-import { useFlowchart } from "@/hooks/use-flowchart";
-import {
-  liveApplicationBadgeCount,
-  liveDirectBadgeCount,
-  liveMyJobBadgeCount,
-} from "@/lib/flowchart/badges";
+import { fetchNavBadgeCounts } from "@/lib/nav-badges";
 import { getSeenIds, SEEN_CHANGE_EVENT } from "@/lib/seen-applications";
 import { getSeenDirectIds, SEEN_DIRECT_EVENT } from "@/lib/seen-direct";
 import { getSeenMyJobIds, SEEN_MY_JOBS_EVENT } from "@/lib/seen-my-jobs";
@@ -58,13 +53,15 @@ export default function MainHeader() {
   const pathname = usePathname();
   const { t } = useLanguage();
   const { user, isLoggedIn, logout } = useAuth();
-  const { state } = useFlowchart();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
   const [seenDirectIds, setSeenDirectIds] = useState<Set<string>>(new Set());
   const [seenMyJobIds, setSeenMyJobIds] = useState<Set<string>>(new Set());
+  const [applicationBadge, setApplicationBadge] = useState(0);
+  const [directBadge, setDirectBadge] = useState(0);
+  const [myJobBadge, setMyJobBadge] = useState(0);
 
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -92,6 +89,38 @@ export default function MainHeader() {
     return () => window.removeEventListener(SEEN_MY_JOBS_EVENT, sync);
   }, []);
 
+  useEffect(() => {
+    if (!user || !isLoggedIn) {
+      setApplicationBadge(0);
+      setDirectBadge(0);
+      setMyJobBadge(0);
+      return;
+    }
+
+    const controller = new AbortController();
+    fetchNavBadgeCounts({
+      role: user.role,
+      seenApplicationIds: seenIds,
+      seenDirectIds,
+      seenMyJobIds,
+      signal: controller.signal,
+    })
+      .then((counts) => {
+        if (controller.signal.aborted) return;
+        setApplicationBadge(counts.applications);
+        setDirectBadge(counts.direct);
+        setMyJobBadge(counts.myJobs);
+      })
+      .catch(() => {
+        if (controller.signal.aborted) return;
+        setApplicationBadge(0);
+        setDirectBadge(0);
+        setMyJobBadge(0);
+      });
+
+    return () => controller.abort();
+  }, [user, isLoggedIn, seenIds, seenDirectIds, seenMyJobIds, pathname]);
+
   // Close user dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -102,16 +131,6 @@ export default function MainHeader() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
-  const applicationBadge = user
-    ? liveApplicationBadgeCount(state, user.id, user.role, seenIds)
-    : 0;
-  const directBadge = user
-    ? liveDirectBadgeCount(state, user.id, user.role, seenDirectIds)
-    : 0;
-  const myJobBadge = user
-    ? liveMyJobBadgeCount(state, user.id, user.role, seenMyJobIds)
-    : 0;
 
   const navItems = [
     { label: t("nav.application"), href: "/applications", badge: applicationBadge },

@@ -57,6 +57,22 @@ export function reduceFlowchart(
       };
     }
 
+    case "SYNC_ENGAGEMENT": {
+      // Replace by id, and drop any stale local row for the same job + influencer.
+      const others = state.engagements.filter(
+        (item) =>
+          item.id !== action.engagement.id &&
+          !(
+            item.jobId === action.engagement.jobId &&
+            item.influencerId === action.engagement.influencerId
+          )
+      );
+      return {
+        ...state,
+        engagements: [...others, action.engagement],
+      };
+    }
+
     case "APPLY_TO_JOB": {
       const duplicate = state.applications.some(
         (item) =>

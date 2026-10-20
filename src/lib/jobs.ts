@@ -24,7 +24,14 @@ export type ApiJob = {
   budgetMax?: number | null;
   status: string;
   promoted: boolean;
+  visibility?: string | null;
+  influencerId?: number | null;
+  postingDate?: string | null;
+  packageName?: string | null;
+  packageDetail?: string | null;
+  packagePrice?: number | null;
   createdAt: string;
+  updatedAt?: string | null;
   entrepreneur?: ApiJobEntrepreneur | null;
 };
 
@@ -55,7 +62,14 @@ const JOB_FIELDS = /* GraphQL */ `
   budgetMax
   status
   promoted
+  visibility
+  influencerId
+  postingDate
+  packageName
+  packageDetail
+  packagePrice
   createdAt
+  updatedAt
   entrepreneur {
     id
     companyName
@@ -79,6 +93,10 @@ function toPlatform(raw: string): Platform {
 }
 
 export function mapApiJobToJob(job: ApiJob): Job {
+  const packagePrice = job.packagePrice ?? 0;
+  const budgetMin = job.budgetMin ?? packagePrice;
+  const budgetMax = job.budgetMax ?? packagePrice;
+  const postingDuration = job.postingDate ? `Post on ${job.postingDate}` : "";
   return {
     id: String(job.id),
     title: job.title,
@@ -96,10 +114,10 @@ export function mapApiJobToJob(job: ApiJob): Job {
     verified: true,
     tags: job.tags ?? [],
     location: job.location ?? "",
-    duration: job.duration ?? "",
+    duration: job.duration || postingDuration,
     applied: 0,
-    budgetMin: job.budgetMin ?? 0,
-    budgetMax: job.budgetMax ?? 0,
+    budgetMin,
+    budgetMax,
     postedDaysAgo: daysAgoFromIso(job.createdAt),
     promoted: job.promoted,
     thumbnailBg: JOB_THUMBNAILS[job.id % JOB_THUMBNAILS.length],
@@ -158,6 +176,32 @@ const MY_JOBS_QUERY = /* GraphQL */ `
   }
 `;
 
+const MY_REQUESTED_JOBS_QUERY = /* GraphQL */ `
+  query MyRequestedJobs($limit: Int, $offset: Int) {
+    myRequestedJobs(limit: $limit, offset: $offset) {
+      data {
+        ${JOB_FIELDS}
+      }
+      status {
+        error
+      }
+    }
+  }
+`;
+
+const MY_ACCEPTED_JOBS_QUERY = /* GraphQL */ `
+  query MyAcceptedJobs($limit: Int, $offset: Int) {
+    myAcceptedJobs(limit: $limit, offset: $offset) {
+      data {
+        ${JOB_FIELDS}
+      }
+      status {
+        error
+      }
+    }
+  }
+`;
+
 type CreateJobResponse = {
   createJob: {
     data: ApiJob | null;
@@ -186,6 +230,38 @@ type MyJobsResponse = {
   };
 };
 
+type MyRequestedJobsResponse = {
+  myRequestedJobs: {
+    data: ApiJob[] | null;
+    status?: { error?: string | null };
+  };
+};
+
+type MyAcceptedJobsResponse = {
+  myAcceptedJobs: {
+    data: ApiJob[] | null;
+    status?: { error?: string | null };
+  };
+};
+
+export type JobListOptions = {
+  limit?: number;
+  offset?: number;
+  signal?: AbortSignal;
+};
+
+export type JobAddonInput = {
+  name: string;
+  price: number;
+};
+
+export type JobRequirementFileInput = {
+  kind: string;
+  required: boolean;
+  fileUrl?: string;
+  originalFilename?: string;
+};
+
 export type CreateJobInput = {
   title: string;
   description: string;
@@ -198,6 +274,19 @@ export type CreateJobInput = {
   duration?: string;
   budgetMin?: number;
   budgetMax?: number;
+  inviteInfluencerIds?: number[];
+  visibility?: string;
+  influencerId?: number;
+  postingDate?: string;
+  languages?: string[];
+  caption?: string;
+  requiredMessage?: string;
+  forbiddenMessage?: string;
+  packageName?: string;
+  packageDetail?: string;
+  packagePrice?: number;
+  addons?: JobAddonInput[];
+  requirementFiles?: JobRequirementFileInput[];
 };
 
 export async function createJob(input: CreateJobInput): Promise<ApiJob> {
@@ -248,6 +337,34 @@ export async function fetchJobById(
 export async function fetchMyJobs(signal?: AbortSignal): Promise<ApiJob[]> {
   const res = await graphqlRequest<MyJobsResponse>(MY_JOBS_QUERY, undefined, signal);
   const { data, status } = res.myJobs;
+  if (status?.error) throw new Error(status.error);
+  return data ?? [];
+}
+
+export async function fetchMyRequestedJobs(
+  options: JobListOptions = {}
+): Promise<ApiJob[]> {
+  const { limit, offset, signal } = options;
+  const res = await graphqlRequest<MyRequestedJobsResponse>(
+    MY_REQUESTED_JOBS_QUERY,
+    { limit, offset },
+    signal
+  );
+  const { data, status } = res.myRequestedJobs;
+  if (status?.error) throw new Error(status.error);
+  return data ?? [];
+}
+
+export async function fetchMyAcceptedJobs(
+  options: JobListOptions = {}
+): Promise<ApiJob[]> {
+  const { limit, offset, signal } = options;
+  const res = await graphqlRequest<MyAcceptedJobsResponse>(
+    MY_ACCEPTED_JOBS_QUERY,
+    { limit, offset },
+    signal
+  );
+  const { data, status } = res.myAcceptedJobs;
   if (status?.error) throw new Error(status.error);
   return data ?? [];
 }

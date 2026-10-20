@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FlowCard, FlowPage, fieldClass, primaryBtn, secondaryBtn } from "@/components/flow-page-shell";
-import { HireSteps, ProductAutocomplete } from "@/components/send-invite-content";
+import { HireSteps } from "@/components/send-invite-content";
 import { useAuth } from "@/hooks/use-auth";
 import { useFlowchart } from "@/hooks/use-flowchart";
 import { useLanguage } from "@/i18n/language-provider";
@@ -424,11 +424,13 @@ export default function PublicJobFlow() {
                 {t("flow.hireProduct")}
                 <RequiredMark />
               </label>
-              <ProductAutocomplete
+              <input
+                id="hire-product"
+                aria-required="true"
                 value={product}
-                onChange={setProduct}
-                placeholder={t("flow.hireProductPlaceholder")}
-                emptyLabel={t("flow.hireProductEmpty")}
+                onChange={(event) => setProduct(event.target.value)}
+                placeholder={t("flow.hireProductInputPlaceholder")}
+                className={`mt-1.5 ${fieldClass}`}
               />
             </div>
             <label className="block text-[13px] font-medium text-[#333]" htmlFor="public-description">

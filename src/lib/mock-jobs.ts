@@ -261,7 +261,9 @@ export function formatOfferPrice(min: number, max: number): string {
 export function postingDateLabel(job: {
   duration: string;
   requirements: string[];
+  postingDate?: string | null;
 }): string {
+  if (job.postingDate) return job.postingDate;
   const line = job.requirements.find((req) => /^posting date:/i.test(req));
   if (line) return line.replace(/^[^:]+:\s*/, "");
   return job.duration.replace(/^post on\s+/i, "");

@@ -1,16 +1,3 @@
-const MOCK_PREVIEW = "/samples/delivery-preview.mp4";
-
-const MOCK_VIDEOS = new Set([
-  "sunscreen-reel.mp4",
-  "matcha-whisk.mp4",
-  "sprint-reel.mp4",
-  "speaker-desk.mp4",
-  "serum-reel.mp4",
-  "coffee-pour.mp4",
-  "hat-street.mp4",
-  "candle-desk.mp4",
-]);
-
 const liveFiles = new Map<string, { file: File; url: string }>();
 
 export function isVideoName(name: string): boolean {
@@ -43,8 +30,5 @@ export function forgetSubmissionFile(file: File): void {
 }
 
 export function submissionPreviewUrl(name: string): string | null {
-  const live = liveFiles.get(name);
-  if (live) return live.url;
-  if (MOCK_VIDEOS.has(name)) return MOCK_PREVIEW;
-  return null;
+  return liveFiles.get(name)?.url ?? null;
 }

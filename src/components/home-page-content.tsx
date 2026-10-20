@@ -18,7 +18,6 @@ import { useLanguage } from "@/i18n/language-provider";
 import { fetchInfluencers, type InfluencerListItem } from "@/lib/influencers";
 import {
   INFLUENCER_CATEGORY_KEYS,
-  MOCK_INFLUENCERS,
   type InfluencerCategoryKey,
 } from "@/lib/mock-influencers";
 import {
@@ -34,7 +33,6 @@ import {
   FOLLOWER_RANGES,
   PRICE_RANGES,
   matchesCountry,
-  matchesFollowerRange,
   matchesPlatform,
   matchesPriceRange,
   type FilterCountryId,
@@ -233,7 +231,7 @@ export default function HomePageContent() {
   const bgParallaxY = useTransform(scrollYMv, (value) => value * 0.08);
   const isInfluencer = user?.role === "influencer";
   const isEntrepreneur = user?.role === "entrepreneur";
-  const showFollowerRange = !isInfluencer;
+  const showFollowerRange = false;
   const showPriceRange = !isEntrepreneur;
 
   const sectionReveal = prefersReducedMotion
@@ -497,25 +495,7 @@ export default function HomePageContent() {
     });
   }, [isInfluencer, jobCatalog, filteredJobs]);
 
-  const filteredInfluencers = useMemo(() => {
-    if (!selectedCountry && !activeFollowerRange) {
-      return influencers;
-    }
-
-    return influencers.filter((inf) => {
-      const mock = MOCK_INFLUENCERS.find(
-        (m) =>
-          m.name.toLowerCase() === inf.name.toLowerCase() ||
-          m.handle === inf.handle
-      );
-      if (!mock) return true;
-      if (!matchesCountry(mock.location, selectedCountry)) return false;
-      if (!matchesFollowerRange(mock.followers, activeFollowerRange)) {
-        return false;
-      }
-      return true;
-    });
-  }, [influencers, selectedCountry, activeFollowerRange]);
+  const filteredInfluencers = influencers;
 
   const visibleJobs = filteredJobs.slice(0, visibleCount);
   const hasMoreJobs = visibleCount < filteredJobs.length;
@@ -540,23 +520,15 @@ export default function HomePageContent() {
   const countryOptions = useMemo(() => {
     const locations = isInfluencer
       ? jobCatalog.map((job) => job.location)
-      : MOCK_INFLUENCERS.map((influencer) => influencer.location);
+      : [];
 
     const available = FILTER_COUNTRIES.filter((country) =>
       locations.some((location) => matchesCountry(location, country.id))
     );
-    return available.length > 0 ? available : [...FILTER_COUNTRIES];
+    return available;
   }, [isInfluencer, jobCatalog]);
 
-  const followerRangeOptions = useMemo(() => {
-    if (!showFollowerRange) return [];
-    const available = FOLLOWER_RANGES.filter((range) =>
-      MOCK_INFLUENCERS.some((influencer) =>
-        matchesFollowerRange(influencer.followers, range.id)
-      )
-    );
-    return available.length > 0 ? available : [...FOLLOWER_RANGES];
-  }, [showFollowerRange]);
+  const followerRangeOptions = FOLLOWER_RANGES.filter(() => false);
 
   const priceRangeOptions = useMemo(() => {
     if (!showPriceRange) return [];
@@ -795,6 +767,7 @@ export default function HomePageContent() {
                     )}
                   </FilterDropdown>
 
+                  {isInfluencer && (
                   <FilterDropdown
                     id="country"
                     label={
@@ -822,6 +795,7 @@ export default function HomePageContent() {
                       </FilterOption>
                     ))}
                   </FilterDropdown>
+                  )}
 
                   <FilterDropdown
                     id="platform"

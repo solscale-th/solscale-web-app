@@ -5,12 +5,72 @@ import MainHeader from "@/components/main-header";
 import SiteFooter from "@/components/site-footer";
 import { useLanguage } from "@/i18n/language-provider";
 import { useAuth } from "@/hooks/use-auth";
+import { updateEntrepreneurProfile, updateInfluencerProfile } from "@/lib/auth-api";
 import { setStoredUser } from "@/lib/auth";
 import { fetchEntrepreneurByEmail, type ApiEntrepreneur } from "@/lib/entrepreneurs";
-import { fetchInfluencerByEmail, type ApiInfluencer } from "@/lib/influencers";
+import {
+  fetchInfluencerAccount,
+  fetchInfluencerByEmail,
+  type ApiInfluencer,
+} from "@/lib/influencers";
 import { PLATFORM_COLORS } from "@/lib/mock-jobs";
 import { INFLUENCER_CATEGORY_KEYS } from "@/lib/mock-influencers";
-import { emptyJobProfile, type JobProfile, type MockUser } from "@/lib/mock-users";
+import {
+  emptyJobProfile,
+  type JobProfile,
+  type MockUser,
+  type ProfileAddon,
+  type ProfilePackage,
+} from "@/lib/mock-users";
+
+function packagesFromApi(influencer: ApiInfluencer): ProfilePackage[] {
+  return (influencer.packages ?? []).map((item) => ({
+    name: item.tier ?? "",
+    price: String(item.price ?? 0),
+    detail: (item.includes ?? []).join("\n"),
+    platform: item.platform ?? "",
+    ...(item.revisions != null ? { revisions: item.revisions } : {}),
+    ...(item.turnaroundDays != null ? { turnaroundDays: item.turnaroundDays } : {}),
+  }));
+}
+
+function addonsFromApi(influencer: ApiInfluencer): ProfileAddon[] {
+  return (influencer.addons ?? []).map((item) => ({
+    name: item.kind ?? "",
+    price: String(item.price ?? 0),
+  }));
+}
+
+function packagesForApi(packages: ProfilePackage[]) {
+  return packages.flatMap((item) => {
+    const tier = item.name.trim();
+    if (!tier) return [];
+    const price = Math.round(Number(item.price.replace(/,/g, "").trim()));
+    const includes = item.detail
+      .split(/\n+/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+    return [
+      {
+        tier,
+        price: Number.isFinite(price) ? price : 0,
+        ...(item.platform.trim() ? { platform: item.platform.trim() } : {}),
+        ...(includes.length > 0 ? { includes } : {}),
+        ...(item.revisions != null ? { revisions: item.revisions } : {}),
+        ...(item.turnaroundDays != null ? { turnaroundDays: item.turnaroundDays } : {}),
+      },
+    ];
+  });
+}
+
+function addonsForApi(addons: ProfileAddon[]) {
+  return addons.flatMap((item) => {
+    const kind = item.name.trim();
+    if (!kind) return [];
+    const price = Math.round(Number(item.price.replace(/,/g, "").trim()));
+    return [{ kind, price: Number.isFinite(price) ? price : 0 }];
+  });
+}
 
 // ─── Country data ─────────────────────────────────────────────────────────────
 
@@ -301,8 +361,11 @@ export default function ProfileContent() {
     useState<ApiEntrepreneur | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
 
   const userEmail = user?.email;
+  const userId = user?.id;
   const userRole = user?.role;
 
   useEffect(() => {
@@ -316,7 +379,11 @@ export default function ProfileContent() {
       setApiEntrepreneur(null);
       try {
         if (userRole === "influencer") {
-          const data = await fetchInfluencerByEmail(userEmail!, controller.signal);
+          const numericId = Number(userId);
+          const data =
+            Number.isInteger(numericId) && numericId > 0
+              ? await fetchInfluencerAccount(numericId, controller.signal)
+              : await fetchInfluencerByEmail(userEmail!, controller.signal);
           if (!controller.signal.aborted) setApiInfluencer(data);
         } else {
           const data = await fetchEntrepreneurByEmail(userEmail!, controller.signal);
@@ -334,67 +401,132 @@ export default function ProfileContent() {
     loadDetails();
 
     return () => controller.abort();
-  }, [userEmail, userRole]);
+  }, [userEmail, userId, userRole]);
 
   if (!user) return null;
 
   const savedJob = user.jobProfile;
+  const sourceLanguages = apiInfluencer
+    ? (apiInfluencer.languages ?? [])
+    : (savedJob?.languages ?? []);
   const jobDefaults: JobProfile = {
     ...emptyJobProfile(),
     ...(savedJob ?? {}),
-    companyName: savedJob ? savedJob.companyName : (apiEntrepreneur?.companyName ?? ""),
-    brandDescription: savedJob ? savedJob.brandDescription : (apiEntrepreneur?.brandDescription ?? ""),
-    stageName: savedJob ? savedJob.stageName : (apiInfluencer?.stageName || user.name || ""),
-    platforms: savedJob ? savedJob.platforms : (apiInfluencer?.platforms ?? []),
-    languages: (savedJob ? savedJob.languages : (apiInfluencer?.languages ?? [])).map((item) => {
+    companyName: apiEntrepreneur?.companyName || savedJob?.companyName || "",
+    brandDescription: apiEntrepreneur?.brandDescription || savedJob?.brandDescription || "",
+    stageName: apiInfluencer
+      ? (apiInfluencer.stageName ?? "")
+      : (savedJob?.stageName || user.name || ""),
+    platforms: apiInfluencer ? (apiInfluencer.platforms ?? []) : (savedJob?.platforms ?? []),
+    languages: sourceLanguages.map((item) => {
       const key = item.trim().toLowerCase();
       if (key === "th" || key === "thai" || key === "ไทย") return "th";
       if (key === "en" || key === "english" || key === "อังกฤษ") return "en";
       return item;
     }),
-    categories: savedJob ? savedJob.categories : (apiInfluencer?.contentCategories ?? []),
+    categories: apiInfluencer
+      ? (apiInfluencer.contentCategories ?? [])
+      : (savedJob?.categories ?? []),
+    packages: apiInfluencer ? packagesFromApi(apiInfluencer) : (savedJob?.packages ?? []),
+    addons: apiInfluencer ? addonsFromApi(apiInfluencer) : (savedJob?.addons ?? []),
   };
 
   const currentForm = form ?? {
-    name:          user.name              ?? "",
-    email:         user.email             ?? "",
-    countryCode:   user.countryCode       ?? "+66",
-    phone:         user.phone             ?? "",
-    bankName:      user.paymentAccount?.bankName       ?? "",
-    accountNumber: user.paymentAccount?.accountNumber  ?? "",
-    accountHolder: user.paymentAccount?.accountHolder  ?? "",
+    name: user.name ?? "",
+    email:
+      (user.role === "influencer" ? apiInfluencer?.email : apiEntrepreneur?.email) ||
+      user.email ||
+      "",
+    countryCode: apiInfluencer?.countryCode || user.countryCode || "+66",
+    phone: apiInfluencer?.phone || user.phone || "",
+    bankName: apiInfluencer
+      ? (apiInfluencer.bankName ?? "")
+      : (user.paymentAccount?.bankName ?? ""),
+    accountNumber: apiInfluencer
+      ? (apiInfluencer.bankAccountNumber ?? "")
+      : (user.paymentAccount?.accountNumber ?? ""),
+    accountHolder: apiInfluencer
+      ? (apiInfluencer.bankAccountName ?? "")
+      : (user.paymentAccount?.accountHolder ?? ""),
     job: jobDefaults,
   };
 
   function handleEdit() {
+    setSaveError("");
     setForm(currentForm);
     setEditing(true);
   }
 
   function handleCancel() {
+    if (saving) return;
+    setSaveError("");
     setForm(null);
     setEditing(false);
   }
 
-  function handleSave() {
-    if (!form || !user) return;
-    const updated: MockUser = {
-      id:          user.id,
-      role:        user.role,
-      name:        form.name,
-      email:       form.email,
-      countryCode: form.countryCode,
-      phone:       form.phone,
-      paymentAccount: {
-        bankName:      form.bankName,
-        accountNumber: form.accountNumber,
-        accountHolder: form.accountHolder,
-      },
-      jobProfile: form.job,
-    };
-    setStoredUser(updated);
-    setForm(null);
-    setEditing(false);
+  async function handleSave() {
+    if (!form || !user || saving) return;
+    setSaveError("");
+    setSaving(true);
+    try {
+      if (user.role === "influencer") {
+        await updateInfluencerProfile({
+          email: form.email.trim(),
+          stageName: form.job.stageName.trim(),
+          platforms: form.job.platforms,
+          contentCategories: form.job.categories,
+          languages: form.job.languages,
+          countryCode: form.countryCode,
+          phone: form.phone.trim(),
+          bankName: form.bankName.trim(),
+          bankAccountName: form.accountHolder.trim(),
+          bankAccountNumber: form.accountNumber.trim(),
+          ...(apiInfluencer
+            ? {
+                packages: packagesForApi(form.job.packages),
+                addons: addonsForApi(form.job.addons),
+              }
+            : {}),
+        });
+        const numericId = Number(user.id);
+        if (Number.isInteger(numericId) && numericId > 0) {
+          setApiInfluencer(await fetchInfluencerAccount(numericId));
+        }
+      } else {
+        await updateEntrepreneurProfile({
+          email: form.email.trim(),
+          companyName: form.job.companyName.trim(),
+        });
+        if (user.email.trim()) {
+          setApiEntrepreneur(await fetchEntrepreneurByEmail(form.email.trim()));
+        }
+      }
+
+      const updated: MockUser = {
+        id: user.id,
+        role: user.role,
+        name:
+          user.role === "entrepreneur"
+            ? form.job.companyName.trim() || form.name
+            : form.job.stageName.trim() || form.name,
+        email: form.email.trim(),
+        countryCode: form.countryCode,
+        phone: form.phone,
+        paymentAccount: {
+          bankName: form.bankName,
+          accountNumber: form.accountNumber,
+          accountHolder: form.accountHolder,
+        },
+        jobProfile: form.job,
+      };
+      setStoredUser(updated);
+      setForm(null);
+      setEditing(false);
+    } catch (err) {
+      setSaveError(err instanceof Error && err.message ? err.message : t("profile.saveFailed"));
+    } finally {
+      setSaving(false);
+    }
   }
 
   function handleSwitchRole() {
@@ -432,7 +564,11 @@ export default function ProfileContent() {
       ? t("profile.roleInfluencer")
       : t("profile.roleEntrepreneur");
 
-  const displayName = editing ? currentForm.name : (user.name ?? "");
+  const displayName = editing
+    ? currentForm.name
+    : user.role === "entrepreneur"
+      ? shownJob.companyName || user.name || ""
+      : shownJob.stageName || user.name || "";
   const initials = displayName
     .split(" ")
     .filter(Boolean)
@@ -441,7 +577,7 @@ export default function ProfileContent() {
     .join("")
     .toUpperCase() || "?";
 
-  const phoneCountry = COUNTRIES.find((c) => c.code === (user.countryCode ?? "+66")) ?? COUNTRIES[0];
+  const phoneCountry = COUNTRIES.find((c) => c.code === currentForm.countryCode) ?? COUNTRIES[0];
 
   const avatarImage =
     user.role === "influencer" ? apiInfluencer?.avatarUrl : apiEntrepreneur?.logoUrl;
@@ -476,17 +612,22 @@ export default function ProfileContent() {
 
               {editing ? (
                 <div className="flex w-full flex-col gap-2">
+                  {saveError ? (
+                    <p className="text-center text-[12px] leading-relaxed text-[#c0392b]">{saveError}</p>
+                  ) : null}
                   <button
                     type="button"
                     onClick={handleSave}
-                    className="w-full rounded-xl bg-brand py-2 text-[13px] font-semibold text-white transition-colors hover:bg-brand-hover"
+                    disabled={saving}
+                    className="w-full rounded-xl bg-brand py-2 text-[13px] font-semibold text-white transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {t("profile.save")}
+                    {saving ? t("profile.saving") : t("profile.save")}
                   </button>
                   <button
                     type="button"
                     onClick={handleCancel}
-                    className="w-full rounded-xl border border-[#e0e0e0] bg-white py-2 text-[13px] font-medium text-[#555] transition-colors hover:bg-[#f5f5f5]"
+                    disabled={saving}
+                    className="w-full rounded-xl border border-[#e0e0e0] bg-white py-2 text-[13px] font-medium text-[#555] transition-colors hover:bg-[#f5f5f5] disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {t("profile.cancel")}
                   </button>
@@ -495,7 +636,8 @@ export default function ProfileContent() {
                 <button
                   type="button"
                   onClick={handleEdit}
-                  className="w-full rounded-xl border border-[#e0e0e0] bg-white py-2 text-[13px] font-medium text-[#555] transition-colors hover:bg-[#f5f5f5]"
+                  disabled={detailLoading}
+                  className="w-full rounded-xl border border-[#e0e0e0] bg-white py-2 text-[13px] font-medium text-[#555] transition-colors hover:bg-[#f5f5f5] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {t("profile.editProfile")}
                 </button>
@@ -535,17 +677,17 @@ export default function ProfileContent() {
                   </>
                 ) : (
                   <>
-                    <Field label={t("profile.labelEmail")} value={user.email} />
+                    <Field label={t("profile.labelEmail")} value={currentForm.email} />
                     {/* Phone with country flag + code */}
                     <div className="flex flex-col gap-0.5 py-3">
                       <span className="text-[11px] font-medium text-[#aaa]">{t("profile.labelPhone")}</span>
-                      {user.phone ? (
+                      {currentForm.phone ? (
                         <div className="flex items-center gap-2">
                           <span className="inline-flex items-center gap-1.5 rounded-lg border border-[#e8e8e8] bg-[#f5f5f5] px-2.5 py-1 text-[13px] font-medium text-[#333]">
                             <span>{phoneCountry.flag}</span>
                             <span>{phoneCountry.code}</span>
                           </span>
-                          <span className="text-[14px] font-medium text-[#111]">{user.phone}</span>
+                          <span className="text-[14px] font-medium text-[#111]">{currentForm.phone}</span>
                         </div>
                       ) : (
                         <span className="text-[14px] font-medium text-[#ccc]">—</span>
@@ -565,9 +707,9 @@ export default function ProfileContent() {
                   </>
                 ) : (
                   <>
-                    <Field label={t("profile.labelBank")}          value={user.paymentAccount?.bankName} />
-                    <Field label={t("profile.labelAccountNumber")} value={user.paymentAccount?.accountNumber} />
-                    <Field label={t("profile.labelAccountHolder")} value={user.paymentAccount?.accountHolder} />
+                    <Field label={t("profile.labelBank")}          value={currentForm.bankName} />
+                    <Field label={t("profile.labelAccountNumber")} value={currentForm.accountNumber} />
+                    <Field label={t("profile.labelAccountHolder")} value={currentForm.accountHolder} />
                   </>
                 )}
               </Section>

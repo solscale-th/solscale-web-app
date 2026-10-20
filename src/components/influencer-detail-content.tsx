@@ -6,7 +6,13 @@ import { motion, useScroll, useTransform } from "motion/react";
 import MainHeader from "@/components/main-header";
 import SiteFooter from "@/components/site-footer";
 import { useLanguage } from "@/i18n/language-provider";
-import type { InfluencerProfile } from "@/lib/influencers";
+import {
+  ADDON_KINDS,
+  PACKAGE_TIERS,
+  type AddonKind,
+  type InfluencerProfile,
+  type PackageTier,
+} from "@/lib/influencers";
 import {
   INFLUENCER_CATEGORY_KEYS,
   type InfluencerCategoryKey,
@@ -141,6 +147,27 @@ export default function InfluencerDetailContent({ influencer }: Props) {
     return raw;
   }
 
+  function offerLabel(tier: string): string {
+    if ((PACKAGE_TIERS as readonly string[]).includes(tier)) {
+      return t(`influencerDetail.offers.${tier as PackageTier}`);
+    }
+    return tier;
+  }
+
+  function addonLabel(kind: string): string {
+    if ((ADDON_KINDS as readonly string[]).includes(kind)) {
+      return t(`influencerDetail.addonKinds.${kind as AddonKind}`);
+    }
+    return kind;
+  }
+
+  function addonDescription(kind: string): string {
+    if ((ADDON_KINDS as readonly string[]).includes(kind)) {
+      return t(`influencerDetail.addonDescs.${kind as AddonKind}`);
+    }
+    return "";
+  }
+
   const packages = influencer.packages;
   const selectedPackage = packages.find((item) => item.id === selectedPackageId) ?? null;
   const selectedAddons = influencer.addons.filter((item) =>
@@ -163,7 +190,7 @@ export default function InfluencerDetailContent({ influencer }: Props) {
     });
     if (selectedPackage) {
       params.set("packageId", selectedPackage.id);
-      params.set("packageName", t(`influencerDetail.offers.${selectedPackage.tier}`));
+      params.set("packageName", offerLabel(selectedPackage.tier));
       params.set("packagePrice", String(selectedPackage.price));
       params.set(
         "packageDetail",
@@ -175,7 +202,7 @@ export default function InfluencerDetailContent({ influencer }: Props) {
         "addons",
         JSON.stringify(
           selectedAddons.map((item) => ({
-            name: t(`influencerDetail.addonKinds.${item.kind}`),
+            name: addonLabel(item.kind),
             price: item.price,
           }))
         )
@@ -389,7 +416,7 @@ export default function InfluencerDetailContent({ influencer }: Props) {
                                   <div className="flex items-start justify-between gap-3">
                                     <div className="min-w-0">
                                       <p className="text-[11px] font-bold uppercase tracking-wider text-brand">
-                                        {t(`influencerDetail.offers.${item.tier}`)}
+                                        {offerLabel(item.tier)}
                                       </p>
                                       <h3 className="mt-1 text-[15px] font-bold text-[#111]">
                                         {item.includes.map((include) => categoryLabel(include)).join(" + ")}
@@ -443,14 +470,14 @@ export default function InfluencerDetailContent({ influencer }: Props) {
                                         <span className="min-w-0 flex-1">
                                           <span className="flex items-start justify-between gap-3">
                                             <span className="text-[14px] font-bold text-[#111]">
-                                              {t(`influencerDetail.addonKinds.${addon.kind}`)}
+                                              {addonLabel(addon.kind)}
                                             </span>
                                             <span className="shrink-0 text-[14px] font-bold text-brand">
                                               {formatBaht(addon.price)}
                                             </span>
                                           </span>
                                           <span className="mt-1 block text-[13px] leading-relaxed text-[#666]">
-                                            {t(`influencerDetail.addonDescs.${addon.kind}`)}
+                                            {addonDescription(addon.kind)}
                                           </span>
                                         </span>
                                       </label>
@@ -754,7 +781,7 @@ export default function InfluencerDetailContent({ influencer }: Props) {
                       <div className="space-y-1.5 px-1 pb-1 text-[13px]">
                         <div className="flex items-center justify-between gap-3 text-[#444]">
                           <span className="truncate">
-                            {t(`influencerDetail.offers.${selectedPackage.tier}`)}
+                            {offerLabel(selectedPackage.tier)}
                           </span>
                           <span className="shrink-0 font-semibold">
                             {formatBaht(selectedPackage.price)}
@@ -766,7 +793,7 @@ export default function InfluencerDetailContent({ influencer }: Props) {
                             className="flex items-center justify-between gap-3 text-[#666]"
                           >
                             <span className="truncate">
-                              {t(`influencerDetail.addonKinds.${addon.kind}`)}
+                              {addonLabel(addon.kind)}
                             </span>
                             <span className="shrink-0">{formatBaht(addon.price)}</span>
                           </div>

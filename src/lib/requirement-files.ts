@@ -1,6 +1,3 @@
-const SAMPLE_IMAGE = "/samples/requirement-preview.png";
-const SAMPLE_PDF = "/samples/requirement-preview.pdf";
-
 const liveFiles = new Map<string, string>();
 
 const FILE_RULES = [
@@ -58,9 +55,5 @@ export function isRequirementImage(name: string): boolean {
 }
 
 export function requirementPreviewUrl(name: string): string | null {
-  const live = liveFiles.get(name);
-  if (live) return live;
-  if (isRequirementImage(name)) return SAMPLE_IMAGE;
-  if (/\.pdf$/i.test(name)) return SAMPLE_PDF;
-  return null;
+  return liveFiles.get(name) ?? null;
 }

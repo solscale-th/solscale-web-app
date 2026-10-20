@@ -1,5 +1,4 @@
-import { findSeededPrivateJob } from "@/lib/mock-hire-request";
-import { MOCK_JOBS, PLATFORM_COLORS, type Job, type Platform } from "@/lib/mock-jobs";
+import { PLATFORM_COLORS, type Job, type Platform } from "@/lib/mock-jobs";
 import { loadFlowchartState } from "./store";
 import type { FlowPostedJob, FlowchartState } from "./types";
 
@@ -54,10 +53,8 @@ export function getAllJobs(): Job[] {
 
 export function findJobById(id: string): Job | undefined {
   const posted = loadFlowchartState().postedJobs.find((job) => job.id === id);
-  if (posted) return postedJobToJob(posted);
-  const seeded = findSeededPrivateJob(id);
-  if (seeded) return postedJobToJob(seeded);
-  return MOCK_JOBS.find((job) => job.id === id);
+  if (!posted) return undefined;
+  return postedJobToJob(posted);
 }
 
 export function escrowAmountForJob(job: { budgetMin: number; budgetMax: number }): number {

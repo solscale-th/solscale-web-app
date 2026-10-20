@@ -17,17 +17,6 @@ import {
   type Job,
 } from "@/lib/mock-jobs";
 import type { DirectOfferStatus } from "@/lib/mock-direct";
-import {
-  ensureHireRequestInvite,
-  ensurePassedJobs,
-  ensureReadyToSubmitJobs,
-  ensureRevisionJobs,
-  ensureSubmittedReviews,
-  isPassedJob,
-  isReadyToSubmitJob,
-  isRevisionJob,
-  isSeededPrivateJob,
-} from "@/lib/mock-hire-request";
 import { useFlowchart } from "@/hooks/use-flowchart";
 import { buildApplication, buildEngagement } from "@/lib/flowchart/builders";
 import { escrowAmountForJob } from "@/lib/flowchart/jobs";
@@ -35,7 +24,21 @@ import DeliverWorkPanel from "@/components/deliver-work-panel";
 import ReviewWorkPanel from "@/components/review-work-panel";
 import JobWorkspaceSection from "@/components/job-workspace-section";
 import { jobDetailHref } from "@/lib/job-detail-href";
-import { acceptInvite, declineInvite, parseApiId } from "@/lib/applications";
+import {
+  acceptInvite,
+  applyToJob,
+  declineInvite,
+  fetchMyApplications,
+  fetchMyDirectInvites,
+  isDuplicateRecordError,
+  parseApiId,
+  type ApiApplication,
+} from "@/lib/applications";
+import {
+  fetchMyEngagements,
+  mapApiEngagementToFlow,
+  submitWork,
+} from "@/lib/engagements";
 import { markMyJobSeen } from "@/lib/seen-my-jobs";
 import {
   isRequirementFileLine,
@@ -169,6 +172,9 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
   const engagementIdParam = searchParams.get("engagement");
 
   const [applyStatus, setApplyStatus] = useState<"idle" | "submitting" | "done">("idle");
+  const [applyError, setApplyError] = useState("");
+  const [apiApplied, setApiApplied] = useState(false);
+  const [apiDirectInvite, setApiDirectInvite] = useState<ApiApplication | null>(null);
   const [acceptStatus, setAcceptStatus] = useState<"idle" | "submitting">("idle");
   const [deliverTab, setDeliverTab] = useState<"details" | "upload">(
     searchParams.get("tab") === "upload" || searchParams.get("tab") === "review"
@@ -179,16 +185,14 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
   const [reviewResult, setReviewResult] = useState<"accepted" | "sent" | null>(null);
 
   useEffect(() => {
-    if (!user) return;
-    if (user.role === "influencer") {
-      if (isPassedJob(job.id)) ensurePassedJobs(user);
-      else if (isRevisionJob(job.id)) ensureRevisionJobs(user);
-      else if (isReadyToSubmitJob(job.id)) ensureReadyToSubmitJobs(user);
-      else if (isSeededPrivateJob(job.id)) ensureHireRequestInvite(user);
-    } else if (isReadyToSubmitJob(job.id)) {
-      ensureSubmittedReviews(user);
-    }
-  }, [user, job.id]);
+    setApplyStatus("idle");
+    setApplyError("");
+    setApiApplied(false);
+    setApiDirectInvite(null);
+    setAcceptStatus("idle");
+    setDelivered(false);
+    setReviewResult(null);
+  }, [job.id]);
 
   const liveInvite = user
     ? state.invites.find(
@@ -196,7 +200,16 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
       )
     : undefined;
 
-  const offerStatus: DirectOfferStatus | null = liveInvite?.status ?? null;
+  const apiInviteStatus: DirectOfferStatus | null = (() => {
+    if (!apiDirectInvite) return null;
+    const status = apiDirectInvite.status.toLowerCase();
+    if (status === "accepted") return "accepted";
+    if (status === "declined" || status === "rejected") return "declined";
+    return "pending";
+  })();
+
+  const offerStatus: DirectOfferStatus | null =
+    liveInvite?.status ?? apiInviteStatus;
 
   const userEngagements = useMemo((): FlowEngagement[] => {
     if (!user) return [];
@@ -265,7 +278,7 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
   const isPrivateOffer =
     isInfluencer &&
     (liveInvite?.isPrivate === true ||
-      isSeededPrivateJob(job.id) ||
+      apiDirectInvite !== null ||
       engagementForJob?.checkoutPaid === true);
   const brandPays =
     !isInfluencer &&
@@ -278,24 +291,81 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
     engagementForJob.checkoutPaid !== true;
   const hideApplicants =
     isPrivateOffer || (!isInfluencer && engagementForJob?.source === "invite");
-  const isPendingOffer = offerStatus === "pending" && !hasEngagement;
+  // Local flowchart invite UI (Accept / Decline). API direct invites use สมัครงาน → acceptInvite.
+  const isPendingOffer =
+    Boolean(liveInvite) &&
+    !apiDirectInvite &&
+    offerStatus === "pending" &&
+    !hasEngagement;
   const isDeclinedOffer = offerStatus === "declined";
   const isAcceptedOffer = offerStatus === "accepted" || hasEngagement;
 
-  const hasApplied = useMemo(() => {
+  const hasAppliedLocal = useMemo(() => {
     if (user?.role !== "influencer") return false;
     return state.applications.some(
       (app) => app.jobId === job.id && app.influencerId === user.id
     );
   }, [user, job.id, state.applications]);
+  const hasApplied = hasAppliedLocal || apiApplied;
 
-  /** Chart: apply only on the marketplace path — not after match or invite. */
+  useEffect(() => {
+    if (user?.role !== "influencer") {
+      setApiApplied(false);
+      setApiDirectInvite(null);
+      return;
+    }
+    const jobId = parseApiId(job.id);
+    if (!jobId) {
+      setApiApplied(false);
+      setApiDirectInvite(null);
+      return;
+    }
+    const controller = new AbortController();
+    Promise.all([
+      fetchMyApplications(controller.signal),
+      fetchMyDirectInvites(controller.signal),
+      fetchMyEngagements(controller.signal),
+    ])
+      .then(([apps, invites, engagements]) => {
+        if (controller.signal.aborted) return;
+        setApiApplied(apps.some((app) => app.jobId === jobId));
+        const invite =
+          invites.find(
+            (item) =>
+              item.jobId === jobId &&
+              item.source?.toLowerCase() === "invite"
+          ) ?? null;
+        setApiDirectInvite(invite);
+        const apiEngagement = engagements.find((item) => item.jobId === jobId);
+        if (apiEngagement) {
+          dispatch({
+            type: "SYNC_ENGAGEMENT",
+            engagement: mapApiEngagementToFlow(apiEngagement, {
+              influencerName: user.name,
+              influencerHandle: `@${user.name.replace(/\s+/g, "").toLowerCase()}`,
+            }),
+          });
+        }
+      })
+      .catch(() => {
+        if (controller.signal.aborted) return;
+        setApiApplied(false);
+        setApiDirectInvite(null);
+      });
+    return () => controller.abort();
+  }, [user, job.id, dispatch]);
+
+  const hasPendingDirectInvite =
+    apiDirectInvite?.status.toLowerCase() === "pending" ||
+    (liveInvite?.status === "pending" && Boolean(liveInvite));
+
+  /** Marketplace apply, or accept a direct invite via the same CTA. */
   const canApply =
     user?.role === "influencer" &&
     !hasEngagement &&
-    !isPendingOffer &&
     !isDeclinedOffer &&
-    !isAcceptedOffer;
+    !isAcceptedOffer &&
+    (hasPendingDirectInvite || (!isPendingOffer && !hasApplied));
 
   const liveRequirements =
     state.postedJobs.find((item) => item.id === job.id)?.requirements ?? job.requirements;
@@ -307,53 +377,199 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
   const applyDone = hasApplied || applyStatus === "done";
   const showMobileApplyBar = canApply && !applyDone;
 
-  function handleApply() {
-    if (!user || applyStatus === "submitting" || hasApplied) return;
-    setApplyStatus("submitting");
+  function recordLocalApplication(
+    applicationId?: string,
+    status: "pending" | "accepted" | "rejected" = "pending"
+  ) {
+    if (!user) return;
+    if (hasAppliedLocal) return;
     try {
-      // API connecting: mutation applyToJob(jobId, cover, portfolio).
       dispatch({
         type: "APPLY_TO_JOB",
-        application: buildApplication({
+        application: {
+          ...buildApplication({
+            jobId: job.id,
+            influencerId: user.id,
+            entrepreneurId: job.companyId,
+            influencerName: user.name,
+            influencerHandle: `@${user.name.replace(/\s+/g, "").toLowerCase()}`,
+            coverMessage: "",
+          }),
+          ...(applicationId ? { id: applicationId } : {}),
+          status,
+        },
+      });
+    } catch {
+      // Local ledger may already contain this apply.
+    }
+  }
+
+  async function completeAcceptInvite(inviteId: string, entrepreneurId: string) {
+    if (!user) return;
+    const apiInviteId = parseApiId(inviteId);
+    if (!apiInviteId) throw new Error(t("jobDetail.applyFailed"));
+
+    await acceptInvite(apiInviteId);
+
+    const localInviteId = liveInvite?.id ?? inviteId;
+    if (!liveInvite) {
+      dispatch({
+        type: "SEND_INVITE",
+        invite: {
+          id: inviteId,
           jobId: job.id,
+          entrepreneurId,
           influencerId: user.id,
-          entrepreneurId: job.companyId,
+          fromCompany: job.company,
+          influencerName: user.name,
+          isPrivate: true,
+          status: "pending",
+          createdAt: Date.now(),
+        },
+      });
+    }
+
+    const jobId = parseApiId(job.id);
+    const engagements = await fetchMyEngagements();
+    const apiEngagement = jobId
+      ? engagements.find((item) => item.jobId === jobId)
+      : undefined;
+
+    const eng = apiEngagement
+      ? mapApiEngagementToFlow(apiEngagement, {
           influencerName: user.name,
           influencerHandle: `@${user.name.replace(/\s+/g, "").toLowerCase()}`,
-          coverMessage: "",
-        }),
-      });
-      setApplyStatus("done");
+        })
+      : {
+          ...buildEngagement({
+            jobId: job.id,
+            influencerId: user.id,
+            entrepreneurId,
+            influencerName: user.name,
+            influencerHandle: `@${user.name.replace(/\s+/g, "").toLowerCase()}`,
+            escrowAmount: escrowAmountForJob(job),
+            source: "invite",
+            sourceId: localInviteId,
+          }),
+          checkoutPaid: true,
+        };
+
+    try {
+      dispatch({ type: "ACCEPT_INVITE", inviteId: localInviteId, engagement: eng });
     } catch {
+      dispatch({ type: "SYNC_ENGAGEMENT", engagement: eng });
+    }
+    setApiDirectInvite((prev) =>
+      prev ? { ...prev, status: "accepted" } : prev
+    );
+    router.push(jobDetailHref(job.id, eng.id));
+  }
+
+  async function handleApply() {
+    if (!user || applyStatus === "submitting") return;
+
+    // Direct offer: สมัครงาน accepts the invite instead of creating a second application.
+    if (hasPendingDirectInvite) {
+      const inviteId = apiDirectInvite
+        ? String(apiDirectInvite.id)
+        : liveInvite?.id;
+      if (!inviteId) {
+        setApplyError(t("jobDetail.applyFailed"));
+        return;
+      }
+      setApplyStatus("submitting");
+      setApplyError("");
+      try {
+        await completeAcceptInvite(
+          inviteId,
+          liveInvite?.entrepreneurId ?? job.companyId
+        );
+        setApplyStatus("done");
+      } catch (err) {
+        setApplyStatus("idle");
+        setApplyError(
+          err instanceof Error && err.message
+            ? err.message
+            : t("jobDetail.applyFailed")
+        );
+      }
+      return;
+    }
+
+    if (hasApplied) return;
+    const jobId = parseApiId(job.id);
+    if (!jobId) {
+      setApplyError(t("jobDetail.applyFailed"));
+      return;
+    }
+
+    setApplyStatus("submitting");
+    setApplyError("");
+    try {
+      const application = await applyToJob(jobId);
+      if (application.jobId !== jobId) {
+        setApplyStatus("idle");
+        setApplyError(t("jobDetail.applyFailed"));
+        return;
+      }
+      const status: "pending" | "accepted" | "rejected" =
+        application.status === "accepted" || application.status === "rejected"
+          ? application.status
+          : "pending";
+      recordLocalApplication(String(application.id), status);
+      setApiApplied(true);
+      setApplyStatus("done");
+    } catch (err) {
+      // "Duplicated record" is a 409 for this jobId + influencer already.
+      // Keep the apply button available; do not lock the UI as success.
       setApplyStatus("idle");
+      if (isDuplicateRecordError(err)) {
+        setApplyError("");
+        return;
+      }
+      setApplyError(
+        err instanceof Error && err.message
+          ? err.message
+          : t("jobDetail.applyFailed")
+      );
     }
   }
 
   async function handleAcceptOffer() {
-    if (!user || !liveInvite || acceptStatus === "submitting") return;
-    const inviteId = liveInvite.id;
-    const apiInviteId = parseApiId(inviteId);
+    if (!user || acceptStatus === "submitting") return;
+    const inviteId = apiDirectInvite
+      ? String(apiDirectInvite.id)
+      : liveInvite?.id;
+    if (!inviteId) return;
+
     setAcceptStatus("submitting");
-    if (apiInviteId) {
-      try {
-        await acceptInvite(apiInviteId);
-      } catch {
-        // Local flowchart still records the accept so the job can go active.
+    try {
+      await completeAcceptInvite(
+        inviteId,
+        liveInvite?.entrepreneurId ?? job.companyId
+      );
+    } catch {
+      // Keep local accept available if the API call fails.
+      if (liveInvite) {
+        const eng = {
+          ...buildEngagement({
+            jobId: job.id,
+            influencerId: user.id,
+            entrepreneurId: liveInvite.entrepreneurId,
+            influencerName: user.name,
+            influencerHandle: `@${user.name.replace(/\s+/g, "").toLowerCase()}`,
+            escrowAmount: escrowAmountForJob(job),
+            source: "invite",
+            sourceId: liveInvite.id,
+          }),
+          checkoutPaid: true,
+        };
+        dispatch({ type: "ACCEPT_INVITE", inviteId: liveInvite.id, engagement: eng });
+        router.push(jobDetailHref(job.id, eng.id));
       }
+    } finally {
+      setAcceptStatus("idle");
     }
-    const eng = buildEngagement({
-      jobId: job.id,
-      influencerId: user.id,
-      entrepreneurId: liveInvite.entrepreneurId,
-      influencerName: user.name,
-      influencerHandle: `@${user.name.replace(/\s+/g, "").toLowerCase()}`,
-      escrowAmount: escrowAmountForJob(job),
-      source: "invite",
-      sourceId: inviteId,
-    });
-    dispatch({ type: "ACCEPT_INVITE", inviteId, engagement: eng });
-    setAcceptStatus("idle");
-    router.push(jobDetailHref(job.id, eng.id));
   }
 
   async function handleDeclineOffer() {
@@ -396,13 +612,21 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
     }
   }
 
-  function handleDeliver(payload: { files: string[]; links: string[] }) {
+  async function handleDeliver(payload: { files: string[]; links: string[] }) {
     if (!engagementForJob || delivered) return;
     const note = [
       ...payload.links,
       ...payload.files.map((name) => `File: ${name}`),
     ].join("\n");
+    const apiEngagementId = parseApiId(engagementForJob.id);
     try {
+      if (apiEngagementId) {
+        await submitWork({
+          engagementId: apiEngagementId,
+          links: payload.links,
+          note: note || undefined,
+        });
+      }
       dispatch({
         type: "SUBMIT_WORK",
         engagementId: engagementForJob.id,
@@ -890,18 +1114,23 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
                         </p>
                       </div>
                     ) : canApply ? (
-                      <motion.button
-                        type="button"
-                        onClick={handleApply}
-                        disabled={applyStatus === "submitting"}
-                        whileHover={applyStatus === "submitting" ? undefined : { y: -1 }}
-                        whileTap={applyStatus === "submitting" ? undefined : { scale: 0.99 }}
-                        className={`flex h-11 w-full items-center justify-center rounded-xl bg-brand text-[14px] font-semibold text-white transition-colors hover:bg-brand-hover disabled:opacity-60 ${FOCUS_RING}`}
-                      >
-                        {applyStatus === "submitting"
-                          ? dictionary.jobDetail.applySection.submitting
-                          : t("jobDetail.applyNow")}
-                      </motion.button>
+                      <div className="space-y-2">
+                        <motion.button
+                          type="button"
+                          onClick={handleApply}
+                          disabled={applyStatus === "submitting"}
+                          whileHover={applyStatus === "submitting" ? undefined : { y: -1 }}
+                          whileTap={applyStatus === "submitting" ? undefined : { scale: 0.99 }}
+                          className={`flex h-11 w-full items-center justify-center rounded-xl bg-brand text-[14px] font-semibold text-white transition-colors hover:bg-brand-hover disabled:opacity-60 ${FOCUS_RING}`}
+                        >
+                          {applyStatus === "submitting"
+                            ? dictionary.jobDetail.applySection.submitting
+                            : t("jobDetail.applyNow")}
+                        </motion.button>
+                        {applyError ? (
+                          <p className="text-center text-[12px] text-[#c0392b]">{applyError}</p>
+                        ) : null}
+                      </div>
                     ) : null}
                   </div>
                 </motion.div>
@@ -954,6 +1183,9 @@ export default function JobDetailContent({ job }: JobDetailContentProps) {
                     : t("jobDetail.applyNow")}
                 </button>
               </div>
+              {applyError ? (
+                <p className="mt-2 text-center text-[12px] text-[#c0392b]">{applyError}</p>
+              ) : null}
             </div>
           </>
         )}

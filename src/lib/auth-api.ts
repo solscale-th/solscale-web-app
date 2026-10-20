@@ -543,10 +543,49 @@ export async function loginEntrepreneurWithLine(
 
 // ── Profile completion mutations ─────────────────────────────────────────────
 
-export async function updateEntrepreneurProfile(input: {
+export type UpdateEntrepreneurProfileInput = {
   companyName?: string;
   email?: string;
-}): Promise<void> {
+};
+
+export type InfluencerPackageUpdate = {
+  tier: string;
+  platform?: string;
+  price: number;
+  includes?: string[];
+  revisions?: number;
+  turnaroundDays?: number;
+};
+
+export type InfluencerAddonUpdate = {
+  kind: string;
+  price: number;
+};
+
+export type UpdateInfluencerProfileInput = {
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  stageName?: string;
+  age?: number;
+  avatarUrl?: string;
+  platforms?: string[];
+  contentCategories?: string[];
+  languages?: string[];
+  bankName?: string;
+  bankAccountName?: string;
+  bankAccountNumber?: string;
+  otherPhotos?: string[];
+  countryCode?: string;
+  phone?: string;
+  bio?: string;
+  packages?: InfluencerPackageUpdate[];
+  addons?: InfluencerAddonUpdate[];
+};
+
+export async function updateEntrepreneurProfile(
+  input: UpdateEntrepreneurProfileInput
+): Promise<void> {
   const res = await graphqlRequest<UpdateEntrepreneurResponse>(
     UPDATE_ENTREPRENEUR,
     { input }
@@ -556,9 +595,9 @@ export async function updateEntrepreneurProfile(input: {
   if (!data) throw new Error(status?.error ?? "Failed to save profile");
 }
 
-export async function updateInfluencerProfile(input: {
-  email: string;
-}): Promise<void> {
+export async function updateInfluencerProfile(
+  input: UpdateInfluencerProfileInput
+): Promise<void> {
   const res = await graphqlRequest<UpdateInfluencerResponse>(
     UPDATE_INFLUENCER,
     { input }

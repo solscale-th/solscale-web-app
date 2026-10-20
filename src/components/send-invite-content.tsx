@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { FlowCard, FlowPage, fieldClass, primaryBtn, secondaryBtn } from "@/components/flow-page-shell";
 import { useAuth } from "@/hooks/use-auth";
 import { useLanguage } from "@/i18n/language-provider";
-import { createJob } from "@/lib/jobs";
+import { createJob, type JobRequirementFileInput } from "@/lib/jobs";
 import { PLATFORM_COLORS, type Platform } from "@/lib/mock-jobs";
-import { getInfluencerById } from "@/lib/mock-influencers";
 import { forgetRequirementFile, rememberRequirementFile } from "@/lib/requirement-files";
 
 type AddonLine = { name: string; price: number };
@@ -30,21 +29,6 @@ function isJobFile(file: File): boolean {
   const name = file.name.toLowerCase();
   return name.endsWith(".pdf") || /\.(png|jpe?g|gif|webp|bmp|svg|heic|heif|avif)$/.test(name);
 }
-
-const PRODUCTS = [
-  "Glow Serum 30ml",
-  "Glow Lab Daily SPF 50",
-  "Glow Lab Night Repair Cream",
-  "ColorBoom Velvet Lip",
-  "ColorBoom Brow Gel",
-  "LeanFuel Whey Vanilla",
-  "LeanFuel Plant Protein",
-  "Casa Lounge Chair",
-  "Casa Linen Throw",
-  "PeakForm Training Tee",
-  "NaturePure Vitamin C",
-  "StockDee Starter Plan",
-];
 
 type HireLanguage = "th" | "en" | "all";
 
@@ -176,155 +160,29 @@ export function HireSteps({ step }: { step: number }) {
   );
 }
 
-export function ProductAutocomplete({
-  value,
-  onChange,
-  placeholder,
-  emptyLabel,
-}: {
-  value: string;
-  onChange: (next: string) => void;
-  placeholder: string;
-  emptyLabel: string;
-}) {
-  const listId = useId();
-  const rootRef = useRef<HTMLDivElement>(null);
-  const [query, setQuery] = useState(value);
-  const [open, setOpen] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(0);
-
-  const filtered = PRODUCTS.filter((product) =>
-    product.toLowerCase().includes(query.trim().toLowerCase())
-  );
-
-  useEffect(() => {
-    if (value) setQuery(value);
-  }, [value]);
-
-  useEffect(() => {
-    setActiveIndex(0);
-  }, [query, open]);
-
-  useEffect(() => {
-    function onPointerDown(event: MouseEvent) {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", onPointerDown);
-    return () => document.removeEventListener("mousedown", onPointerDown);
-  }, []);
-
-  function choose(product: string) {
-    onChange(product);
-    setQuery(product);
-    setOpen(false);
-  }
-
-  function onKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
-    if (!open && (event.key === "ArrowDown" || event.key === "Enter")) {
-      event.preventDefault();
-      setOpen(true);
-      return;
-    }
-    if (!open) return;
-
-    if (event.key === "ArrowDown") {
-      event.preventDefault();
-      setActiveIndex((index) => (filtered.length === 0 ? 0 : (index + 1) % filtered.length));
-    } else if (event.key === "ArrowUp") {
-      event.preventDefault();
-      setActiveIndex((index) =>
-        filtered.length === 0 ? 0 : (index - 1 + filtered.length) % filtered.length
-      );
-    } else if (event.key === "Enter") {
-      event.preventDefault();
-      const choice = filtered[activeIndex];
-      if (choice) choose(choice);
-    } else if (event.key === "Escape") {
-      setOpen(false);
-    }
-  }
-
-  return (
-    <div ref={rootRef} className="relative">
-      <input
-        id="hire-product"
-        role="combobox"
-        aria-required="true"
-        aria-expanded={open}
-        aria-controls={listId}
-        aria-autocomplete="list"
-        aria-activedescendant={
-          open && filtered[activeIndex] ? `${listId}-option-${activeIndex}` : undefined
-        }
-        className={`mt-1.5 ${fieldClass}`}
-        value={query}
-        placeholder={placeholder}
-        autoComplete="off"
-        onChange={(event) => {
-          const next = event.target.value;
-          setQuery(next);
-          if (next !== value) onChange("");
-          setOpen(true);
-        }}
-        onFocus={() => setOpen(true)}
-        onKeyDown={onKeyDown}
-      />
-      {open && (
-        <ul
-          id={listId}
-          role="listbox"
-          className="absolute z-20 mt-1.5 max-h-56 w-full overflow-y-auto rounded-xl border border-[#ece7e1] bg-white py-1.5 shadow-[0_12px_32px_rgba(17,17,17,0.12)]"
-        >
-          {filtered.length === 0 ? (
-            <li className="px-3.5 py-2.5 text-[13px] text-[#8a8580]">{emptyLabel}</li>
-          ) : (
-            filtered.map((product, index) => {
-              const active = index === activeIndex;
-              return (
-                <li key={product} role="presentation">
-                  <button
-                    type="button"
-                    id={`${listId}-option-${index}`}
-                    role="option"
-                    aria-selected={active}
-                    className={`flex w-full px-3.5 py-2.5 text-left text-[13px] ${
-                      active ? "bg-brand/8 text-[#141414]" : "text-[#333] hover:bg-surface"
-                    }`}
-                    onMouseEnter={() => setActiveIndex(index)}
-                    onClick={() => choose(product)}
-                  >
-                    {product}
-                  </button>
-                </li>
-              );
-            })
-          )}
-        </ul>
-      )}
-    </div>
-  );
-}
-
 export default function SendInviteContent() {
   const { t, locale } = useLanguage();
   const { user } = useAuth();
   const params = useSearchParams();
   const influencerId = params.get("influencerId") ?? "";
+  const numericInfluencerId = Number(influencerId);
+  const hasInfluencer = Number.isInteger(numericInfluencerId) && numericInfluencerId > 0;
   const influencerName = params.get("name") ?? "Influencer";
   const packageName = params.get("packageName") ?? "";
   const packageDetail = params.get("packageDetail") ?? "";
-  const packagePrice = Number(params.get("packagePrice") ?? "");
+  const packagePriceRaw = params.get("packagePrice");
+  const packagePrice = Number(packagePriceRaw);
   const addons = useMemo(() => parseAddons(params.get("addons") ?? ""), [params]);
-  const hasPackagePrice = Number.isFinite(packagePrice);
+  const hasPackagePrice =
+    packagePriceRaw !== null && packagePriceRaw !== "" && Number.isFinite(packagePrice);
   const addonTotal = addons.reduce((sum, item) => sum + item.price, 0);
   const total = (hasPackagePrice ? packagePrice : 0) + addonTotal;
-  const profile = useMemo(() => getInfluencerById(influencerId), [influencerId]);
   const avatarUrl = params.get("avatar");
-  const avatarBg = safeAvatarBg(params.get("avatarBg"), profile?.avatarBg);
-  const platform = knownPlatform(params.get("platform") ?? profile?.platform);
-  const verified = profile?.verified === true;
+  const avatarBg = safeAvatarBg(params.get("avatarBg"));
+  const platformFromQuery = knownPlatform(params.get("platform"));
 
   const [step, setStep] = useState(1);
+  const [platformChoice, setPlatformChoice] = useState<Platform | "">(platformFromQuery ?? "");
   const [postingAt, setPostingAt] = useState("");
   const [confirmedPosting, setConfirmedPosting] = useState("");
   const [product, setProduct] = useState("");
@@ -339,7 +197,8 @@ export default function SendInviteContent() {
   const [sending, setSending] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const earliest = useMemo(() => minPostingValue(), []);
-  const briefReady = Boolean(product) && description.trim().length > 0 && languages.length > 0;
+  const platform = platformChoice || null;
+  const briefReady = product.trim().length > 0 && description.trim().length > 0 && languages.length > 0;
   const requirementsReady =
     Boolean(jobFiles.storyboard && jobFiles.super) &&
     requiredMessage.trim().length > 0 &&
@@ -355,8 +214,16 @@ export default function SendInviteContent() {
 
   if (user.role !== "entrepreneur") {
     return (
-      <FlowPage title={t("flow.hireTitle")} backHref={backHref}>
+      <FlowPage title={t("flow.hireTitle")} backHref={backHref} demo={false}>
         <p className="text-[14px] text-[#777]">{t("postJob.notEntrepreneur")}</p>
+      </FlowPage>
+    );
+  }
+
+  if (!hasInfluencer) {
+    return (
+      <FlowPage title={t("flow.hireTitle")} backHref="/" demo={false}>
+        <p className="text-[14px] text-[#777]">{t("flow.hireMissingInfluencer")}</p>
       </FlowPage>
     );
   }
@@ -381,7 +248,7 @@ export default function SendInviteContent() {
 
   function handleContinue(event: React.FormEvent) {
     event.preventDefault();
-    if (!postingAt) return;
+    if (!postingAt || !platform) return;
     setConfirmedPosting(postingAt);
     setStep(2);
   }
@@ -409,41 +276,49 @@ export default function SendInviteContent() {
 
   async function handleSendRequest(event: React.FormEvent) {
     event.preventDefault();
-    if (sending) return;
+    if (sending || !platform || !hasInfluencer) return;
     setSubmitError("");
     setSending(true);
     try {
-      const postingLabel = formatPosting(confirmedPosting || postingAt);
+      const postingValue = confirmedPosting || postingAt;
+      const postingLabel = formatPosting(postingValue);
       const languageLabel = languages
         .map((id) => {
           const option = LANGUAGE_OPTIONS.find((item) => item.id === id);
           return option ? t(`flow.${option.labelKey}`) : id;
         })
         .join(", ");
+      const languageCodes = languages.includes("all") ? ["th", "en"] : [...languages];
       const deliverables = [
         [packageName, packageDetail, hasPackagePrice ? formatBaht(packagePrice) : ""]
           .filter(Boolean)
           .join(" — "),
         ...addons.map((item) => `${item.name} — ${formatBaht(item.price)}`),
       ].filter(Boolean);
+      const requirementFiles: JobRequirementFileInput[] = JOB_FILES.flatMap((item) => {
+        const file = jobFiles[item.key];
+        if (!file) return [];
+        return [{ kind: item.key, required: item.required, originalFilename: file.name }];
+      });
       const requirements = [
         `${t("flow.hirePostingTime")}: ${postingLabel}`,
-        `${t("flow.hireProduct")}: ${product}`,
+        `${t("flow.hireProduct")}: ${product.trim()}`,
         `${t("flow.hireLanguages")}: ${languageLabel}`,
         subtitle.trim() ? `${t("flow.hireCaption")}: ${subtitle.trim()}` : "",
-        ...JOB_FILES.flatMap((item) => {
-          const file = jobFiles[item.key];
-          return file ? [`${t(`flow.${item.titleKey}`)}: ${file.name}`] : [];
+        ...requirementFiles.map((file) => {
+          const item = JOB_FILES.find((entry) => entry.key === file.kind);
+          const label = item ? t(`flow.${item.titleKey}`) : file.kind;
+          return `${label}: ${file.originalFilename}`;
         }),
         `${t("flow.hireRequiredMessage")}: ${requiredMessage.trim()}`,
         `${t("flow.hireForbiddenMessage")}: ${forbiddenMessage.trim()}`,
       ].filter(Boolean);
 
       await createJob({
-        title: `${product} — ${packageName}`,
+        title: packageName ? `${product.trim()} — ${packageName}` : product.trim(),
         description: description.trim(),
         brief: [
-          `${t("flow.hireSubtitle", { name: influencerName })}`,
+          t("flow.hireSubtitle", { name: influencerName }),
           ...deliverables,
           `${t("flow.hirePostingTime")}: ${postingLabel}`,
           `${t("flow.hireLanguages")}: ${languageLabel}`,
@@ -453,12 +328,28 @@ export default function SendInviteContent() {
         ]
           .filter(Boolean)
           .join("\n"),
-        platform: platform ?? "Instagram",
-        deliverables,
+        platform,
+        deliverables: deliverables.length > 0 ? deliverables : [product.trim()],
         requirements,
         duration: postingLabel,
-        budgetMin: Math.round(total),
-        budgetMax: Math.round(total),
+        ...(total > 0
+          ? { budgetMin: Math.round(total), budgetMax: Math.round(total) }
+          : {}),
+        visibility: "private",
+        influencerId: numericInfluencerId,
+        inviteInfluencerIds: [numericInfluencerId],
+        postingDate: postingValue,
+        languages: languageCodes,
+        ...(subtitle.trim() ? { caption: subtitle.trim() } : {}),
+        requiredMessage: requiredMessage.trim(),
+        forbiddenMessage: forbiddenMessage.trim(),
+        ...(packageName ? { packageName } : {}),
+        ...(packageDetail ? { packageDetail } : {}),
+        ...(hasPackagePrice ? { packagePrice: Math.round(packagePrice) } : {}),
+        ...(addons.length > 0
+          ? { addons: addons.map((item) => ({ name: item.name, price: Math.round(item.price) })) }
+          : {}),
+        ...(requirementFiles.length > 0 ? { requirementFiles } : {}),
       });
       setRequestSent(true);
     } catch (err) {
@@ -486,6 +377,7 @@ export default function SendInviteContent() {
 
   return (
     <FlowPage
+      demo={false}
       title={
         step === 4
           ? t("flow.hireConfirmTitle")
@@ -529,15 +421,7 @@ export default function SendInviteContent() {
               </div>
             )}
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5">
-                <p className="truncate text-[16px] font-bold text-[#111]">{influencerName}</p>
-                {verified && (
-                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" className="shrink-0" aria-label={t("common.verified")}>
-                    <circle cx="8" cy="8" r="7" fill="var(--color-accent)" />
-                    <path d="M4.8 8.1L7 10.2L11.2 5.8" stroke="var(--color-on-accent)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                )}
-              </div>
+              <p className="truncate text-[16px] font-bold text-[#111]">{influencerName}</p>
               {platform ? (
                 <span
                   className="mt-1.5 inline-flex rounded-md px-2 py-0.5 text-[10px] font-semibold"
@@ -554,16 +438,21 @@ export default function SendInviteContent() {
                 </span>
               )}
             </div>
-            <p className="shrink-0 text-[18px] font-extrabold text-brand">{formatBaht(total)}</p>
+            {total > 0 && (
+              <p className="shrink-0 text-[18px] font-extrabold text-brand">{formatBaht(total)}</p>
+            )}
           </div>
 
           <div className="mt-5 space-y-3">
-            <SummaryField
-              label={t("flow.invitePackage")}
-              value={[packageName, packageDetail, hasPackagePrice ? formatBaht(packagePrice) : ""]
-                .filter(Boolean)
-                .join("\n")}
-            />
+            {packageName && (
+              <SummaryField
+                label={t("flow.invitePackage")}
+                value={[packageName, packageDetail, hasPackagePrice ? formatBaht(packagePrice) : ""]
+                  .filter(Boolean)
+                  .join("\n")}
+              />
+            )}
+            {platform && <SummaryField label={t("postJob.platformLabel")} value={platform} />}
             {addons.length > 0 && (
               <SummaryField
                 label={t("flow.inviteAddons")}
@@ -713,18 +602,19 @@ export default function SendInviteContent() {
       ) : step === 2 ? (
         <FlowCard>
           <form onSubmit={handleBrief} className="space-y-5">
-            <div>
-              <label className="block text-[13px] font-medium text-[#333]" htmlFor="hire-product">
-                {t("flow.hireProduct")}
-                <RequiredMark />
-              </label>
-              <ProductAutocomplete
+            <label className="block text-[13px] font-medium text-[#333]" htmlFor="hire-product">
+              {t("flow.hireProduct")}
+              <RequiredMark />
+              <input
+                id="hire-product"
+                type="text"
+                required
                 value={product}
-                onChange={setProduct}
-                placeholder={t("flow.hireProductPlaceholder")}
-                emptyLabel={t("flow.hireProductEmpty")}
+                onChange={(event) => setProduct(event.target.value)}
+                placeholder={t("flow.hireProductInputPlaceholder")}
+                className={`mt-1.5 ${fieldClass}`}
               />
-            </div>
+            </label>
 
             <label className="block text-[13px] font-medium text-[#333]" htmlFor="hire-description">
               {t("flow.hireProductDescription")}
@@ -794,23 +684,26 @@ export default function SendInviteContent() {
         </FlowCard>
       ) : (
         <>
+          {(packageName || addons.length > 0) && (
           <FlowCard>
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-[#999]">
-                  {t("flow.invitePackage")}
-                </p>
-                <p className="mt-1 text-[15px] font-bold text-[#111]">{packageName}</p>
-                {packageDetail && (
-                  <p className="mt-1 text-[13px] leading-relaxed text-[#666]">{packageDetail}</p>
+            {packageName && (
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-[#999]">
+                    {t("flow.invitePackage")}
+                  </p>
+                  <p className="mt-1 text-[15px] font-bold text-[#111]">{packageName}</p>
+                  {packageDetail && (
+                    <p className="mt-1 text-[13px] leading-relaxed text-[#666]">{packageDetail}</p>
+                  )}
+                </div>
+                {hasPackagePrice && (
+                  <p className="shrink-0 text-[15px] font-extrabold text-[#111]">
+                    {formatBaht(packagePrice)}
+                  </p>
                 )}
               </div>
-              {hasPackagePrice && (
-                <p className="shrink-0 text-[15px] font-extrabold text-[#111]">
-                  {formatBaht(packagePrice)}
-                </p>
-              )}
-            </div>
+            )}
 
             {addons.length > 0 && (
               <div className="mt-4 border-t border-[#f0f0f0] pt-4">
@@ -828,10 +721,12 @@ export default function SendInviteContent() {
               </div>
             )}
 
-            <div className="mt-4 flex items-center justify-between gap-3 border-t border-[#f0f0f0] pt-4">
-              <span className="text-[14px] font-bold text-[#111]">{t("influencerDetail.selectedTotal")}</span>
-              <span className="text-[18px] font-extrabold text-brand">{formatBaht(total)}</span>
-            </div>
+            {total > 0 && (
+              <div className="mt-4 flex items-center justify-between gap-3 border-t border-[#f0f0f0] pt-4">
+                <span className="text-[14px] font-bold text-[#111]">{t("influencerDetail.selectedTotal")}</span>
+                <span className="text-[18px] font-extrabold text-brand">{formatBaht(total)}</span>
+              </div>
+            )}
 
             {confirmedPosting && (
               <p className="mt-3 text-[13px] text-[#555]">
@@ -840,9 +735,30 @@ export default function SendInviteContent() {
               </p>
             )}
           </FlowCard>
+          )}
 
           <FlowCard>
             <form onSubmit={handleContinue} className="space-y-4">
+              {!platformFromQuery && (
+                <label className="block text-[13px] font-medium text-[#333]" htmlFor="hire-platform">
+                  {t("postJob.platformLabel")}
+                  <RequiredMark />
+                  <select
+                    id="hire-platform"
+                    required
+                    value={platformChoice}
+                    onChange={(event) => setPlatformChoice(event.target.value as Platform | "")}
+                    className={`mt-1.5 ${fieldClass}`}
+                  >
+                    <option value="">{t("flow.hirePlatformRequired")}</option>
+                    {(Object.keys(PLATFORM_COLORS) as Platform[]).map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
               <label className="block text-[13px] font-medium text-[#333]" htmlFor="posting-time">
                 {t("flow.hirePostingTime")}
                 <input
@@ -859,7 +775,7 @@ export default function SendInviteContent() {
                 />
               </label>
               <p className="text-[12px] leading-relaxed text-[#888]">{t("flow.hirePostingHint")}</p>
-              <button type="submit" className={primaryBtn} disabled={!postingAt}>
+              <button type="submit" className={primaryBtn} disabled={!postingAt || !platform}>
                 {t("flow.hireContinue")}
               </button>
             </form>

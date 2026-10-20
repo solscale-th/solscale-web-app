@@ -5,6 +5,36 @@ import {
 } from "./mock-influencers";
 import { PLATFORM_COLORS, type Platform } from "./mock-jobs";
 
+export type ApiInfluencerPackage = {
+  id: number;
+  tier?: string | null;
+  platform?: string | null;
+  price?: number | null;
+  includes?: string[] | null;
+  revisions?: number | null;
+  turnaroundDays?: number | null;
+};
+
+export type ApiInfluencerAddon = {
+  id: number;
+  kind?: string | null;
+  price?: number | null;
+};
+
+export type ApiInfluencerPortfolioItem = {
+  id: number;
+  title?: string | null;
+  platform?: string | null;
+  imageUrl?: string | null;
+};
+
+export type ApiInfluencerReview = {
+  id: number;
+  rating?: number | null;
+  comment?: string | null;
+  entrepreneur?: { companyName?: string | null } | null;
+};
+
 export type ApiInfluencer = {
   id: number;
   email?: string | null;
@@ -20,9 +50,16 @@ export type ApiInfluencer = {
   bankAccountName?: string | null;
   bankAccountNumber?: string | null;
   otherPhotos?: string[] | null;
+  countryCode?: string | null;
+  phone?: string | null;
+  bio?: string | null;
   averageRating?: number | null;
   reviewCount?: number | null;
   createdAt?: string | null;
+  packages?: ApiInfluencerPackage[] | null;
+  addons?: ApiInfluencerAddon[] | null;
+  portfolio?: ApiInfluencerPortfolioItem[] | null;
+  reviews?: ApiInfluencerReview[] | null;
 };
 
 export const PACKAGE_TIERS = ["starter", "standard", "campaign"] as const;
@@ -31,10 +68,10 @@ export type PackageTier = (typeof PACKAGE_TIERS)[number];
 export const ADDON_KINDS = ["revision", "rush", "usage", "crosspost"] as const;
 export type AddonKind = (typeof ADDON_KINDS)[number];
 
-/** A hireable package this influencer offers. */
+/** A hireable package this influencer offers. `tier` is the API string. */
 export type InfluencerPackage = {
   id: string;
-  tier: PackageTier;
+  tier: string;
   platform?: string | null;
   price: number;
   includes: string[];
@@ -42,10 +79,10 @@ export type InfluencerPackage = {
   turnaroundDays: number;
 };
 
-/** An optional extra that can be added to a package. */
+/** An optional extra on the influencer's catalog. `kind` is the API string. */
 export type InfluencerAddon = {
   id: string;
-  kind: AddonKind;
+  kind: string;
   price: number;
 };
 
@@ -80,9 +117,9 @@ export type InfluencerProfile = {
   averageRating: number;
   reviewCount: number;
   createdAt?: string | null;
-  /** Optional bio when available from mock data */
+  /** Optional bio when the API provides one */
   about?: string | null;
-  /** Mock-only fallback when avatarUrl is absent */
+  /** Color behind the initial when avatarUrl is absent */
   avatarFallbackClass?: string;
   packages: InfluencerPackage[];
   addons: InfluencerAddon[];
@@ -163,6 +200,68 @@ export function mapInfluencer(influencer: ApiInfluencer): InfluencerListItem {
   };
 }
 
+function mapPackages(raw?: ApiInfluencerPackage[] | null): InfluencerPackage[] {
+  if (!raw) return [];
+  return raw.flatMap((item) => {
+    if (item.id == null) return [];
+    return [
+      {
+        id: String(item.id),
+        tier: item.tier?.trim() ?? "",
+        platform: item.platform,
+        price: item.price ?? 0,
+        includes: item.includes ?? [],
+        revisions: item.revisions ?? 0,
+        turnaroundDays: item.turnaroundDays ?? 0,
+      },
+    ];
+  });
+}
+
+function mapAddons(raw?: ApiInfluencerAddon[] | null): InfluencerAddon[] {
+  if (!raw) return [];
+  return raw.flatMap((item) => {
+    if (item.id == null) return [];
+    return [
+      {
+        id: String(item.id),
+        kind: item.kind?.trim() ?? "",
+        price: item.price ?? 0,
+      },
+    ];
+  });
+}
+
+function mapPortfolio(raw?: ApiInfluencerPortfolioItem[] | null): InfluencerPortfolioItem[] {
+  if (!raw) return [];
+  return raw.flatMap((item) => {
+    if (item.id == null) return [];
+    return [
+      {
+        id: String(item.id),
+        title: item.title?.trim() ?? "",
+        platform: item.platform,
+        imageUrl: item.imageUrl,
+      },
+    ];
+  });
+}
+
+function mapReviews(raw?: ApiInfluencerReview[] | null): InfluencerReview[] {
+  if (!raw) return [];
+  return raw.flatMap((item) => {
+    if (item.id == null) return [];
+    return [
+      {
+        id: String(item.id),
+        author: item.entrepreneur?.companyName?.trim() ?? "",
+        rating: item.rating ?? 0,
+        comment: item.comment ?? "",
+      },
+    ];
+  });
+}
+
 export function toInfluencerProfile(influencer: ApiInfluencer): InfluencerProfile {
   const name =
     influencer.stageName?.trim() ||
@@ -182,77 +281,13 @@ export function toInfluencerProfile(influencer: ApiInfluencer): InfluencerProfil
     averageRating: Number(influencer.averageRating ?? 0),
     reviewCount: influencer.reviewCount ?? 0,
     createdAt: influencer.createdAt,
+    about: influencer.bio,
     avatarFallbackClass:
       AVATAR_BACKGROUNDS[influencer.id % AVATAR_BACKGROUNDS.length],
-    packages: [],
-    addons: [],
-    portfolio: [],
-    reviews: [],
-  };
-}
-
-function roundBaht(amount: number): number {
-  return Math.max(500, Math.round(amount / 100) * 100);
-}
-
-export function basePriceFromFollowers(followers: number): number {
-  return Math.max(3500, Math.round(followers / 25));
-}
-
-function basePriceFromId(id: string): number {
-  const numeric = Number(id);
-  const seed = Number.isFinite(numeric)
-    ? numeric
-    : id.split("").reduce((total, char) => total + char.charCodeAt(0), 0);
-  return 4500 + (Math.abs(seed) % 8) * 1200;
-}
-
-/** Priced packages and add-ons used until the marketplace API returns them. */
-export function withMockHireOffer(
-  profile: InfluencerProfile,
-  options?: { includes?: string[]; basePrice?: number }
-): InfluencerProfile {
-  if (profile.packages.length > 0 && profile.addons.length > 0) return profile;
-
-  const includes = (
-    options?.includes?.filter((item) => item.trim()) ??
-    (profile.contentCategories.length > 0
-      ? profile.contentCategories
-      : profile.platforms)
-  ).slice(0, 4);
-  const work = includes.length > 0 ? includes : ["Content"];
-  const base = roundBaht(options?.basePrice ?? basePriceFromId(profile.id));
-  const platform = profile.platforms[0] ?? null;
-
-  const tiers: {
-    tier: PackageTier;
-    count: number;
-    revisions: number;
-    days: number;
-    multiplier: number;
-  }[] = [
-    { tier: "starter", count: 1, revisions: 1, days: 7, multiplier: 1 },
-    { tier: "standard", count: Math.min(2, work.length), revisions: 2, days: 10, multiplier: 1.8 },
-    { tier: "campaign", count: work.length, revisions: 3, days: 14, multiplier: 2.8 },
-  ];
-
-  return {
-    ...profile,
-    packages: tiers.map((tier) => ({
-      id: `${profile.id}-pkg-${tier.tier}`,
-      tier: tier.tier,
-      platform,
-      price: roundBaht(base * tier.multiplier),
-      includes: work.slice(0, tier.count),
-      revisions: tier.revisions,
-      turnaroundDays: tier.days,
-    })),
-    addons: [
-      { id: `${profile.id}-addon-revision`, kind: "revision", price: roundBaht(base * 0.15) },
-      { id: `${profile.id}-addon-rush`, kind: "rush", price: roundBaht(base * 0.22) },
-      { id: `${profile.id}-addon-usage`, kind: "usage", price: roundBaht(base * 0.4) },
-      { id: `${profile.id}-addon-crosspost`, kind: "crosspost", price: roundBaht(base * 0.28) },
-    ],
+    packages: mapPackages(influencer.packages),
+    addons: mapAddons(influencer.addons),
+    portfolio: mapPortfolio(influencer.portfolio),
+    reviews: mapReviews(influencer.reviews),
   };
 }
 
@@ -377,6 +412,35 @@ const INFLUENCER_BY_ID_QUERY = /* GraphQL */ `
     influencer(id: $id) {
       data {
         ${INFLUENCER_PUBLIC_FIELDS}
+        bio
+        packages {
+          id
+          tier
+          platform
+          price
+          includes
+          revisions
+          turnaroundDays
+        }
+        addons {
+          id
+          kind
+          price
+        }
+        portfolio {
+          id
+          title
+          platform
+          imageUrl
+        }
+        reviews {
+          id
+          rating
+          comment
+          entrepreneur {
+            companyName
+          }
+        }
       }
       status {
         error
@@ -398,6 +462,55 @@ type InfluencerByIdResult = {
     status?: { error?: string | null };
   };
 };
+
+const INFLUENCER_ACCOUNT_QUERY = /* GraphQL */ `
+  query InfluencerAccount($id: Int!) {
+    influencer(id: $id) {
+      data {
+        ${INFLUENCER_PUBLIC_FIELDS}
+        bio
+        countryCode
+        phone
+        bankName
+        bankAccountName
+        bankAccountNumber
+        packages {
+          id
+          tier
+          platform
+          price
+          includes
+          revisions
+          turnaroundDays
+        }
+        addons {
+          id
+          kind
+          price
+        }
+      }
+      status {
+        error
+      }
+    }
+  }
+`;
+
+/** Logged-in account fields, including bank details and the hire catalog. */
+export async function fetchInfluencerAccount(
+  id: number,
+  signal?: AbortSignal
+): Promise<ApiInfluencer | null> {
+  const result = await graphqlRequest<InfluencerByIdResult>(
+    INFLUENCER_ACCOUNT_QUERY,
+    { id },
+    signal
+  );
+
+  const { data, status } = result.influencer;
+  if (status?.error) throw new Error(status.error);
+  return data;
+}
 
 export async function fetchInfluencerById(
   id: number,

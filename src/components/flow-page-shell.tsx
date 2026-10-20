@@ -20,12 +20,15 @@ export function FlowPage({
   backHref,
   leading,
   children,
+  demo = true,
 }: {
   title: string;
   subtitle?: string;
   backHref?: string;
   leading?: React.ReactNode;
   children: React.ReactNode;
+  /** Other flows still persist locally. The hire form talks to the API. */
+  demo?: boolean;
 }) {
   const { t } = useLanguage();
 
@@ -49,7 +52,7 @@ export function FlowPage({
           <h1 className="text-[22px] font-bold tracking-tight text-[#111]">{title}</h1>
           {subtitle && <p className="mt-1 text-[14px] text-[#777]">{subtitle}</p>}
         </div>
-        <DemoBanner />
+        {demo && <DemoBanner />}
         {children}
       </main>
       <SiteFooter />

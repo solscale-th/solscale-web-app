@@ -12,7 +12,6 @@ import {
   type Submission,
   type ReceivedSubmission,
 } from "@/lib/mock-submissions";
-import { MOCK_JOBS } from "@/lib/mock-jobs";
 import { findJobById } from "@/lib/flowchart/jobs";
 import { logJobList } from "@/lib/jobs";
 import { getSeenSubmissionIds, markSubmissionSeen, SEEN_SUBMISSION_EVENT } from "@/lib/seen-submissions";
@@ -52,7 +51,7 @@ function SubmissionCard({
   detailHref: string;
 }) {
   const { t } = useLanguage();
-  const job = findJobById(submission.jobId) ?? MOCK_JOBS.find((j) => j.id === submission.jobId);
+  const job = findJobById(submission.jobId);
   if (!job) return null;
 
   return (
@@ -94,7 +93,7 @@ function ReceivedSubmissionCard({
   detailHref: string;
 }) {
   const { t } = useLanguage();
-  const job = findJobById(item.jobId) ?? MOCK_JOBS.find((j) => j.id === item.jobId);
+  const job = findJobById(item.jobId);
   if (!job) return null;
 
   const initials = item.influencerName
@@ -259,8 +258,8 @@ export default function SubmissionListContent() {
     }
     if (sortKey === "updatedDate") return a.updatedDaysAgo - b.updatedDaysAgo;
     if (sortKey === "name") {
-      const jobA = findJobById(a.jobId) ?? MOCK_JOBS.find((j) => j.id === a.jobId);
-      const jobB = findJobById(b.jobId) ?? MOCK_JOBS.find((j) => j.id === b.jobId);
+      const jobA = findJobById(a.jobId);
+      const jobB = findJobById(b.jobId);
       return (jobA?.title ?? "").localeCompare(jobB?.title ?? "");
     }
     return 0;
@@ -303,7 +302,7 @@ export default function SubmissionListContent() {
     role: user.role,
     count: isInfluencer ? sortedSubs.length : sortedReceived.length,
     jobs: (isInfluencer ? sortedSubs : sortedReceived).map((item) => {
-      const job = findJobById(item.jobId) ?? MOCK_JOBS.find((entry) => entry.id === item.jobId);
+      const job = findJobById(item.jobId);
       return {
         id: item.id,
         jobId: item.jobId,

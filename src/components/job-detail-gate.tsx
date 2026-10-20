@@ -5,7 +5,7 @@ import JobDetailContent from "@/components/job-detail-content";
 import MainHeader from "@/components/main-header";
 import { findJobById } from "@/lib/flowchart/jobs";
 import { fetchJobById, mapApiJobToJob } from "@/lib/jobs";
-import { getJobById, type Job } from "@/lib/mock-jobs";
+import { type Job } from "@/lib/mock-jobs";
 
 export default function JobDetailGate({ jobId }: { jobId: string }) {
   const [job, setJob] = useState<Job | undefined>(undefined);
@@ -14,7 +14,7 @@ export default function JobDetailGate({ jobId }: { jobId: string }) {
   useEffect(() => {
     const numericId = Number(jobId);
     if (!Number.isInteger(numericId) || numericId <= 0) {
-      setJob(findJobById(jobId) ?? getJobById(jobId));
+      setJob(findJobById(jobId));
       setReady(true);
       return;
     }
@@ -26,14 +26,14 @@ export default function JobDetailGate({ jobId }: { jobId: string }) {
         setJob(
           apiJob
             ? mapApiJobToJob(apiJob)
-            : findJobById(jobId) ?? getJobById(jobId)
+            : findJobById(jobId)
         );
         setReady(true);
       })
       .catch((err) => {
         if (controller.signal.aborted) return;
         if (err instanceof DOMException && err.name === "AbortError") return;
-        setJob(findJobById(jobId) ?? getJobById(jobId));
+        setJob(findJobById(jobId));
         setReady(true);
       });
 
@@ -67,7 +67,7 @@ export default function JobDetailGate({ jobId }: { jobId: string }) {
         </div>
       }
     >
-      <JobDetailContent job={job} />
+      <JobDetailContent key={job.id} job={job} />
     </Suspense>
   );
 }

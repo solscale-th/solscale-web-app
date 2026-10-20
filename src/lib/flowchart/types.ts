@@ -170,6 +170,7 @@ export type FlowAction =
   | { type: "REQUEST_REVISION"; engagementId: string; note: string }
   | { type: "APPROVE_WORK"; engagementId: string; note?: string }
   | { type: "SYNC_POSTED_JOB"; job: FlowPostedJob }
+  | { type: "SYNC_ENGAGEMENT"; engagement: FlowEngagement }
   | { type: "PAY_JOB"; engagementId: string }
   | { type: "RELEASE_PAYMENT"; engagementId: string }
   | { type: "RAISE_DISPUTE"; dispute: FlowDispute }

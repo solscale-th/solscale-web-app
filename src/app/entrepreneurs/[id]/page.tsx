@@ -4,13 +4,8 @@ import {
   fetchEntrepreneurById,
   toEntrepreneurProfile,
   type EntrepreneurCampaign,
-  type EntrepreneurProfile,
 } from "@/lib/entrepreneurs";
 import { fetchJobs, type ApiJob } from "@/lib/jobs";
-import {
-  getEntrepreneurById,
-  getJobsByEntrepreneur,
-} from "@/lib/mock-entrepreneurs";
 
 function daysAgoFromIso(iso?: string | null): number {
   if (!iso) return 0;
@@ -35,39 +30,6 @@ function mapApiJobToCampaign(job: ApiJob): EntrepreneurCampaign {
   };
 }
 
-function resolveMockProfile(id: string): {
-  entrepreneur: EntrepreneurProfile;
-  campaigns: EntrepreneurCampaign[];
-} | null {
-  const mock = getEntrepreneurById(id);
-  if (!mock) return null;
-
-  const jobs = getJobsByEntrepreneur(id);
-  return {
-    entrepreneur: {
-      id: mock.id,
-      companyName: mock.name,
-      brandDescription: mock.about,
-      email: null,
-      logoUrl: null,
-      avatarFallbackClass: mock.avatarBg,
-    },
-    campaigns: jobs.map((job) => ({
-      id: job.id,
-      title: job.title,
-      description: job.description,
-      platform: job.platform,
-      budgetMin: job.budgetMin,
-      budgetMax: job.budgetMax,
-      postedDaysAgo: job.postedDaysAgo,
-      promoted: job.promoted,
-      location: job.location,
-      duration: job.duration,
-      thumbnailBg: job.thumbnailBg,
-    })),
-  };
-}
-
 export default async function EntrepreneurDetailPage({
   params,
 }: {
@@ -75,36 +37,21 @@ export default async function EntrepreneurDetailPage({
 }) {
   const { id } = await params;
   const numericId = Number(id);
+  if (!Number.isInteger(numericId) || numericId <= 0) notFound();
 
-  if (Number.isInteger(numericId) && numericId > 0) {
-    try {
-      const apiEntrepreneur = await fetchEntrepreneurById(numericId);
-      if (apiEntrepreneur) {
-        const allJobs = await fetchJobs().catch(() => [] as ApiJob[]);
-        const campaigns = allJobs
-          .filter((job) => job.entrepreneurId === apiEntrepreneur.id)
-          .filter((job) => job.status.toLowerCase() !== "closed")
-          .map(mapApiJobToCampaign);
+  const apiEntrepreneur = await fetchEntrepreneurById(numericId).catch(() => null);
+  if (!apiEntrepreneur) notFound();
 
-        return (
-          <EntrepreneurDetailContent
-            entrepreneur={toEntrepreneurProfile(apiEntrepreneur)}
-            campaigns={campaigns}
-          />
-        );
-      }
-    } catch {
-      // Fall through to mock data when the API is unavailable.
-    }
-  }
-
-  const mock = resolveMockProfile(id);
-  if (!mock) notFound();
+  const allJobs = await fetchJobs().catch(() => [] as ApiJob[]);
+  const campaigns = allJobs
+    .filter((job) => job.entrepreneurId === apiEntrepreneur.id)
+    .filter((job) => job.status.toLowerCase() !== "closed")
+    .map(mapApiJobToCampaign);
 
   return (
     <EntrepreneurDetailContent
-      entrepreneur={mock.entrepreneur}
-      campaigns={mock.campaigns}
+      entrepreneur={toEntrepreneurProfile(apiEntrepreneur)}
+      campaigns={campaigns}
     />
   );
 }

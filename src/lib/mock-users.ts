@@ -14,6 +14,8 @@ export type ProfilePackage = {
   price: string;
   detail: string;
   platform: string;
+  revisions?: number;
+  turnaroundDays?: number;
 };
 
 export type ProfileAddon = {
@@ -79,6 +81,10 @@ export function parseJobProfile(value: unknown): JobProfile | undefined {
             price: asString(record.price),
             detail: asString(record.detail),
             platform: asString(record.platform),
+            ...(typeof record.revisions === "number" ? { revisions: record.revisions } : {}),
+            ...(typeof record.turnaroundDays === "number"
+              ? { turnaroundDays: record.turnaroundDays }
+              : {}),
           },
         ];
       })

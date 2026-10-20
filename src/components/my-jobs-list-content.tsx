@@ -1,56 +1,48 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import MainHeader from "@/components/main-header";
 import SiteFooter from "@/components/site-footer";
 import { useLanguage } from "@/i18n/language-provider";
 import { useAuth } from "@/hooks/use-auth";
-import {
-  canSubmitWork,
-  WORK_STATUS_LABELS,
-  type JobEngagement,
-} from "@/lib/mock-my-jobs";
-import { MOCK_JOBS } from "@/lib/mock-jobs";
-import { getSeenMyJobIds, markMyJobSeen, SEEN_MY_JOBS_EVENT } from "@/lib/seen-my-jobs";
 import { useFlowchart } from "@/hooks/use-flowchart";
-import { findJobById } from "@/lib/flowchart/jobs";
+import { markMyJobSeen } from "@/lib/seen-my-jobs";
 import {
-  ensurePassedJobs,
-  ensureReadyToSubmitJobs,
-  ensureRevisionJobs,
-  ensureSubmittedReviews,
-} from "@/lib/mock-hire-request";
-import { jobDetailHref, type JobDetailSection } from "@/lib/job-detail-href";
-import type { FlowEngagement } from "@/lib/flowchart/types";
-import { SendUrlsDialog } from "@/components/submission-url-form";
-
-function flowToEngagement(eng: FlowEngagement, isInfluencer: boolean): JobEngagement {
-  return {
-    id: eng.id,
-    jobId: eng.jobId,
-    influencerId: eng.influencerId,
-    influencerName: eng.influencerName,
-    influencerHandle: eng.influencerHandle,
-    influencerAvatarBg: eng.influencerAvatarBg,
-    acceptedDaysAgo: 0,
-    workStatus: eng.workStatus,
-    submissionNote: eng.submissionNote,
-    reviewNote: eng.reviewNote,
-    messages: [],
-    hasUpdate: isInfluencer
-      ? eng.workStatus === "submitted" || eng.workStatus === "revision_requested"
-      : eng.workStatus === "submitted",
-    checkoutPaid: eng.checkoutPaid === true,
-    source: eng.source,
-  };
-}
-
-// ─── Types ────────────────────────────────────────────────────────────────────
+  fetchMyAcceptedJobs,
+  logJobList,
+  mapApiJobToJob,
+  type ApiJob,
+} from "@/lib/jobs";
+import {
+  fetchMyEngagements,
+  mapApiEngagementToFlow,
+  mapApiWorkStatus,
+  type ApiEngagement,
+} from "@/lib/engagements";
+import { canSubmitWork, WORK_STATUS_LABELS } from "@/lib/mock-my-jobs";
+import { formatOfferPrice } from "@/lib/mock-jobs";
+import { jobDetailHref } from "@/lib/job-detail-href";
+import type { WorkStatus } from "@/lib/flowchart/types";
 
 type SortKey = "dateAdded" | "name" | "updatedDate";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+type AcceptedJobCard = {
+  api: ApiJob;
+  job: ReturnType<typeof mapApiJobToJob>;
+  acceptedDaysAgo: number;
+  updatedDaysAgo: number;
+  engagementId?: string;
+  workStatus: WorkStatus;
+  checkoutPaid: boolean;
+};
+
+function daysAgoFromIso(iso?: string | null): number {
+  if (!iso) return 0;
+  const ms = Date.now() - new Date(iso).getTime();
+  if (Number.isNaN(ms) || ms < 0) return 0;
+  return Math.floor(ms / (1000 * 60 * 60 * 24));
+}
 
 function formatAccepted(daysAgo: number): string {
   if (daysAgo === 0) return "Today";
@@ -58,141 +50,79 @@ function formatAccepted(daysAgo: number): string {
   return `${daysAgo}d ago`;
 }
 
-function UpdateDot() {
-  return (
-    <span className="absolute -right-1 -top-1 z-10 flex h-3.5 w-3.5">
-      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#ff2d55] opacity-75" />
-      <span className="relative inline-flex h-3.5 w-3.5 rounded-full bg-[#ff2d55]" />
-    </span>
-  );
-}
-
-// ─── Engagement card ──────────────────────────────────────────────────────────
-
 function EngagementCard({
-  engagement,
+  item,
   isInfluencer,
-  seen,
-  onSendUrls,
 }: {
-  engagement: JobEngagement;
+  item: AcceptedJobCard;
   isInfluencer: boolean;
-  seen: boolean;
-  onSendUrls?: () => void;
 }) {
   const { t } = useLanguage();
-  const router = useRouter();
-  const job = findJobById(engagement.jobId) ?? MOCK_JOBS.find((j) => j.id === engagement.jobId);
-  if (!job) return null;
-
-  const showDot = engagement.hasUpdate && !seen;
-  const statusInfo = WORK_STATUS_LABELS[engagement.workStatus];
+  const { job, api, acceptedDaysAgo, engagementId, workStatus, checkoutPaid } = item;
+  const statusInfo = WORK_STATUS_LABELS[workStatus];
   const readyToDeliver =
-    isInfluencer &&
-    engagement.checkoutPaid === true &&
-    canSubmitWork(engagement.workStatus);
-  const workPassed = isInfluencer && engagement.workStatus === "approved";
-  const waitingForPay =
-    isInfluencer && engagement.source === "invite" && engagement.checkoutPaid !== true;
-  const readyToReview = !isInfluencer && engagement.workStatus === "submitted";
+    isInfluencer && checkoutPaid && canSubmitWork(workStatus);
+  const workPassed = isInfluencer && workStatus === "approved";
 
-  const initials = engagement.influencerName
-    .split(" ")
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-
-  function navigate(section?: JobDetailSection) {
-    if (engagement.hasUpdate) markMyJobSeen(engagement.id);
-    router.push(jobDetailHref(engagement.jobId, engagement.id, section));
-  }
-
-  function openUpload() {
-    if (engagement.hasUpdate) markMyJobSeen(engagement.id);
-    router.push(`${jobDetailHref(engagement.jobId, engagement.id)}&tab=upload`);
-  }
-
-  function openReview() {
-    if (engagement.hasUpdate) markMyJobSeen(engagement.id);
-    router.push(`${jobDetailHref(engagement.jobId, engagement.id)}&tab=review`);
-  }
-
-  const primaryLabel = isInfluencer ? t("myJob.submitWork") : t("myJob.reviewWork");
+  const detailsHref = engagementId
+    ? jobDetailHref(job.id, engagementId)
+    : `/jobs/${job.id}`;
+  const uploadHref = engagementId
+    ? `${jobDetailHref(job.id, engagementId)}&tab=upload`
+    : `/jobs/${job.id}?tab=upload`;
 
   return (
     <div className="relative flex flex-col rounded-2xl border border-[#f0f0f0] bg-white shadow-[0_2px_10px_rgba(0,0,0,0.07)] transition-shadow hover:shadow-[0_4px_18px_rgba(0,0,0,0.12)]">
-      {showDot && <UpdateDot />}
-
-      {/* Banner */}
       <div className={`relative h-28 overflow-hidden rounded-t-2xl ${job.thumbnailBg}`}>
-        {/* Work status chip */}
-        <span className={`absolute right-2.5 top-2.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${statusInfo.className}`}>
-          {statusInfo.en}
+        <span
+          className={`absolute right-2.5 top-2.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+            isInfluencer && engagementId
+              ? statusInfo.className
+              : "bg-green-100 text-green-700 capitalize"
+          }`}
+        >
+          {isInfluencer && engagementId ? statusInfo.en : api.status}
         </span>
-
-        {/* For entrepreneur view: show influencer avatar */}
-        {!isInfluencer && (
-          <div className="absolute bottom-2 left-2.5 flex items-center gap-1.5">
-            <div className={`grid h-8 w-8 place-items-center rounded-full text-xs font-black text-brand ${engagement.influencerAvatarBg}`}>
-              {initials}
-            </div>
-            <div>
-              <p className="text-[11px] font-semibold text-white drop-shadow">{engagement.influencerName}</p>
-              <p className="text-[10px] text-white/80 drop-shadow">{engagement.influencerHandle}</p>
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* Content */}
       <div className="flex flex-1 flex-col gap-2 p-3.5">
-        <h3 className="line-clamp-2 text-[14px] font-bold leading-snug text-[#111]">{job.title}</h3>
-        <p className="text-[12px] text-[#888]">{job.company}</p>
+        <h3 className="line-clamp-2 text-[14px] font-bold leading-snug text-[#111]">
+          {job.title}
+        </h3>
+        <p className="text-[12px] text-[#888]">{job.company || "—"}</p>
+        <p className="text-[20px] font-semibold tabular-nums tracking-[-0.03em] text-brand">
+          {formatOfferPrice(job.budgetMin, job.budgetMax)}
+        </p>
         <p className="text-[11px] text-[#999]">
-          {t("myJob.acceptedLabel")}: {formatAccepted(engagement.acceptedDaysAgo)}
+          {t("myJob.acceptedLabel")}: {formatAccepted(acceptedDaysAgo)}
         </p>
 
-        {/* Action buttons */}
         <div className="mt-auto flex flex-col gap-1.5 pt-1">
-          {isInfluencer &&
-            canSubmitWork(engagement.workStatus) &&
-            onSendUrls &&
-            !readyToDeliver &&
-            engagement.source !== "invite" && (
-            <button
-              type="button"
-              onClick={onSendUrls}
+          {isInfluencer && readyToDeliver && !workPassed && (
+            <Link
+              href={uploadHref}
+              onClick={() => markMyJobSeen(engagementId ?? job.id)}
               className="block w-full rounded-xl bg-brand px-3.5 py-2 text-center text-[12px] font-semibold text-white transition-colors hover:bg-brand-hover"
             >
-              {t("myJob.sendUrls")}
-            </button>
+              {t("myJob.submitWork")}
+            </Link>
           )}
-          {!workPassed && !waitingForPay && (
-          <button
-            type="button"
-            onClick={() =>
-              readyToDeliver ? openUpload() : readyToReview ? openReview() : navigate("submit-work")
-            }
-            className="block w-full rounded-xl bg-brand px-3.5 py-2 text-center text-[12px] font-semibold text-white transition-colors hover:bg-brand-hover"
-          >
-            {primaryLabel}
-          </button>
-          )}
-          <button
-            type="button"
-            onClick={() => navigate()}
-            className="rounded-xl border border-brand px-2 py-1.5 text-[11px] font-semibold text-brand transition-colors hover:bg-brand/5"
+          <Link
+            href={detailsHref}
+            onClick={() => markMyJobSeen(engagementId ?? job.id)}
+            className={`block w-full rounded-xl px-3.5 py-2 text-center text-[12px] font-semibold transition-colors ${
+              isInfluencer && readyToDeliver && !workPassed
+                ? "border border-brand text-brand hover:bg-brand/5"
+                : "bg-brand text-white hover:bg-brand-hover"
+            }`}
           >
             {t("myJob.viewDetails")}
-          </button>
+          </Link>
         </div>
       </div>
     </div>
   );
 }
-
-// ─── Sort dropdown ────────────────────────────────────────────────────────────
 
 function SortDropdown({
   value,
@@ -215,10 +145,16 @@ function SortDropdown({
         onClick={() => setOpen((v) => !v)}
         className="flex items-center gap-1.5 rounded-lg border border-[#eee] bg-white px-3 py-1.5 text-[13px] font-medium text-[#555] transition-colors hover:border-[#ccc]"
       >
-        <span className="hidden sm:inline text-[#999]">{label}:</span>
+        <span className="hidden text-[#999] sm:inline">{label}:</span>
         {current}
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-          <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+          <path
+            d="M3 4.5L6 7.5L9 4.5"
+            stroke="currentColor"
+            strokeWidth="1.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
         </svg>
       </button>
       {open && (
@@ -227,8 +163,13 @@ function SortDropdown({
             <button
               key={opt.key}
               type="button"
-              onClick={() => { onChange(opt.key); setOpen(false); }}
-              className={`block w-full px-4 py-2.5 text-left text-[13px] transition-colors hover:bg-surface ${value === opt.key ? "font-semibold text-brand" : "text-[#333]"}`}
+              onClick={() => {
+                onChange(opt.key);
+                setOpen(false);
+              }}
+              className={`block w-full px-4 py-2.5 text-left text-[13px] transition-colors hover:bg-surface ${
+                value === opt.key ? "font-semibold text-brand" : "text-[#333]"
+              }`}
             >
               {opt.label}
             </button>
@@ -239,104 +180,122 @@ function SortDropdown({
   );
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
+function engagementsByJobId(engagements: ApiEngagement[]): Map<number, ApiEngagement> {
+  const map = new Map<number, ApiEngagement>();
+  for (const engagement of engagements) {
+    const existing = map.get(engagement.jobId);
+    if (!existing || engagement.id > existing.id) {
+      map.set(engagement.jobId, engagement);
+    }
+  }
+  return map;
+}
 
 export default function MyJobsListContent() {
   const { t } = useLanguage();
   const { user } = useAuth();
-  const { state, dispatch } = useFlowchart();
+  const { dispatch } = useFlowchart();
   const [sortKey, setSortKey] = useState<SortKey>("dateAdded");
-  const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
-  const [sendUrlsEngagement, setSendUrlsEngagement] = useState<JobEngagement | null>(null);
-  const [sendUrlsError, setSendUrlsError] = useState("");
-
-  const closeSendUrls = useCallback(() => {
-    setSendUrlsEngagement(null);
-    setSendUrlsError("");
-  }, []);
+  const [jobs, setJobs] = useState<AcceptedJobCard[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    if (user?.role === "influencer") {
-      ensureReadyToSubmitJobs(user);
-      ensureRevisionJobs(user);
-      ensurePassedJobs(user);
-    }
-    else if (user?.role === "entrepreneur") ensureSubmittedReviews(user);
-  }, [user]);
+    if (!user) return;
+    const controller = new AbortController();
+    setLoading(true);
+    setError(false);
 
-  useEffect(() => {
-    const sync = () => setSeenIds(new Set(getSeenMyJobIds()));
-    sync();
-    window.addEventListener(SEEN_MY_JOBS_EVENT, sync);
-    return () => window.removeEventListener(SEEN_MY_JOBS_EVENT, sync);
-  }, []);
+    const isInfluencer = user.role === "influencer";
+    const load = isInfluencer
+      ? Promise.all([
+          fetchMyAcceptedJobs({ signal: controller.signal }),
+          fetchMyEngagements(controller.signal),
+        ])
+      : fetchMyAcceptedJobs({ signal: controller.signal }).then(
+          (apiJobs) => [apiJobs, [] as ApiEngagement[]] as const
+        );
+
+    load
+      .then(([apiJobs, engagements]) => {
+        if (controller.signal.aborted) return;
+        const byJob = engagementsByJobId(engagements);
+        const mapped = apiJobs.map((api) => {
+          const engagement = byJob.get(api.id);
+          if (engagement && isInfluencer) {
+            dispatch({
+              type: "SYNC_ENGAGEMENT",
+              engagement: mapApiEngagementToFlow(engagement, {
+                influencerName: user.name,
+                influencerHandle: `@${user.name.replace(/\s+/g, "").toLowerCase()}`,
+              }),
+            });
+          }
+          return {
+            api,
+            job: mapApiJobToJob(api),
+            acceptedDaysAgo: daysAgoFromIso(
+              engagement?.createdAt ?? api.createdAt
+            ),
+            updatedDaysAgo: daysAgoFromIso(
+              engagement?.updatedAt ?? api.updatedAt ?? api.createdAt
+            ),
+            engagementId: engagement ? String(engagement.id) : undefined,
+            workStatus: mapApiWorkStatus(engagement?.workStatus),
+            // API engagements are ready to deliver (no checkout step yet).
+            checkoutPaid: Boolean(engagement),
+          } satisfies AcceptedJobCard;
+        });
+        setJobs(mapped);
+        logJobList("my-jobs:api", {
+          role: user.role,
+          count: mapped.length,
+          jobs: mapped.map((item) => ({
+            id: item.job.id,
+            title: item.job.title,
+            company: item.job.company,
+            status: item.api.status,
+            engagementId: item.engagementId,
+            workStatus: item.workStatus,
+          })),
+        });
+        setLoading(false);
+      })
+      .catch((err) => {
+        if (controller.signal.aborted) return;
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        setJobs([]);
+        setError(true);
+        setLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [user, dispatch]);
+
+  const sortedJobs = useMemo(() => {
+    const list = [...jobs];
+    list.sort((a, b) => {
+      if (sortKey === "dateAdded") return a.acceptedDaysAgo - b.acceptedDaysAgo;
+      if (sortKey === "updatedDate") return a.updatedDaysAgo - b.updatedDaysAgo;
+      if (sortKey === "name") return a.job.title.localeCompare(b.job.title);
+      return 0;
+    });
+    return list;
+  }, [jobs, sortKey]);
 
   if (!user) return null;
 
   const isInfluencer = user.role === "influencer";
-  const title    = isInfluencer ? t("myJob.influencerTitle")    : t("myJob.entrepreneurTitle");
-  const subtitle = isInfluencer ? t("myJob.influencerSubtitle") : t("myJob.entrepreneurSubtitle");
+  const title = isInfluencer ? t("myJob.influencerTitle") : t("myJob.entrepreneurTitle");
+  const subtitle = isInfluencer
+    ? t("myJob.influencerSubtitle")
+    : t("myJob.entrepreneurSubtitle");
 
   const sortOptions: { key: SortKey; label: string }[] = [
-    { key: "dateAdded",   label: t("myJob.sortDateAdded")   },
-    { key: "name",        label: t("myJob.sortName")        },
+    { key: "dateAdded", label: t("myJob.sortDateAdded") },
+    { key: "name", label: t("myJob.sortName") },
     { key: "updatedDate", label: t("myJob.sortUpdatedDate") },
   ];
-
-  const notifFirst = (aHas: boolean, aId: string, bHas: boolean, bId: string) => {
-    const aUnseen = aHas && !seenIds.has(aId);
-    const bUnseen = bHas && !seenIds.has(bId);
-    if (aUnseen && !bUnseen) return -1;
-    if (!aUnseen && bUnseen) return  1;
-    return 0;
-  };
-
-  const liveList = state.engagements
-    .filter((eng) => {
-      if (isInfluencer) {
-        return eng.influencerId === user.id;
-      }
-      return eng.entrepreneurId === user.id;
-    })
-    .map((eng) => flowToEngagement(eng, isInfluencer));
-  const sortedList = [...liveList].sort((a, b) => {
-    if (sortKey === "dateAdded") {
-      const n = notifFirst(a.hasUpdate, a.id, b.hasUpdate, b.id);
-      if (n !== 0) return n;
-      return a.acceptedDaysAgo - b.acceptedDaysAgo;
-    }
-    if (sortKey === "updatedDate") {
-      // Sort by most recently updated messages / work status
-      const aLatest = a.messages[a.messages.length - 1]?.sentDaysAgo ?? 999;
-      const bLatest = b.messages[b.messages.length - 1]?.sentDaysAgo ?? 999;
-      return aLatest - bLatest;
-    }
-    if (sortKey === "name") {
-      const jobA = findJobById(a.jobId) ?? MOCK_JOBS.find((j) => j.id === a.jobId);
-      const jobB = findJobById(b.jobId) ?? MOCK_JOBS.find((j) => j.id === b.jobId);
-      return (jobA?.title ?? "").localeCompare(jobB?.title ?? "");
-    }
-    return 0;
-  });
-
-  const sendUrlsJob = sendUrlsEngagement
-    ? findJobById(sendUrlsEngagement.jobId) ?? MOCK_JOBS.find((j) => j.id === sendUrlsEngagement.jobId)
-    : undefined;
-
-  function handleSendUrls(note: string) {
-    if (!sendUrlsEngagement) return;
-    try {
-      dispatch({
-        type: "SUBMIT_WORK",
-        engagementId: sendUrlsEngagement.id,
-        note,
-      });
-      markMyJobSeen(sendUrlsEngagement.id);
-      closeSendUrls();
-    } catch {
-      setSendUrlsError(t("myJob.sendUrlsError"));
-    }
-  }
 
   return (
     <div className="flex min-h-screen flex-col bg-white">
@@ -344,7 +303,6 @@ export default function MyJobsListContent() {
 
       <section className="flex-1 px-4 pb-16 pt-10 sm:px-8">
         <div className="mx-auto max-w-7xl">
-          {/* Header row */}
           <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
             <div>
               <h1 className="text-[17px] font-bold text-[#111]">{title}</h1>
@@ -358,44 +316,25 @@ export default function MyJobsListContent() {
             />
           </div>
 
-          {sortedList.length === 0 ? (
+          {loading ? (
+            <p className="py-16 text-center text-[14px] text-[#888]">{t("common.loading")}</p>
+          ) : error ? (
+            <p className="py-16 text-center text-[14px] text-[#888]">{t("common.loadFailed")}</p>
+          ) : sortedJobs.length === 0 ? (
             <p className="py-16 text-center text-[14px] text-[#888]">{t("myJob.empty")}</p>
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {sortedList.map((engagement) => (
+              {sortedJobs.map((item) => (
                 <EngagementCard
-                  key={engagement.id}
-                  engagement={engagement}
+                  key={item.job.id}
+                  item={item}
                   isInfluencer={isInfluencer}
-                  seen={seenIds.has(engagement.id)}
-                  onSendUrls={
-                    isInfluencer && canSubmitWork(engagement.workStatus)
-                      ? () => {
-                          setSendUrlsError("");
-                          setSendUrlsEngagement(engagement);
-                        }
-                      : undefined
-                  }
                 />
               ))}
             </div>
           )}
         </div>
       </section>
-
-      <SendUrlsDialog
-        key={sendUrlsEngagement?.id ?? "closed"}
-        open={sendUrlsEngagement !== null}
-        title={sendUrlsJob?.title}
-        submitLabel={
-          sendUrlsEngagement?.workStatus === "revision_requested"
-            ? t("myJob.detailReSubmitBtn")
-            : t("myJob.sendUrls")
-        }
-        error={sendUrlsError}
-        onClose={closeSendUrls}
-        onSubmit={handleSendUrls}
-      />
 
       <SiteFooter />
     </div>

@@ -40,11 +40,33 @@ function normalizeEngagements(items: unknown): FlowEngagement[] {
   });
 }
 
+function isSeededJobId(id: string): boolean {
+  return (
+    id.startsWith("job-hire-") ||
+    id.startsWith("job-submit-") ||
+    id.startsWith("job-fix-") ||
+    id.startsWith("job-pass-")
+  );
+}
+
+function withoutSeededJobs(state: FlowchartState): FlowchartState {
+  const engagements = state.engagements.filter((item) => !isSeededJobId(item.jobId));
+  const engagementIds = new Set(engagements.map((item) => item.id));
+  return {
+    ...state,
+    postedJobs: state.postedJobs.filter((job) => !isSeededJobId(job.id)),
+    invites: state.invites.filter((item) => !isSeededJobId(item.jobId)),
+    applications: state.applications.filter((item) => !isSeededJobId(item.jobId)),
+    engagements,
+    ratings: state.ratings.filter((item) => engagementIds.has(item.engagementId)),
+    disputes: state.disputes.filter((item) => engagementIds.has(item.engagementId)),
+  };
+}
 function parseRaw(raw: string): FlowchartState | null {
   try {
     const parsed = JSON.parse(raw) as Partial<FlowchartState>;
     if (parsed.version !== 1) return null;
-    return {
+    return withoutSeededJobs({
       version: 1,
       postedJobs: parsed.postedJobs ?? [],
       invites: parsed.invites ?? [],
@@ -52,7 +74,7 @@ function parseRaw(raw: string): FlowchartState | null {
       engagements: normalizeEngagements(parsed.engagements),
       ratings: parsed.ratings ?? [],
       disputes: parsed.disputes ?? [],
-    };
+    });
   } catch {
     return null;
   }
